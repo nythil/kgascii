@@ -17,55 +17,69 @@
 
 #include <iostream>
 #include <algorithm>
-#include <string>
 #include <vector>
 #include <boost/bind.hpp>
-#include <boost/program_options.hpp>
 #include <kgascii/ft2pp/library.hpp>
 #include <kgascii/ft2pp/face.hpp>
 #include <kgascii/ft2pp/util.hpp>
+#include <common/cmdlinetool.hpp>
 
-namespace bpo = boost::program_options;
-using namespace KG::Ascii;
+namespace FT2pp = KG::Ascii::FT2pp;
 
-void dumpFont(FT2pp::Library& ft_library, const std::string& fileName);
-void dumpFontMetrics(FT2pp::Face& ft_face, int pixel_size);
+class DumpFont: public CmdlineTool
+{
+public:
+    DumpFont();
+
+protected:
+    bool processArgs();
+
+    int doExecute();
+    
+private:
+    void dumpFont(FT2pp::Library& ft_library, const std::string& fileName);
+
+    void dumpFontMetrics(FT2pp::Face& ft_face, int pixel_size);
+
+private:
+    std::vector<std::string> fontFiles_;
+};
 
 int main(int argc, char* argv[])
 {
-    typedef std::vector<std::string> string_list;
-    string_list font_files;
+    return DumpFont().execute(argc, argv);
+}
 
-    bpo::options_description opt_desc("Options");
-    opt_desc.add_options()
-        ("help", "help message")
-        ("input-file,i", bpo::value(&font_files), "input font file")
+DumpFont::DumpFont()
+    :CmdlineTool("Options")
+{
+    using namespace boost::program_options;
+    desc_.add_options()
+        ("input-file,i", value(&fontFiles_), "input font file")
     ;
+    posDesc_.add("input-file", -1);
+}
 
-    bpo::positional_options_description pos_opt_desc;
-    pos_opt_desc.add("input-file", -1);
+bool DumpFont::processArgs()
+{
+    requireOption("input-file");
+    return true;
+}
 
-    bpo::variables_map vm;
-    bpo::store(bpo::command_line_parser(argc, argv).
-               options(opt_desc).positional(pos_opt_desc).run(), vm);
-    bpo::notify(vm);
-
-    if (vm.count("help") || !vm.count("input-file")) {
-        std::cout << "Usage: dumpfont [options] input_file1 ...\n";
-        std::cout << opt_desc;
-        return 0;
-    }
-
+int DumpFont::doExecute()
+{
     FT2pp::Library ft_library;
-    std::for_each(font_files.begin(), font_files.end(),
-        boost::bind(&dumpFont, boost::ref(ft_library), _1));
+    std::for_each(fontFiles_.begin(), fontFiles_.end(),
+        boost::bind(&DumpFont::dumpFont, this, boost::ref(ft_library), _1));
 
     return 0;
 }
 
-void dumpFont(FT2pp::Library& ft_library, const std::string& fileName)
+void DumpFont::dumpFont(FT2pp::Library& ft_library, const std::string& fileName)
 {
-    std::cout << "file: " << fileName << "\n";
+    using std::cout;
+
+    cout << "file: " << fileName << "\n";
 
     int face_idx = 0;
     int num_faces = 1;
@@ -74,79 +88,83 @@ void dumpFont(FT2pp::Library& ft_library, const std::string& fileName)
 
         if (face_idx == 0) {
             num_faces = ft_face->num_faces;
-            std::cout << "num_faces: " << num_faces << "\n\n";
+            cout << "num_faces: " << num_faces << "\n\n";
         }
 
-        std::cout << "face #" << ft_face->face_index << "\n";
-        std::cout << "family name: " << ft_face->family_name << "\n";
-        std::cout << "style name: " << ft_face->style_name << "\n";
-        std::cout << "horizontal: " << (FT_HAS_HORIZONTAL(ft_face) != 0) << "\n";
-        std::cout << "vertical: " << (FT_HAS_VERTICAL(ft_face) != 0) << "\n";
-        std::cout << "hinter: " << ((ft_face->face_flags & FT_FACE_FLAG_HINTER) != 0) << "\n";
-        std::cout << "scalable: " << (FT_IS_SCALABLE(ft_face) != 0) << "\n";
-        std::cout << "fixed width: " << (FT_IS_FIXED_WIDTH(ft_face) != 0) << "\n";
-        std::cout << "fixed sizes: " << (FT_HAS_FIXED_SIZES(ft_face) != 0) << "\n";
+        cout << "face #" << ft_face->face_index << "\n";
+        cout << "family name: " << ft_face->family_name << "\n";
+        cout << "style name: " << ft_face->style_name << "\n";
+        cout << "horizontal: " << (FT_HAS_HORIZONTAL(ft_face) != 0) << "\n";
+        cout << "vertical: " << (FT_HAS_VERTICAL(ft_face) != 0) << "\n";
+        cout << "hinter: " << ((ft_face->face_flags & FT_FACE_FLAG_HINTER) != 0) << "\n";
+        cout << "scalable: " << (FT_IS_SCALABLE(ft_face) != 0) << "\n";
+        cout << "fixed width: " << (FT_IS_FIXED_WIDTH(ft_face) != 0) << "\n";
+        cout << "fixed sizes: " << (FT_HAS_FIXED_SIZES(ft_face) != 0) << "\n";
         if (FT_HAS_FIXED_SIZES(ft_face)) {
             for (int si = 0; si < ft_face->num_fixed_sizes; ++si) {
                 FT_Bitmap_Size size = ft_face->available_sizes[si];
-                std::cout << "  ";
-                std::cout << "size " << si << ": ";
-                std::cout << "w=" << size.width << " ";
-                std::cout << "h=" << size.height << " ";
-                std::cout << "x_ppem=" << FT2pp::from26Dot6(size.x_ppem) << " ";
-                std::cout << "y_ppem=" << FT2pp::from26Dot6(size.y_ppem) << "\n";
+                cout << "  ";
+                cout << "size " << si << ": ";
+                cout << "w=" << size.width << " ";
+                cout << "h=" << size.height << " ";
+                cout << "x_ppem=" << FT2pp::from26Dot6(size.x_ppem) << " ";
+                cout << "y_ppem=" << FT2pp::from26Dot6(size.y_ppem) << "\n";
 
                 dumpFontMetrics(ft_face, size.y_ppem / 64);
             }
         }
-        std::cout << "\n";
+        cout << "\n";
 
         face_idx++;
     }
 
-    std::cout << "\n\n";
+    cout << "\n\n";
 }
 
-void dumpFontMetrics(FT2pp::Face& ft_face, int pixel_size)
+void DumpFont::dumpFontMetrics(FT2pp::Face& ft_face, int pixel_size)
 {
+    using std::cout;
+    using FT2pp::from16Dot16;
+    using FT2pp::from26Dot6;
+
     ft_face.setPixelSizes(pixel_size, pixel_size);
 
     FT_Fixed y_scale = ft_face->size->metrics.y_scale;
     FT_Fixed x_scale = ft_face->size->metrics.x_scale;
 
-    std::cout << "    ";
-    std::cout << "size.metrics.x_ppem = " << ft_face->size->metrics.x_ppem << "\n";
-    std::cout << "    ";
-    std::cout << "size.metrics.y_ppem = " << ft_face->size->metrics.y_ppem << "\n";
-    std::cout << "    ";
-    std::cout << "size.metrics.x_scale = " << FT2pp::from16Dot16(x_scale) << "\n";
-    std::cout << "    ";
-    std::cout << "size.metrics.y_scale = " << FT2pp::from16Dot16(y_scale) << "\n";
-    std::cout << "    ";
-    std::cout << "size.metrics.ascender = " << FT2pp::from26Dot6(ft_face->size->metrics.ascender) << "\n";
-    std::cout << "    ";
-    std::cout << "size.metrics.descender = " << FT2pp::from26Dot6(ft_face->size->metrics.descender) << "\n";
-    std::cout << "    ";
-    std::cout << "size.metrics.height = " << FT2pp::from26Dot6(ft_face->size->metrics.height) << "\n";
-    std::cout << "    ";
-    std::cout << "size.metrics.max_advance = " << FT2pp::from26Dot6(ft_face->size->metrics.max_advance) << "\n";
+    cout << "    ";
+    cout << "size.metrics.x_ppem = " << ft_face->size->metrics.x_ppem << "\n";
+    cout << "    ";
+    cout << "size.metrics.y_ppem = " << ft_face->size->metrics.y_ppem << "\n";
+    cout << "    ";
+    cout << "size.metrics.x_scale = " << from16Dot16(x_scale) << "\n";
+    cout << "    ";
+    cout << "size.metrics.y_scale = " << from16Dot16(y_scale) << "\n";
+    cout << "    ";
+    cout << "size.metrics.ascender = " << from26Dot6(ft_face->size->metrics.ascender) << "\n";
+    cout << "    ";
+    cout << "size.metrics.descender = " << from26Dot6(ft_face->size->metrics.descender) << "\n";
+    cout << "    ";
+    cout << "size.metrics.height = " << from26Dot6(ft_face->size->metrics.height) << "\n";
+    cout << "    ";
+    cout << "size.metrics.max_advance = " << from26Dot6(ft_face->size->metrics.max_advance) << "\n";
 
-    std::cout << "    ";
-    std::cout << "ascent = " << FT2pp::from26Dot6(FT_MulFix(ft_face->ascender, y_scale)) << "\n";
-    std::cout << "    ";
-    std::cout << "descent = " << FT2pp::from26Dot6(FT_MulFix(ft_face->descender, y_scale)) << "\n";
-    std::cout << "    ";
-    std::cout << "yMax = " << FT2pp::from26Dot6(FT_MulFix(ft_face->bbox.yMax, y_scale)) << "\n";
-    std::cout << "    ";
-    std::cout << "yMin = " << FT2pp::from26Dot6(FT_MulFix(ft_face->bbox.yMin, y_scale)) << "\n";
-    std::cout << "    ";
-    std::cout << "xMax = " << FT2pp::from26Dot6(FT_MulFix(ft_face->bbox.xMax, x_scale)) << "\n";
-    std::cout << "    ";
-    std::cout << "xMin = " << FT2pp::from26Dot6(FT_MulFix(ft_face->bbox.xMin, x_scale)) << "\n";
-    std::cout << "    ";
-    std::cout << "height = " << FT2pp::from26Dot6(FT_MulFix(ft_face->height, y_scale)) << "\n";
-    std::cout << "    ";
-    std::cout << "max_advance_width = " << FT2pp::from26Dot6(FT_MulFix(ft_face->max_advance_width, x_scale)) << "\n";
+    cout << "    ";
+    cout << "ascent = " << from26Dot6(FT_MulFix(ft_face->ascender, y_scale)) << "\n";
+    cout << "    ";
+    cout << "descent = " << from26Dot6(FT_MulFix(ft_face->descender, y_scale)) << "\n";
+    cout << "    ";
+    cout << "yMax = " << from26Dot6(FT_MulFix(ft_face->bbox.yMax, y_scale)) << "\n";
+    cout << "    ";
+    cout << "yMin = " << from26Dot6(FT_MulFix(ft_face->bbox.yMin, y_scale)) << "\n";
+    cout << "    ";
+    cout << "xMax = " << from26Dot6(FT_MulFix(ft_face->bbox.xMax, x_scale)) << "\n";
+    cout << "    ";
+    cout << "xMin = " << from26Dot6(FT_MulFix(ft_face->bbox.xMin, x_scale)) << "\n";
+    cout << "    ";
+    cout << "height = " << from26Dot6(FT_MulFix(ft_face->height, y_scale)) << "\n";
+    cout << "    ";
+    cout << "max_advance_width = " << from26Dot6(FT_MulFix(ft_face->max_advance_width, x_scale)) << "\n";
 }
 
 

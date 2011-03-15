@@ -15,64 +15,73 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/filesystem.hpp>
-#include <boost/program_options.hpp>
 #include <algorithm>
 #include <iostream>
-#include <sstream>
-#include <kgascii/fontimage.hpp>
+#include <boost/filesystem.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <kgascii/fontimage.hpp>
+#include <common/cmdlinetool.hpp>
 
-namespace bpo = boost::program_options;
-namespace bfs = boost::filesystem;
-namespace bgil = boost::gil;
-using namespace KG::Ascii;
+
+class ExtractFont: public CmdlineTool
+{
+public:
+    ExtractFont();
+
+protected:
+    bool processArgs();
+
+    int doExecute();
+    
+private:
+    int maxWidth_;
+    std::string inputFile_;
+    std::string outputFile_;
+};
+
 
 int main(int argc, char* argv[])
 {
-    int max_width;
-    std::string input_file;
-    std::string output_file;
+    return ExtractFont().execute(argc, argv);
+}
 
-    bpo::options_description opt_desc("Options");
-    opt_desc.add_options()
-        ("help", "help message")
-        ("max-width,w", bpo::value(&max_width)->default_value(1024), "max output image width")
-        ("input-file,i", bpo::value(&input_file), "input dsc file")
-        ("output-file,o", bpo::value(&output_file), "output file")
+
+ExtractFont::ExtractFont()
+    :CmdlineTool("Options")
+{
+    using namespace boost::program_options;
+    desc_.add_options()
+        ("max-width,w", value(&maxWidth_)->default_value(1024), "max output image width")
+        ("input-file,i", value(&inputFile_), "input dsc file")
+        ("output-file,o", value(&outputFile_), "output file")
     ;
+    posDesc_.add("input-file", 1);
+}
 
-    bpo::positional_options_description pos_opt_desc;
-    pos_opt_desc.add("input-file", 1);
+bool ExtractFont::processArgs()
+{
+    requireOption("input-file");
 
-    bpo::variables_map vm;
-    bpo::store(bpo::command_line_parser(argc, argv).
-               options(opt_desc).positional(pos_opt_desc).run(), vm);
-    bpo::notify(vm);
-
-    if (vm.count("help") || !vm.count("input-file")) {
-        std::cout << "Usage: dsc2img [options] input_file\n";
-        std::cout << opt_desc;
-        return 0;
+    if (!vm_.count("output-file")) {
+        boost::filesystem::path input_path(inputFile_);
+        outputFile_ = input_path.stem().string() + ".png";
     }
 
-    bfs::path dsc_file_path(input_file);
+    return true;
+}
 
-    bfs::path output_image_path;
-    if (vm.count("output-file")) {
-        output_image_path = output_file;
-    } else {
-        output_image_path = input_file;
-        output_image_path.replace_extension(".png");
-    }
-
+int ExtractFont::doExecute()
+{
+    using namespace KG::Ascii;
+    using namespace boost::gil;
+    
     FontImage image;
-    if (!image.load(dsc_file_path.string())) {
+    if (!image.load(inputFile_)) {
         std::cout << "loading error\n";
         return -1;
     }
 
-    int max_chars_per_row = max_width / image.glyphWidth();
+    int max_chars_per_row = maxWidth_ / image.glyphWidth();
     assert(max_chars_per_row > 1);
 
     std::vector<int> charcodes = image.charcodes();
@@ -82,23 +91,22 @@ int main(int argc, char* argv[])
     int image_height = row_count * image.glyphHeight();
 
     cv::Mat output_image(image_height, image_width, CV_8UC1);
-    bgil::gray8_view_t output_view = 
-        bgil::interleaved_view(image_width, image_height, 
-            reinterpret_cast<bgil::gray8_ptr_t>(output_image.data), output_image.step[0]);
+    gray8_view_t output_view = interleaved_view(image_width, image_height, 
+            reinterpret_cast<gray8_ptr_t>(output_image.data), output_image.step[0]);
 
     for (size_t ci = 0; ci < charcodes.size(); ++ci) {
         int charcode = charcodes[ci];
-        bgil::gray8c_view_t glyph_view = image.getGlyph(charcode);
+        gray8c_view_t glyph_view = image.getGlyph(charcode);
         int row = ci % max_chars_per_row;
         int rowX = row * image.glyphWidth();
         int col = ci / max_chars_per_row;
         int colY = col * image.glyphHeight();
-        bgil::gray8_view_t output_cell = 
-            bgil::subimage_view(output_view, rowX, colY, image.glyphWidth(), image.glyphHeight());
-        bgil::copy_pixels(glyph_view, output_cell);
+        gray8_view_t output_cell = subimage_view(output_view, rowX, colY, 
+                image.glyphWidth(), image.glyphHeight());
+        copy_pixels(glyph_view, output_cell);
     }
 
-    cv::imwrite(output_image_path.string(), output_image);
+    cv::imwrite(outputFile_, output_image);
 
     return 0;
 }

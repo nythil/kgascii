@@ -15,116 +15,127 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/filesystem.hpp>
-#include <boost/program_options.hpp>
 #include <iostream>
 #include <sstream>
+#include <boost/filesystem.hpp>
 #include <kgascii/fontimage.hpp>
 #include <kgascii/fontloader.hpp>
+#include <common/cmdlinetool.hpp>
 
-namespace bpo = boost::program_options;
-namespace bfs = boost::filesystem;
-using namespace KG::Ascii;
+
+class ExtractFont: public CmdlineTool
+{
+public:
+    ExtractFont();
+
+protected:
+    bool processArgs();
+
+    int doExecute();
+    
+private:
+    int minChar_;
+    int maxChar_;
+    std::string strHint_;
+    KG::Ascii::FontLoader::Hinting hint_;
+    std::string strAutohint_;
+    KG::Ascii::FontLoader::AutoHinter autohint_;
+    std::string strMode_;
+    KG::Ascii::FontLoader::RenderMode mode_;
+    std::string fontFile_;
+    int fontSize_;
+    std::string outputFile_;
+};
 
 int main(int argc, char* argv[])
 {
-    int min_char;
-    int max_char;
-    std::string str_hint;
-    std::string str_autohint;
-    std::string str_mode;
-    std::string font_file;
-    int font_size;
-    std::string output_file;
+    return ExtractFont().execute(argc, argv);
+}
 
-    bpo::options_description opt_desc("Options");
-    opt_desc.add_options()
-        ("help", "help message")
-        ("hint,h", bpo::value(&str_hint)->default_value("normal"), "hinting algorithm (normal|light|off)")
-        ("autohint,a", bpo::value(&str_autohint)->default_value("on"), "auto-hinter options (on|force|off)")
-        ("mode,m", bpo::value(&str_mode)->default_value("gray"), "rendering mode (gray|mono)")
-        ("min-char,f", bpo::value(&min_char)->default_value(32), "first charcode")
-        ("max-char,l", bpo::value(&max_char)->default_value(127), "last charcode")
-        ("input-file,i", bpo::value(&font_file), "input font file")
-        ("output-file,o", bpo::value(&output_file), "output file")
-        ("pixel-size,s", bpo::value(&font_size), "font nominal pixel size")
+ExtractFont::ExtractFont()
+    :CmdlineTool("Options")
+{
+    using namespace boost::program_options;
+    desc_.add_options()
+        ("hint,h", value(&strHint_)->default_value("normal"), "hinting algorithm (normal|light|off)")
+        ("autohint,a", value(&strAutohint_)->default_value("on"), "auto-hinter options (on|force|off)")
+        ("mode,m", value(&strMode_)->default_value("gray"), "rendering mode (gray|mono)")
+        ("min-char,f", value(&minChar_)->default_value(32), "first charcode")
+        ("max-char,l", value(&maxChar_)->default_value(127), "last charcode")
+        ("output-file,o", value(&outputFile_), "output file")
+        ("input-file,i", value(&fontFile_), "input font file")
+        ("pixel-size,s", value(&fontSize_), "font nominal pixel size")
     ;
+    posDesc_.add("input-file", 1);
+    posDesc_.add("pixel-size", 1);
+}
 
-    bpo::positional_options_description pos_opt_desc;
-    pos_opt_desc.add("input-file", 1);
-    pos_opt_desc.add("pixel-size", 1);
+bool ExtractFont::processArgs()
+{
+    using namespace KG::Ascii;
+    
+    requireOption("input-file");
+    requireOption("pixel-size");
 
-    bpo::variables_map vm;
-    bpo::store(bpo::command_line_parser(argc, argv).
-               options(opt_desc).positional(pos_opt_desc).run(), vm);
-    bpo::notify(vm);
-
-    if (vm.count("help") || !vm.count("input-file") || !vm.count("pixel-size")) {
-        std::cout << "Usage: extractfont [options] input_file pixel_size\n";
-        std::cout << opt_desc;
-        return 0;
-    }
-
-    FontLoader::Hinting hint = FontLoader::HintingLight;
-    if (str_hint == "normal")
-        hint = FontLoader::HintingNormal;
-    else if (str_hint == "light")
-        hint = FontLoader::HintingLight;
-    else if (str_hint == "off")
-        hint = FontLoader::HintingOff;
+    if (strHint_ == "normal")
+        hint_ = FontLoader::HintingNormal;
+    else if (strHint_ == "light")
+        hint_ = FontLoader::HintingLight;
+    else if (strHint_ == "off")
+        hint_ = FontLoader::HintingOff;
     else
         throw std::logic_error("bad option");
 
-    FontLoader::AutoHinter autohint = FontLoader::AutoHinterOn;
-    if (str_autohint == "on")
-        autohint = FontLoader::AutoHinterOn;
-    else if (str_autohint == "off")
-        autohint = FontLoader::AutoHinterOff;
-    else if (str_autohint == "force")
-        autohint = FontLoader::AutoHinterForce;
+    if (strAutohint_ == "on")
+        autohint_ = FontLoader::AutoHinterOn;
+    else if (strAutohint_ == "off")
+        autohint_ = FontLoader::AutoHinterOff;
+    else if (strAutohint_ == "force")
+        autohint_ = FontLoader::AutoHinterForce;
     else
         throw std::logic_error("bad option");
 
-    FontLoader::RenderMode mode = FontLoader::RenderGrayscale;
-    if (str_mode == "gray")
-        mode = FontLoader::RenderGrayscale;
-    else if (str_mode == "mono")
-        mode = FontLoader::RenderMonochrome;
+    if (strMode_ == "gray")
+        mode_ = FontLoader::RenderGrayscale;
+    else if (strMode_ == "mono")
+        mode_ = FontLoader::RenderMonochrome;
     else
         throw std::logic_error("bad option");
 
-    bfs::path font_path(font_file);
-
-    bfs::path output_path;
-    if (vm.count("output-file")) {
-        output_path = output_file;
-    } else {
+    if (!vm_.count("output-file")) {
+        boost::filesystem::path input_path(fontFile_);
         std::ostringstream path_builder;
-        path_builder << font_path.stem().string();
+        path_builder << input_path.stem().string();
         path_builder << "_";
-        path_builder << font_size;
+        path_builder << fontSize_;
         path_builder << ".dsc";
-        output_path = path_builder.str();
+        outputFile_ = path_builder.str();
     }
+
+    return true;
+}
+
+int ExtractFont::doExecute()
+{
+    using namespace KG::Ascii;
 
     FontLoader loader;
-    if (!loader.loadFont(font_path.string(), font_size)) {
+    if (!loader.loadFont(fontFile_, fontSize_)) {
         std::cout << "font not found\n";
         return -1;
     }
-    loader.setAutohinter(autohint);
-    loader.setHinting(hint);
-    loader.setRenderMode(mode);
+    loader.setAutohinter(autohint_);
+    loader.setHinting(hint_);
+    loader.setRenderMode(mode_);
 
     FontImage image;
-    if (!image.load(loader, min_char, max_char)) {
+    if (!image.load(loader, minChar_, maxChar_)) {
         std::cout << "loading error\n";
         return -1;
     }
 
-    image.save(output_path.string());
+    image.save(outputFile_);
 
     return 0;
 }
-
 

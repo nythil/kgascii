@@ -23,13 +23,13 @@
 
 #include "kgascii_api.hpp"
 
-namespace kgAscii {
+namespace KG { namespace Ascii {
 
 std::string KGASCII_API hexlify(const unsigned char* first, const unsigned char* last);
 
 unsigned char* KGASCII_API unhexlify(const std::string& chars, unsigned char* dst);
 
-}
+} } // namespace KG::Ascii
 
 #endif // KGASCII_HEXSTRING_HPP
 

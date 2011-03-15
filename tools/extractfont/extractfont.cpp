@@ -23,6 +23,7 @@
 #include "fontloader.hpp"
 
 namespace bpo = boost::program_options;
+using namespace KG::Ascii;
 
 int main(int argc, char* argv[])
 {
@@ -63,31 +64,31 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    kgAscii::FontLoader::Hinting hint = kgAscii::FontLoader::HintingLight;
+    FontLoader::Hinting hint = FontLoader::HintingLight;
     if (str_hint == "normal")
-        hint = kgAscii::FontLoader::HintingNormal;
+        hint = FontLoader::HintingNormal;
     else if (str_hint == "light")
-        hint = kgAscii::FontLoader::HintingLight;
+        hint = FontLoader::HintingLight;
     else if (str_hint == "off")
-        hint = kgAscii::FontLoader::HintingOff;
+        hint = FontLoader::HintingOff;
     else
         throw std::logic_error("bad option");
 
-    kgAscii::FontLoader::AutoHinter autohint = kgAscii::FontLoader::AutoHinterOn;
+    FontLoader::AutoHinter autohint = FontLoader::AutoHinterOn;
     if (str_autohint == "on")
-        autohint = kgAscii::FontLoader::AutoHinterOn;
+        autohint = FontLoader::AutoHinterOn;
     else if (str_autohint == "off")
-        autohint = kgAscii::FontLoader::AutoHinterOff;
+        autohint = FontLoader::AutoHinterOff;
     else if (str_autohint == "force")
-        autohint = kgAscii::FontLoader::AutoHinterForce;
+        autohint = FontLoader::AutoHinterForce;
     else
         throw std::logic_error("bad option");
 
-    kgAscii::FontLoader::RenderMode mode = kgAscii::FontLoader::RenderGrayscale;
+    FontLoader::RenderMode mode = FontLoader::RenderGrayscale;
     if (str_mode == "gray")
-        mode = kgAscii::FontLoader::RenderGrayscale;
+        mode = FontLoader::RenderGrayscale;
     else if (str_mode == "mono")
-        mode = kgAscii::FontLoader::RenderMonochrome;
+        mode = FontLoader::RenderMonochrome;
     else
         throw std::logic_error("bad option");
 
@@ -105,7 +106,7 @@ int main(int argc, char* argv[])
         output_path = path_builder.str();
     }
 
-    kgAscii::FontLoader loader;
+    FontLoader loader;
     if (!loader.loadFont(font_path.string(), font_size)) {
         std::cout << "font not found\n";
         return -1;
@@ -114,7 +115,7 @@ int main(int argc, char* argv[])
     loader.setHinting(hint);
     loader.setRenderMode(mode);
 
-    kgAscii::FontImage image;
+    FontImage image;
     if (!image.load(loader, min_char, max_char)) {
         std::cout << "loading error\n";
         return -1;

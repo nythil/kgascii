@@ -26,6 +26,7 @@
 #include "ft2pp/util.hpp"
 
 namespace bpo = boost::program_options;
+using namespace KG::Ascii;
 
 void dumpFont(FT2pp::Library& ft_library, const std::string& fileName);
 void dumpFontMetrics(FT2pp::Face& ft_face, int pixel_size);

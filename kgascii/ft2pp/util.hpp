@@ -18,7 +18,7 @@
 #ifndef KGASCII_FT2PP_UTIL_HPP
 #define KGASCII_FT2PP_UTIL_HPP
 
-namespace FT2pp {
+namespace KG { namespace Ascii { namespace FT2pp {
 
 inline double from26Dot6(long x)
 {
@@ -30,6 +30,6 @@ inline double from16Dot16(long x)
     return (x / 65536) + (x % 65536) / 65536.0;
 }
 
-}
+} } } // namespace KG::Ascii::FT2pp
 
 #endif // KGASCII_FT2PP_UTIL_HPP

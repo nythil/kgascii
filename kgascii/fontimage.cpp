@@ -21,7 +21,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include "hexstring.hpp"
 
-namespace kgAscii {
+namespace KG { namespace Ascii {
 
 FontImage::FontImage()
 {
@@ -201,5 +201,5 @@ bool FontImage::load(FontLoader& loader, int ci_min, int ci_max)
     return true;
 }
 
-}
+} } // namespace KG::Ascii
 

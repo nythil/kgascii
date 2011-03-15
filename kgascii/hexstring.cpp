@@ -21,7 +21,7 @@
 #include <boost/spirit/include/karma.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 
-namespace kgAscii {
+namespace KG { namespace Ascii {
 
 namespace qi = boost::spirit::qi;
 namespace karma = boost::spirit::karma;
@@ -112,5 +112,5 @@ unsigned char* unhexlify(const std::string& chars, unsigned char* dst)
     return dst;
 }
 
-}
+} } // namespace KG::Ascii
 

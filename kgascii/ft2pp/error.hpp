@@ -23,7 +23,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-namespace FT2pp {
+namespace KG { namespace Ascii { namespace FT2pp {
 
 class Error: public std::exception
 {
@@ -50,6 +50,6 @@ inline void checkCall(FT_Error err)
     }
 }
 
-}
+} } } // namespace KG::Ascii::FT2pp
 
 #endif // KGASCII_FT2PP_ERROR_HPP

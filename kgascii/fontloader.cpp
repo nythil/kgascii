@@ -21,7 +21,7 @@
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
 
-namespace kgAscii {
+namespace KG { namespace Ascii {
 
 FontLoader::FontLoader()
     :library_(boost::make_shared<FT2pp::Library>())
@@ -260,5 +260,5 @@ int FontLoader::makeRenderFlags() const
     }
 }
 
-}
+} } // namespace KG::Ascii
 

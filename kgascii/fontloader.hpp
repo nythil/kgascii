@@ -26,12 +26,13 @@
 #include <boost/gil/typedefs.hpp>
 #include "kgascii_api.hpp"
 
+
+namespace KG { namespace Ascii {
+
 namespace FT2pp {
 class Library;
 class Face;
-}
-
-namespace kgAscii {
+} // namespace FT2pp
 
 class KGASCII_API FontLoader: boost::noncopyable
 {
@@ -119,7 +120,7 @@ private:
     RenderMode mode_;
 };
 
-}
+} } // namespace KG::Ascii
 
 #endif // KGASCII_FONTLOADER_HPP
 

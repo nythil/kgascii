@@ -24,6 +24,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 namespace bpo = boost::program_options;
+using namespace KG::Ascii;
 
 int main(int argc, char* argv[])
 {
@@ -63,7 +64,7 @@ int main(int argc, char* argv[])
         output_image_path.replace_extension(".png");
     }
 
-    kgAscii::FontImage image;
+    FontImage image;
     if (!image.load(dsc_file_path.string())) {
         std::cout << "loading error\n";
         return -1;

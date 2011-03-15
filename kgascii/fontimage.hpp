@@ -27,7 +27,7 @@
 #include <Eigen/Dense>
 #include "kgascii_api.hpp"
 
-namespace kgAscii {
+namespace KG { namespace Ascii {
 
 class FontLoader;
 
@@ -70,6 +70,6 @@ private:
     GlyphMap charmap_;
 };
 
-}
+} } // namespace KG::Ascii
 
 #endif // KGASCII_FONTIMAGE_HPP

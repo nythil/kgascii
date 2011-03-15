@@ -25,7 +25,7 @@
 
 #include "error.hpp"
 
-namespace FT2pp {
+namespace KG { namespace Ascii { namespace FT2pp {
 
 class Library: boost::noncopyable
 {
@@ -52,6 +52,6 @@ private:
     FT_Library handle_;
 };
 
-}
+} } } // namespace KG::Ascii::FT2pp
 
 #endif // KGASCII_FT2PP_LIBRARY_HPP

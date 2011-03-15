@@ -24,6 +24,8 @@
 #include <opencv2/highgui/highgui.hpp>
 
 namespace bpo = boost::program_options;
+namespace bfs = boost::filesystem;
+namespace bgil = boost::gil;
 using namespace KG::Ascii;
 
 int main(int argc, char* argv[])
@@ -54,9 +56,9 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    boost::filesystem::path dsc_file_path(input_file);
+    bfs::path dsc_file_path(input_file);
 
-    boost::filesystem::path output_image_path;
+    bfs::path output_image_path;
     if (vm.count("output-file")) {
         output_image_path = output_file;
     } else {
@@ -80,20 +82,20 @@ int main(int argc, char* argv[])
     int image_height = row_count * image.glyphHeight();
 
     cv::Mat output_image(image_height, image_width, CV_8UC1);
-    boost::gil::gray8_view_t output_view = 
-        boost::gil::interleaved_view(image_width, image_height, 
-            reinterpret_cast<boost::gil::gray8_ptr_t>(output_image.data), output_image.step[0]);
+    bgil::gray8_view_t output_view = 
+        bgil::interleaved_view(image_width, image_height, 
+            reinterpret_cast<bgil::gray8_ptr_t>(output_image.data), output_image.step[0]);
 
     for (size_t ci = 0; ci < charcodes.size(); ++ci) {
         int charcode = charcodes[ci];
-        boost::gil::gray8c_view_t glyph_view = image.getGlyph(charcode);
+        bgil::gray8c_view_t glyph_view = image.getGlyph(charcode);
         int row = ci % max_chars_per_row;
         int rowX = row * image.glyphWidth();
         int col = ci / max_chars_per_row;
         int colY = col * image.glyphHeight();
-        boost::gil::gray8_view_t output_cell = 
-            boost::gil::subimage_view(output_view, rowX, colY, image.glyphWidth(), image.glyphHeight());
-        boost::gil::copy_pixels(glyph_view, output_cell);
+        bgil::gray8_view_t output_cell = 
+            bgil::subimage_view(output_view, rowX, colY, image.glyphWidth(), image.glyphHeight());
+        bgil::copy_pixels(glyph_view, output_cell);
     }
 
     cv::imwrite(output_image_path.string(), output_image);

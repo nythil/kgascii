@@ -23,6 +23,7 @@
 #include "fontloader.hpp"
 
 namespace bpo = boost::program_options;
+namespace bfs = boost::filesystem;
 using namespace KG::Ascii;
 
 int main(int argc, char* argv[])
@@ -92,9 +93,9 @@ int main(int argc, char* argv[])
     else
         throw std::logic_error("bad option");
 
-    boost::filesystem::path font_path(font_file);
+    bfs::path font_path(font_file);
 
-    boost::filesystem::path output_path;
+    bfs::path output_path;
     if (vm.count("output-file")) {
         output_path = output_file;
     } else {

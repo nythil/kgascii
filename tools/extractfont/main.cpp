@@ -19,8 +19,8 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <sstream>
-#include "fontimage.hpp"
-#include "fontloader.hpp"
+#include <kgascii/fontimage.hpp>
+#include <kgascii/fontloader.hpp>
 
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;

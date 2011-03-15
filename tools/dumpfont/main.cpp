@@ -21,9 +21,9 @@
 #include <vector>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
-#include "ft2pp/library.hpp"
-#include "ft2pp/face.hpp"
-#include "ft2pp/util.hpp"
+#include <kgascii/ft2pp/library.hpp>
+#include <kgascii/ft2pp/face.hpp>
+#include <kgascii/ft2pp/util.hpp>
 
 namespace bpo = boost::program_options;
 using namespace KG::Ascii;

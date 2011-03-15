@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
-#include "fontimage.hpp"
+#include <kgascii/fontimage.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 namespace bpo = boost::program_options;

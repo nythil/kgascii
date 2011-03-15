@@ -1,4 +1,4 @@
-PROJECT(KGASCII)
+PROJECT(LIBKGASCII)
 
 SET(kgascii_SRCS
     ft2pp/error.hpp 

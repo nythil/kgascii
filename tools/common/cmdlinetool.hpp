@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_TOOLS_COMMON_HPP
-#define KGASCII_TOOLS_COMMON_HPP
+#ifndef KGASCII_TOOLS_COMMON_CMDLINETOOL_HPP
+#define KGASCII_TOOLS_COMMON_CMDLINETOOL_HPP
 
 #include <string>
 #include <boost/program_options.hpp>
@@ -40,6 +40,7 @@ protected:
 
 protected:
     void requireOption(const char* name);
+    void conflictingOptions(const char* opt1, const char* opt2);
 
 private:
     void parseArgs(int argc, const char* const argv[]);
@@ -50,5 +51,5 @@ protected:
     boost::program_options::variables_map vm_;
 };
 
-#endif // KGASCII_TOOLS_COMMON_HPP
+#endif // KGASCII_TOOLS_COMMON_CMDLINETOOL_HPP
 

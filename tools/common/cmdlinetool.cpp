@@ -66,8 +66,21 @@ void CmdlineTool::printUsage(const char* prog_name)
 void CmdlineTool::requireOption(const char* name)
 {
     using boost::format;
-    if (!vm_.count(name) || vm_[name].defaulted())
-        throw std::logic_error(str(format("missing option '%1%'") % name));
+    if (!vm_.count(name) || vm_[name].defaulted()) {
+        format fmt_err("missing option '%1%'");
+        throw std::logic_error(str(fmt_err % name));
+    }
+}
+
+void CmdlineTool::conflictingOptions(const char* opt1, const char* opt2)
+{
+    using boost::format;
+    if (vm_.count(opt1) && vm_.count(opt2)) {
+        if (!vm_[opt1].defaulted() && !vm_[opt2].defaulted()) {
+            format fmt_err("option conflict: '%1%' and '%2%'");
+            throw std::logic_error(str(fmt_err % opt1 % opt2));
+        }
+    }
 }
 
 void CmdlineTool::parseArgs(int argc, const char* const argv[])

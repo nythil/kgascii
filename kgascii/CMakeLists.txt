@@ -11,6 +11,12 @@ SET(kgascii_SRCS
     fontloader.hpp
     hexstring.cpp
     hexstring.hpp
+    asciifier.cpp
+    asciifier.hpp
+    glyphmatcher.cpp
+    glyphmatcher.hpp
+    textsurface.cpp
+    textsurface.hpp
 )
 SET(Boost_USE_STATIC_LIBS        ON)
 SET(Boost_USE_MULTITHREADED      ON)

@@ -16,11 +16,18 @@
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
 #include <iostream>
+#include <limits>
 #include <boost/optional.hpp>
+#include <boost/gil/gil_all.hpp>
+#include <boost/timer.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <common/cmdlinetool.hpp>
 #include <common/validateoptional.hpp>
+#include <kgascii/fontimage.hpp>
+#include <kgascii/textsurface.hpp>
+#include <kgascii/glyphmatcher.hpp>
+#include <kgascii/asciifier.hpp>
 
 using std::cout;
 
@@ -36,13 +43,13 @@ protected:
     
 private:
     std::string inputFile_;
-    std::string fontFile_;
     boost::optional<int> startFrame_;
     boost::optional<int> endFrame_;
     boost::optional<int> maxFrames_;
     boost::optional<double> startTime_;
     boost::optional<double> endTime_;
     boost::optional<double> maxTime_;
+    std::string fontFile_;
 };
 
 
@@ -64,6 +71,7 @@ VideoToAscii::VideoToAscii()
         ("start-time", value(&startTime_), "starting video position in seconds")
         ("end-time", value(&endTime_), "final video position in seconds")
         ("max-time", value(&maxTime_), "max video time")
+        ("font-file,f", value(&fontFile_), "input video file")
     ;
     posDesc_.add("input-file", 1);
 }
@@ -71,6 +79,7 @@ VideoToAscii::VideoToAscii()
 bool VideoToAscii::processArgs()
 {
     requireOption("input-file");
+    requireOption("font-file");
     
     conflictingOptions("start-frame", "start-time");
     conflictingOptions("start-frame", "end-time");
@@ -91,14 +100,29 @@ bool VideoToAscii::processArgs()
 
 int VideoToAscii::doExecute()
 {
+    using namespace boost::gil;
+
     cv::VideoCapture capture(inputFile_);
     if (!capture.isOpened())
         return -1;
 
-    cout << "video width " << capture.get(CV_CAP_PROP_FRAME_WIDTH) << "\n";
-    cout << "video height " << capture.get(CV_CAP_PROP_FRAME_HEIGHT) << "\n";
+    KG::Ascii::FontImage font;
+    if (!font.load(fontFile_))
+        return -1;
+    int char_width = font.glyphWidth();
+    int char_height = font.glyphHeight();
+
+    int frame_width = static_cast<int>(capture.get(CV_CAP_PROP_FRAME_WIDTH));
+    int frame_height = static_cast<int>(capture.get(CV_CAP_PROP_FRAME_HEIGHT));
+    cout << "video width " << frame_width << "\n";
+    cout << "video height " << frame_height << "\n";
     cout << "video frame count " << capture.get(CV_CAP_PROP_FRAME_COUNT) << "\n";
     cout << "video fps " << capture.get(CV_CAP_PROP_FPS) << "\n";
+
+    int col_count = (frame_width + char_width - 1) / char_width;
+    int row_count = (frame_height + char_height - 1) / char_height;
+    cout << "output columns " << col_count << "\n";
+    cout << "output rows " << row_count << "\n";
 
     if (startFrame_) {
         capture.set(CV_CAP_PROP_POS_FRAMES, *startFrame_);
@@ -111,29 +135,62 @@ int VideoToAscii::doExecute()
     startFrame_ = static_cast<int>(capture.get(CV_CAP_PROP_POS_FRAMES));
     startTime_ = capture.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
 
+    KG::Ascii::TextSurface text(row_count, col_count);
+    KG::Ascii::GlyphMatcher matcher(font);
+    KG::Ascii::Asciifier asciifier(matcher);
+
+    boost::timer timer;
+
     while (true) {
-        int currentFrame = static_cast<int>(capture.get(CV_CAP_PROP_POS_FRAMES));
-        if (maxFrames_ && (currentFrame - *startFrame_) >= *maxFrames_)
+        int current_frame = static_cast<int>(capture.get(CV_CAP_PROP_POS_FRAMES));
+        if (maxFrames_ && (current_frame - *startFrame_) >= *maxFrames_)
             break;
-        if (endFrame_ && currentFrame >= *endFrame_)
-            break;
-
-        double currentTime = capture.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
-        if (endTime_ && currentTime >= *endTime_)
-            break;
-        if (maxTime_ && (currentTime - *startTime_) >= *maxTime_)
+        if (endFrame_ && current_frame >= *endFrame_)
             break;
 
-        cv::Mat captureFrame;
-        if (!capture.retrieve(captureFrame))
+        double current_time = capture.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
+        if (endTime_ && current_time >= *endTime_)
+            break;
+        if (maxTime_ && (current_time - *startTime_) >= *maxTime_)
             break;
 
-        cv::Mat grayFrame;
-        cv::cvtColor(captureFrame, grayFrame, CV_BGR2GRAY);
+        cv::Mat capture_frame;
+        if (!capture.retrieve(capture_frame))
+            break;
+
+        cv::Mat gray_frame;
+        cv::cvtColor(capture_frame, gray_frame, CV_BGR2GRAY);
+
+        assert(gray_frame.dims == 2);
+        assert(gray_frame.cols == frame_width);
+        assert(gray_frame.rows == frame_height);
+        assert(gray_frame.type() == CV_8UC1);
+
+        gray8c_view_t gray_view = interleaved_view(frame_width, frame_height, 
+                reinterpret_cast<gray8c_ptr_t>(gray_frame.data), 
+                gray_frame.step[0]);
+
+        text.clear();
+        asciifier.generate(gray_view, text);
+
+        for (int r = 0; r < text.rows(); ++r) {
+            cout.write(text.row(r), text.cols());
+            cout << "\n";
+        }
 
         if (!capture.grab())
             break;
     }
+
+    double total_time = timer.elapsed();
+
+    endFrame_ = static_cast<int>(capture.get(CV_CAP_PROP_POS_FRAMES));
+    endTime_ = capture.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
+
+    cout << "total frames " << (*endFrame_ - *startFrame_) << "\n";
+    cout << "total video time " << (*endTime_ - *startTime_) << "\n";
+    cout << "processing time " << total_time << "\n";
+    cout << "processing time / frame " << total_time / (*endFrame_ - *startFrame_) << "\n";
 
     return 0;
 }

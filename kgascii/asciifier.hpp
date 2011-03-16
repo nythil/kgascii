@@ -19,6 +19,7 @@
 #define KGASCII_ASCIIFIER_HPP
 
 #include <boost/noncopyable.hpp>
+#include <boost/gil/image.hpp>
 #include <boost/gil/typedefs.hpp>
 #include "kgascii_api.hpp"
 
@@ -37,6 +38,7 @@ public:
 
 private:
     const GlyphMatcher& matcher_;
+    mutable boost::gil::gray8_image_t cornerImg_;
 };
 
 } } // namespace KG::Ascii

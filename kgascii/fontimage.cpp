@@ -126,7 +126,6 @@ bool FontImage::load(const std::string& file_path)
     for (boost::property_tree::ptree::const_iterator it = pt_glyphs.begin(); it != it_end; ++it) {
         int charcode = it->second.get<int>("charcode");
         std::string data = it->second.get<std::string>("data");
-        assert(data.size() == 2 * glyphSize);
 
         size_t row_offset = ci * glyphSize;
         unsigned char* glyph_bytes_begin = glyphs_.data() + row_offset;

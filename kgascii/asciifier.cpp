@@ -29,35 +29,55 @@ using namespace boost::gil;
 
 Asciifier::Asciifier(const GlyphMatcher& m)
     :matcher_(m)
+    ,cornerImg_(m.glyphWidth(), m.glyphHeight())
 {
 }
 
 void Asciifier::generate(const gray8c_view_t& imgv, TextSurface& text) const
 {
+    //single character size
     int char_w = matcher_.glyphWidth();
     int char_h = matcher_.glyphHeight();
+    //text surface size
+    int text_w = text.cols() * char_w;
+    int text_h = text.rows() * char_h;
+    //processed image region size
+    int roi_w = std::min(imgv.width(), text_w);
+    int roi_h = std::min(imgv.height(), text_h);
 
-    int img_w = imgv.width();
-    int img_h = imgv.height();
+    gray8_view_t tmpview = view(cornerImg_);
 
-    gray8_image_t tmpimg(char_w, char_h);
-    gray8_view_t tmpview = view(tmpimg);
-
-    for (int r = 0; r < text.rows(); ++r) {
-        int y = r * char_h;
-        int dy = std::min(char_h, img_h - y);
-        for (int c = 0; c < text.cols(); ++c) {
-            int x = c * char_w;
-            int dx = std::min(char_w, img_w - x);
-
+    int y = 0, r = 0;
+    for (; y + char_h <= roi_h; y += char_h, ++r) {
+        int x = 0, c = 0;
+        for (; x + char_w <= roi_w; x += char_w, ++c) {
+            text(r, c) = matcher_.match(subimage_view(imgv, x, y, char_w, char_h));
+        }
+        if (x < roi_w) {
+            int dx = roi_w - x;
             fill_pixels(tmpview, 0);
-            copy_pixels(subimage_view(imgv, x, y, dx, dy), 
-                    subimage_view(tmpview, 0, 0, dx, dy));
-
+            copy_pixels(subimage_view(imgv, x, y, dx, char_h), 
+                    subimage_view(tmpview, 0, 0, dx, char_h));
             text(r, c) = matcher_.match(tmpview);
         }
     }
-
+    if (y < roi_h) {
+        int dy = roi_h - y;
+        int x = 0, c = 0;
+        fill_pixels(tmpview, 0);
+        for (; x + char_w <= roi_w; x += char_w, ++c) {
+            copy_pixels(subimage_view(imgv, x, y, char_w, dy), 
+                    subimage_view(tmpview, 0, 0, char_w, dy));
+            text(r, c) = matcher_.match(tmpview);
+        }
+        if (x < roi_w) {
+            int dx = roi_w - x;
+            fill_pixels(tmpview, 0);
+            copy_pixels(subimage_view(imgv, x, y, dx, dy), 
+                    subimage_view(tmpview, 0, 0, dx, dy));
+            text(r, c) = matcher_.match(tmpview);
+        }
+    }
 }
 
 } } // namespace KG::Ascii

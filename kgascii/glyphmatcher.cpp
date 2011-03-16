@@ -63,9 +63,13 @@ int GlyphMatcher::distance(const gray8c_view_t& img1, const gray8c_view_t& img2)
     const unsigned char* img1_data = interleaved_view_get_raw_data(img1);
     const unsigned char* img2_data = interleaved_view_get_raw_data(img2);
     int result = 0;
-    for (int i = 0; i < char_size; ++i) {
-        int df = img1_data[i] - img2_data[i];
-        result += df * df;
+    for (int y = 0; y < img1.height(); ++y) {
+        gray8c_view_t::x_iterator img1_it = img1.row_begin(y);
+        gray8c_view_t::x_iterator img2_it = img2.row_begin(y);
+        for (int x = 0; x < img1.width(); ++x, ++img1_it, ++img2_it) {
+            int df = *img1_it - *img2_it;
+            result += df * df;
+        }
     }
     return result;
 }

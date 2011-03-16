@@ -50,6 +50,8 @@ private:
     boost::optional<double> endTime_;
     boost::optional<double> maxTime_;
     std::string fontFile_;
+    int maxCols_;
+    int maxRows_;
 };
 
 
@@ -67,11 +69,13 @@ VideoToAscii::VideoToAscii()
         ("input-file,i", value(&inputFile_), "input video file")
         ("start-frame", value(&startFrame_), "starting video frame number")
         ("end-frame", value(&endFrame_), "final video frame number")
-        ("max-frames", value(&maxFrames_), "max number of frames")
+        ("max-frames", value(&maxFrames_), "max number of video frames")
         ("start-time", value(&startTime_), "starting video position in seconds")
         ("end-time", value(&endTime_), "final video position in seconds")
         ("max-time", value(&maxTime_), "max video time")
-        ("font-file,f", value(&fontFile_), "input video file")
+        ("font-file,f", value(&fontFile_), "font file")
+        ("cols", value(&maxCols_)->default_value(79), "suggested number of text columns")
+        ("rows", value(&maxRows_)->default_value(49), "suggested number of text rows")
     ;
     posDesc_.add("input-file", 1);
 }
@@ -106,21 +110,39 @@ int VideoToAscii::doExecute()
     if (!capture.isOpened())
         return -1;
 
+    int frame_width = static_cast<int>(capture.get(CV_CAP_PROP_FRAME_WIDTH));
+    int frame_height = static_cast<int>(capture.get(CV_CAP_PROP_FRAME_HEIGHT));
+
     KG::Ascii::FontImage font;
     if (!font.load(fontFile_))
         return -1;
     int char_width = font.glyphWidth();
     int char_height = font.glyphHeight();
 
-    int frame_width = static_cast<int>(capture.get(CV_CAP_PROP_FRAME_WIDTH));
-    int frame_height = static_cast<int>(capture.get(CV_CAP_PROP_FRAME_HEIGHT));
+    int hint_width = maxCols_ * char_width;
+    int hint_height = maxRows_ * char_height;
+    int out_width, out_height;
+    if (hint_width * frame_height / frame_width < hint_height) {
+        out_width = hint_width;
+        out_height = out_width * frame_height / frame_width;
+    } else {
+        out_height = hint_height;
+        out_width = out_height * frame_width / frame_height;
+    }
+
+    int col_count = (out_width + char_width - 1) / char_width;
+    int row_count = (out_height + char_height - 1) / char_height;
+
+    KG::Ascii::TextSurface text(row_count, col_count);
+    KG::Ascii::GlyphMatcher matcher(font);
+    KG::Ascii::Asciifier asciifier(matcher);
+
     cout << "video width " << frame_width << "\n";
     cout << "video height " << frame_height << "\n";
     cout << "video frame count " << capture.get(CV_CAP_PROP_FRAME_COUNT) << "\n";
     cout << "video fps " << capture.get(CV_CAP_PROP_FPS) << "\n";
-
-    int col_count = (frame_width + char_width - 1) / char_width;
-    int row_count = (frame_height + char_height - 1) / char_height;
+    cout << "output width " << out_width << "\n";
+    cout << "output height " << out_height << "\n";
     cout << "output columns " << col_count << "\n";
     cout << "output rows " << row_count << "\n";
 
@@ -134,10 +156,6 @@ int VideoToAscii::doExecute()
 
     startFrame_ = static_cast<int>(capture.get(CV_CAP_PROP_POS_FRAMES));
     startTime_ = capture.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
-
-    KG::Ascii::TextSurface text(row_count, col_count);
-    KG::Ascii::GlyphMatcher matcher(font);
-    KG::Ascii::Asciifier asciifier(matcher);
 
     boost::timer timer;
 
@@ -157,16 +175,22 @@ int VideoToAscii::doExecute()
         cv::Mat capture_frame;
         if (!capture.retrieve(capture_frame))
             break;
+        cv::Mat scaled_frame;
+        if (frame_width == out_width && frame_height == out_height) {
+            scaled_frame = capture_frame;
+        } else {
+            cv::resize(capture_frame, scaled_frame, cv::Size(out_width, out_height));
+        }
 
         cv::Mat gray_frame;
-        cv::cvtColor(capture_frame, gray_frame, CV_BGR2GRAY);
+        cv::cvtColor(scaled_frame, gray_frame, CV_BGR2GRAY);
 
         assert(gray_frame.dims == 2);
-        assert(gray_frame.cols == frame_width);
-        assert(gray_frame.rows == frame_height);
+        assert(gray_frame.cols == out_width);
+        assert(gray_frame.rows == out_height);
         assert(gray_frame.type() == CV_8UC1);
 
-        gray8c_view_t gray_view = interleaved_view(frame_width, frame_height, 
+        gray8c_view_t gray_view = interleaved_view(out_width, out_height, 
                 reinterpret_cast<gray8c_ptr_t>(gray_frame.data), 
                 gray_frame.step[0]);
 

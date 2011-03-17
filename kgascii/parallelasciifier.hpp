@@ -15,39 +15,47 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_ASCIIFIER_HPP
-#define KGASCII_ASCIIFIER_HPP
+#ifndef KGASCII_PARALLELASCIIFIER_HPP
+#define KGASCII_PARALLELASCIIFIER_HPP
 
 #include <boost/noncopyable.hpp>
 #include <boost/gil/typedefs.hpp>
+#include <boost/gil/image_view.hpp>
+#include <boost/thread.hpp>
+#include "asciifier.hpp"
+#include "taskqueue.hpp"
 #include "kgascii_api.hpp"
 
 namespace KG { namespace Ascii {
 
-class GlyphMatcher;
-class TextSurface;
-
-class KGASCII_API Asciifier: boost::noncopyable
+class KGASCII_API ParallelAsciifier: public Asciifier
 {
 public:
-    virtual void generate(const boost::gil::gray8c_view_t& imgv, 
-            TextSurface& text) = 0;
+    ParallelAsciifier(const GlyphMatcher& m, size_t thr_cnt);
 
-    virtual size_t threadCount() const = 0;
-
-    virtual ~Asciifier();
+    ~ParallelAsciifier();
     
-protected:
-    Asciifier(const GlyphMatcher& m);
+public:
+    void generate(const boost::gil::gray8c_view_t& imgv, TextSurface& text);
 
-protected:
-    const GlyphMatcher& matcher() const;
+    size_t threadCount() const;
 
 private:
-    const GlyphMatcher& matcher_;
+    void threadFunc();
+
+    struct WorkItem
+    {
+        boost::gil::gray8c_view_t imgv;
+        char* outp;
+    };
+    
+private:
+    boost::thread_group group_;
+    TaskQueue<WorkItem> queue_;
 };
 
 } } // namespace KG::Ascii
 
-#endif // KGASCII_ASCIIFIER_HPP
+#endif // KGASCII_PARALLELASCIIFIER_HPP
+
 

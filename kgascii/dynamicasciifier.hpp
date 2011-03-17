@@ -15,39 +15,39 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_ASCIIFIER_HPP
-#define KGASCII_ASCIIFIER_HPP
+#ifndef KGASCII_DYNAMICASCIIFIER_HPP
+#define KGASCII_DYNAMICASCIIFIER_HPP
 
 #include <boost/noncopyable.hpp>
 #include <boost/gil/typedefs.hpp>
+#include <boost/scoped_ptr.hpp>
+#include "asciifier.hpp"
 #include "kgascii_api.hpp"
 
 namespace KG { namespace Ascii {
 
-class GlyphMatcher;
-class TextSurface;
-
-class KGASCII_API Asciifier: boost::noncopyable
+class KGASCII_API DynamicAsciifier: public Asciifier
 {
 public:
-    virtual void generate(const boost::gil::gray8c_view_t& imgv, 
-            TextSurface& text) = 0;
+    DynamicAsciifier(const GlyphMatcher& m);
 
-    virtual size_t threadCount() const = 0;
-
-    virtual ~Asciifier();
+    ~DynamicAsciifier();
     
-protected:
-    Asciifier(const GlyphMatcher& m);
+public:
+    void generate(const boost::gil::gray8c_view_t& imgv, TextSurface& text);
 
-protected:
-    const GlyphMatcher& matcher() const;
+    size_t threadCount() const;
+
+    void setSequential();
+
+    void setParallel(size_t cnt);
 
 private:
-    const GlyphMatcher& matcher_;
+    boost::scoped_ptr<Asciifier> strategy_;
 };
 
 } } // namespace KG::Ascii
 
-#endif // KGASCII_ASCIIFIER_HPP
+#endif // KGASCII_DYNAMICASCIIFIER_HPP
+
 

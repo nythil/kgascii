@@ -13,6 +13,13 @@ SET(kgascii_SRCS
     hexstring.hpp
     asciifier.cpp
     asciifier.hpp
+    sequentialasciifier.cpp
+    sequentialasciifier.hpp
+    parallelasciifier.cpp
+    parallelasciifier.hpp
+    dynamicasciifier.cpp
+    dynamicasciifier.hpp
+    taskqueue.hpp
     glyphmatcher.cpp
     glyphmatcher.hpp
     textsurface.cpp

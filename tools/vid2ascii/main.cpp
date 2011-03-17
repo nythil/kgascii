@@ -27,7 +27,7 @@
 #include <kgascii/fontimage.hpp>
 #include <kgascii/textsurface.hpp>
 #include <kgascii/glyphmatcher.hpp>
-#include <kgascii/asciifier.hpp>
+#include <kgascii/dynamicasciifier.hpp>
 #include <windows.h>
 
 using std::cout;
@@ -53,6 +53,7 @@ private:
     std::string fontFile_;
     int maxCols_;
     int maxRows_;
+    int threads_;
 };
 
 
@@ -77,6 +78,7 @@ VideoToAscii::VideoToAscii()
         ("font-file,f", value(&fontFile_), "font file")
         ("cols", value(&maxCols_)->default_value(79), "suggested number of text columns")
         ("rows", value(&maxRows_)->default_value(49), "suggested number of text rows")
+        ("threads", value(&threads_)->default_value(0), "number of worker threads (0 = auto)")
     ;
     posDesc_.add("input-file", 1);
 }
@@ -216,9 +218,12 @@ int VideoToAscii::doExecute()
 
     KG::Ascii::TextSurface text(row_count, col_count);
     KG::Ascii::GlyphMatcher matcher(font);
-    KG::Ascii::Asciifier asciifier(matcher);
-    asciifier.setParallel(3);
-
+    KG::Ascii::DynamicAsciifier asciifier(matcher);
+    if (threads_ == 1) {
+        asciifier.setSequential();
+    } else {
+        asciifier.setParallel(threads_);
+    }
 
     cout << "video width " << frame_width << "\n";
     cout << "video height " << frame_height << "\n";
@@ -228,6 +233,7 @@ int VideoToAscii::doExecute()
     cout << "output height " << out_height << "\n";
     cout << "output columns " << col_count << "\n";
     cout << "output rows " << row_count << "\n";
+    cout << "worker threads " << asciifier.threadCount() << "\n";
 
     if (startFrame_) {
         capture.set(CV_CAP_PROP_POS_FRAMES, *startFrame_);

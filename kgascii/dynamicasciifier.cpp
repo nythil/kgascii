@@ -15,39 +15,44 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_ASCIIFIER_HPP
-#define KGASCII_ASCIIFIER_HPP
-
-#include <boost/noncopyable.hpp>
-#include <boost/gil/typedefs.hpp>
-#include "kgascii_api.hpp"
+#include "dynamicasciifier.hpp"
+#include "sequentialasciifier.hpp"
+#include "parallelasciifier.hpp"
 
 namespace KG { namespace Ascii {
 
-class GlyphMatcher;
-class TextSurface;
+using namespace boost::gil;
 
-class KGASCII_API Asciifier: boost::noncopyable
+DynamicAsciifier::DynamicAsciifier(const GlyphMatcher& m)
+    :Asciifier(m)
 {
-public:
-    virtual void generate(const boost::gil::gray8c_view_t& imgv, 
-            TextSurface& text) = 0;
+    setSequential();
+}
 
-    virtual size_t threadCount() const = 0;
+DynamicAsciifier::~DynamicAsciifier()
+{
+}
 
-    virtual ~Asciifier();
-    
-protected:
-    Asciifier(const GlyphMatcher& m);
+void DynamicAsciifier::generate(const gray8c_view_t& imgv, TextSurface& text)
+{
+    strategy_->generate(imgv, text);
+}
 
-protected:
-    const GlyphMatcher& matcher() const;
+size_t DynamicAsciifier::threadCount() const
+{
+    return strategy_->threadCount();
+}
 
-private:
-    const GlyphMatcher& matcher_;
-};
+void DynamicAsciifier::setSequential()
+{
+    strategy_.reset(new SequentialAsciifier(matcher()));
+}
+
+void DynamicAsciifier::setParallel(size_t cnt)
+{
+    strategy_.reset(new ParallelAsciifier(matcher(), cnt));
+}
 
 } } // namespace KG::Ascii
 
-#endif // KGASCII_ASCIIFIER_HPP
 

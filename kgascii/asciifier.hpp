@@ -19,8 +19,8 @@
 #define KGASCII_ASCIIFIER_HPP
 
 #include <boost/noncopyable.hpp>
-#include <boost/gil/image.hpp>
 #include <boost/gil/typedefs.hpp>
+#include <boost/scoped_ptr.hpp>
 #include "kgascii_api.hpp"
 
 namespace KG { namespace Ascii {
@@ -33,12 +33,18 @@ class KGASCII_API Asciifier: boost::noncopyable
 public:
     Asciifier(const GlyphMatcher& m);
 
+    ~Asciifier();
+    
 public:
     void generate(const boost::gil::gray8c_view_t& imgv, TextSurface& text) const;
 
+    void setSequential();
+
+    void setParallel(int cnt);
+
 private:
     const GlyphMatcher& matcher_;
-    mutable boost::gil::gray8_image_t cornerImg_;
+    boost::scoped_ptr<class AsciifierStrategy> strategy_;
 };
 
 } } // namespace KG::Ascii

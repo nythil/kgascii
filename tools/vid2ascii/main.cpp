@@ -217,6 +217,7 @@ int VideoToAscii::doExecute()
     KG::Ascii::TextSurface text(row_count, col_count);
     KG::Ascii::GlyphMatcher matcher(font);
     KG::Ascii::Asciifier asciifier(matcher);
+    asciifier.setParallel(3);
 
 
     cout << "video width " << frame_width << "\n";
@@ -258,7 +259,9 @@ int VideoToAscii::doExecute()
         if (maxTime_ && (current_time - *startTime_) >= *maxTime_)
             break;
 
-        if (current_time - *startTime_ < timer.elapsed()) {
+        double elapsed_time = timer.elapsed();
+
+        if (current_time - *startTime_ < elapsed_time) {
             if (!capture.grab())
                 break;
             continue;
@@ -292,6 +295,11 @@ int VideoToAscii::doExecute()
         con.display(text);
         frame_count++;
 
+        elapsed_time = timer.elapsed();
+        if (current_time - *startTime_ > elapsed_time) {
+            double dtime = (current_time - *startTime_) - elapsed_time;
+            Sleep(static_cast<int>(dtime * 800));
+        }
         if (!capture.grab())
             break;
     }

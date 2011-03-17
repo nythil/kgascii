@@ -59,9 +59,6 @@ char GlyphMatcher::match(const gray8c_view_t& imgv) const
 int GlyphMatcher::distance(const gray8c_view_t& img1, const gray8c_view_t& img2) const
 {
     assert(img1.size() == img2.size());
-    int char_size = img1.width() * img1.height();
-    const unsigned char* img1_data = interleaved_view_get_raw_data(img1);
-    const unsigned char* img2_data = interleaved_view_get_raw_data(img2);
     int result = 0;
     for (int y = 0; y < img1.height(); ++y) {
         gray8c_view_t::x_iterator img1_it = img1.row_begin(y);

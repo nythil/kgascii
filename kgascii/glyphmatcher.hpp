@@ -20,6 +20,7 @@
 
 #include <vector>
 #include <boost/noncopyable.hpp>
+#include <boost/gil/image_view.hpp>
 #include <boost/gil/typedefs.hpp>
 #include "kgascii_api.hpp"
 
@@ -46,6 +47,7 @@ private:
 private:
     const FontImage& font_;
     std::vector<int> charcodes_;
+    std::vector<boost::gil::gray8c_view_t> glyphs_;
 };
 
 } } // namespace KG::Ascii

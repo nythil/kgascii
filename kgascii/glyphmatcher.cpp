@@ -26,7 +26,11 @@ using namespace boost::gil;
 GlyphMatcher::GlyphMatcher(const FontImage& f)
     :font_(f)
     ,charcodes_(f.charcodes())
+    ,glyphs_(charcodes_.size())
 {
+    for (size_t ci = 0; ci < charcodes_.size(); ++ci) {
+        glyphs_[ci] = font_.getGlyph(charcodes_[ci]);
+    }
 }
 
 int GlyphMatcher::glyphWidth() const
@@ -46,11 +50,10 @@ char GlyphMatcher::match(const gray8c_view_t& imgv) const
     int d2_min = std::numeric_limits<int>::max();
     int cc_min = ' ';
     for (size_t ci = 0; ci < charcodes_.size(); ++ci) {
-        int cc = charcodes_[ci];
-        int d2 = distance(imgv, font_.getGlyph(cc));
+        int d2 = distance(imgv, glyphs_[ci]);
         if (d2 < d2_min) {
             d2_min = d2;
-            cc_min = cc;
+            cc_min = charcodes_[ci];
         }
     }
     return (char)cc_min;

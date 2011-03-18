@@ -28,6 +28,9 @@
 #include <kgascii/textsurface.hpp>
 #include <kgascii/glyphmatcher.hpp>
 #include <kgascii/dynamicasciifier.hpp>
+#include <kgascii/policybasedglyphmatcher.hpp>
+#include <kgascii/squaredeuclideandistance.hpp>
+#include <kgascii/meansdistance.hpp>
 #include <windows.h>
 
 using std::cout;
@@ -55,7 +58,6 @@ private:
     int maxRows_;
     int threads_;
 };
-
 
 int main(int argc, char* argv[])
 {
@@ -217,7 +219,8 @@ int VideoToAscii::doExecute()
     int row_count = (out_height + char_height - 1) / char_height;
 
     KG::Ascii::TextSurface text(row_count, col_count);
-    KG::Ascii::GlyphMatcher matcher(font);
+    //KG::Ascii::PolicyBasedGlyphMatcher<KG::Ascii::SquaredEuclideanDistance> matcher(font);
+    KG::Ascii::PolicyBasedGlyphMatcher<KG::Ascii::MeansDistance> matcher(font);
     KG::Ascii::DynamicAsciifier asciifier(matcher);
     if (threads_ == 1) {
         asciifier.setSequential();

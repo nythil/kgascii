@@ -15,43 +15,37 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_GLYPHMATCHER_HPP
-#define KGASCII_GLYPHMATCHER_HPP
+#ifndef KGASCII_SQUAREDEUCLIDEANDISTANCE_HPP
+#define KGASCII_SQUAREDEUCLIDEANDISTANCE_HPP
 
-#include <boost/noncopyable.hpp>
+#include <boost/gil/image_view.hpp>
 #include <boost/gil/typedefs.hpp>
-#include "kgascii_api.hpp"
 
 namespace KG { namespace Ascii {
 
-class FontImage;
-
-class KGASCII_API GlyphMatcher: boost::noncopyable
+class SquaredEuclideanDistance
 {
 public:
-    virtual ~GlyphMatcher();
-
-public:
-    int glyphWidth() const;
-
-    int glyphHeight() const;
-
-    virtual char match(const boost::gil::gray8c_view_t& imgv) const = 0;
-
-protected:
-    GlyphMatcher(const FontImage& f);
-
-    const FontImage& font() const;
-
-private:
-    int distance(const boost::gil::gray8c_view_t& img1, 
-            const boost::gil::gray8c_view_t& img2) const;
-
-private:
-    const FontImage& font_;
+    int operator()(const boost::gil::gray8c_view_t& img1, 
+            const boost::gil::gray8c_view_t& img2) const
+    {
+        assert(img1.size() == img2.size());
+        int result = 0;
+        for (int y = 0; y < img1.height(); ++y) {
+            boost::gil::gray8c_view_t::x_iterator img1_it = img1.row_begin(y);
+            boost::gil::gray8c_view_t::x_iterator img2_it = img2.row_begin(y);
+            for (int x = 0; x < img1.width(); ++x, ++img1_it, ++img2_it) {
+                int df = *img1_it - *img2_it;
+                result += df * df;
+            }
+        }
+        return result;
+    }
 };
 
 } } // namespace KG::Ascii
 
-#endif // KGASCII_GLYPHMATCHER_HPP
+#endif // KGASCII_SQUAREDEUCLIDEANDISTANCE_HPP
+
+
 

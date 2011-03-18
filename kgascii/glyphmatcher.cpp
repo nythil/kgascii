@@ -17,20 +17,16 @@
 
 #include "glyphmatcher.hpp"
 #include "fontimage.hpp"
-#include <limits>
 
 namespace KG { namespace Ascii {
 
-using namespace boost::gil;
-
 GlyphMatcher::GlyphMatcher(const FontImage& f)
     :font_(f)
-    ,charcodes_(f.charcodes())
-    ,glyphs_(charcodes_.size())
 {
-    for (size_t ci = 0; ci < charcodes_.size(); ++ci) {
-        glyphs_[ci] = font_.getGlyph(charcodes_[ci]);
-    }
+}
+
+GlyphMatcher::~GlyphMatcher()
+{
 }
 
 int GlyphMatcher::glyphWidth() const
@@ -43,35 +39,9 @@ int GlyphMatcher::glyphHeight() const
     return font_.glyphHeight();
 }
 
-char GlyphMatcher::match(const gray8c_view_t& imgv) const
+const FontImage& GlyphMatcher::font() const
 {
-    assert(imgv.width() == glyphWidth());
-    assert(imgv.height() == glyphHeight());
-    int d2_min = std::numeric_limits<int>::max();
-    int cc_min = ' ';
-    for (size_t ci = 0; ci < charcodes_.size(); ++ci) {
-        int d2 = distance(imgv, glyphs_[ci]);
-        if (d2 < d2_min) {
-            d2_min = d2;
-            cc_min = charcodes_[ci];
-        }
-    }
-    return (char)cc_min;
-}
-
-int GlyphMatcher::distance(const gray8c_view_t& img1, const gray8c_view_t& img2) const
-{
-    assert(img1.size() == img2.size());
-    int result = 0;
-    for (int y = 0; y < img1.height(); ++y) {
-        gray8c_view_t::x_iterator img1_it = img1.row_begin(y);
-        gray8c_view_t::x_iterator img2_it = img2.row_begin(y);
-        for (int x = 0; x < img1.width(); ++x, ++img1_it, ++img2_it) {
-            int df = *img1_it - *img2_it;
-            result += df * df;
-        }
-    }
-    return result;
+    return font_;
 }
 
 } } // namespace KG::Ascii

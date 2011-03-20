@@ -19,18 +19,12 @@
 
 namespace KG { namespace Ascii {
 
-Asciifier::Asciifier(const GlyphMatcher& m)
-    :matcher_(m)
+Asciifier::Asciifier()
 {
 }
 
 Asciifier::~Asciifier()
 {
-}
-
-const GlyphMatcher& Asciifier::matcher() const
-{
-    return matcher_;
 }
 
 } } // namespace KG::Ascii

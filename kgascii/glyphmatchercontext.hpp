@@ -15,50 +15,42 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_PARALLELASCIIFIER_HPP
-#define KGASCII_PARALLELASCIIFIER_HPP
+#ifndef KGASCII_GLYPHMATCHERCONTEXT_HPP
+#define KGASCII_GLYPHMATCHERCONTEXT_HPP
 
 #include <boost/noncopyable.hpp>
 #include <boost/gil/typedefs.hpp>
-#include <boost/gil/image_view.hpp>
-#include <boost/thread.hpp>
-#include "asciifier.hpp"
-#include "taskqueue.hpp"
 #include "kgascii_api.hpp"
 
 namespace KG { namespace Ascii {
 
-class KGASCII_API ParallelAsciifier: public Asciifier
+class GlyphMatcher;
+class FontImage;
+
+class KGASCII_API GlyphMatcherContext: boost::noncopyable
 {
 public:
-    ParallelAsciifier(const GlyphMatcherContext& c, size_t thr_cnt);
-
-    ~ParallelAsciifier();
-    
-public:
-    const GlyphMatcherContext& context() const;
-
-    size_t threadCount() const;
+    virtual ~GlyphMatcherContext();
 
 public:
-    void generate(const boost::gil::gray8c_view_t& imgv, TextSurface& text);
+    const FontImage& font() const;
+
+    virtual int cellWidth() const;
+
+    virtual int cellHeight() const;
+
+    virtual char match(const boost::gil::gray8c_view_t& imgv) const;
+
+    virtual GlyphMatcher* createMatcher() const = 0;
+
+protected:
+    GlyphMatcherContext(const FontImage& f);
 
 private:
-    void threadFunc();
-
-    struct WorkItem
-    {
-        boost::gil::gray8c_view_t imgv;
-        char* outp;
-    };
-    
-private:
-    const GlyphMatcherContext& context_;
-    boost::thread_group group_;
-    TaskQueue<WorkItem> queue_;
+    const FontImage& font_;
 };
 
 } } // namespace KG::Ascii
 
-#endif // KGASCII_PARALLELASCIIFIER_HPP
+#endif // KGASCII_GLYPHMATCHERCONTEXT_HPP
 

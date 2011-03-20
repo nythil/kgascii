@@ -24,7 +24,7 @@
 
 namespace KG { namespace Ascii {
 
-class FontImage;
+class GlyphMatcherContext;
 
 class KGASCII_API GlyphMatcher: boost::noncopyable
 {
@@ -32,23 +32,12 @@ public:
     virtual ~GlyphMatcher();
 
 public:
-    int glyphWidth() const;
+    virtual const GlyphMatcherContext& context() const = 0;
 
-    int glyphHeight() const;
-
-    virtual char match(const boost::gil::gray8c_view_t& imgv) const = 0;
+    virtual char match(const boost::gil::gray8c_view_t& imgv) = 0;
 
 protected:
-    GlyphMatcher(const FontImage& f);
-
-    const FontImage& font() const;
-
-private:
-    int distance(const boost::gil::gray8c_view_t& img1, 
-            const boost::gil::gray8c_view_t& img2) const;
-
-private:
-    const FontImage& font_;
+    GlyphMatcher();
 };
 
 } } // namespace KG::Ascii

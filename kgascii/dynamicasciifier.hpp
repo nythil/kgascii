@@ -29,20 +29,24 @@ namespace KG { namespace Ascii {
 class KGASCII_API DynamicAsciifier: public Asciifier
 {
 public:
-    DynamicAsciifier(const GlyphMatcher& m);
+    DynamicAsciifier(const GlyphMatcherContext& c);
 
     ~DynamicAsciifier();
     
 public:
-    void generate(const boost::gil::gray8c_view_t& imgv, TextSurface& text);
+    const GlyphMatcherContext& context() const;
 
     size_t threadCount() const;
+
+public:
+    void generate(const boost::gil::gray8c_view_t& imgv, TextSurface& text);
 
     void setSequential();
 
     void setParallel(size_t cnt);
 
 private:
+    const GlyphMatcherContext& context_;
     boost::scoped_ptr<Asciifier> strategy_;
 };
 

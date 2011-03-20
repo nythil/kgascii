@@ -24,27 +24,25 @@
 
 namespace KG { namespace Ascii {
 
-class GlyphMatcher;
+class GlyphMatcherContext;
 class TextSurface;
 
 class KGASCII_API Asciifier: boost::noncopyable
 {
 public:
+    virtual ~Asciifier();
+
+public:
+    virtual const GlyphMatcherContext& context() const = 0;
+    
+    virtual size_t threadCount() const = 0;
+
+public:
     virtual void generate(const boost::gil::gray8c_view_t& imgv, 
             TextSurface& text) = 0;
 
-    virtual size_t threadCount() const = 0;
-
-    virtual ~Asciifier();
-    
 protected:
-    Asciifier(const GlyphMatcher& m);
-
-protected:
-    const GlyphMatcher& matcher() const;
-
-private:
-    const GlyphMatcher& matcher_;
+    Asciifier();
 };
 
 } } // namespace KG::Ascii

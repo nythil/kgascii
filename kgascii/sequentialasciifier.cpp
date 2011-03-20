@@ -16,10 +16,10 @@
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
 #include "sequentialasciifier.hpp"
+#include "glyphmatchercontext.hpp"
 #include "glyphmatcher.hpp"
 #include "textsurface.hpp"
 #include <boost/gil/algorithm.hpp>
-#include <boost/gil/image.hpp>
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/image_view_factory.hpp>
 
@@ -27,17 +27,28 @@ namespace KG { namespace Ascii {
 
 using namespace boost::gil;
 
-SequentialAsciifier::SequentialAsciifier(const GlyphMatcher& m)
-    :Asciifier(m)
-    ,cornerImg_(m.glyphWidth(), m.glyphHeight())
+SequentialAsciifier::SequentialAsciifier(const GlyphMatcherContext& c)
+    :Asciifier()
+    ,context_(c)
+    ,matcher_(context_.createMatcher())
 {
+}
+
+const GlyphMatcherContext& SequentialAsciifier::context() const
+{
+    return context_;
+}
+
+size_t SequentialAsciifier::threadCount() const
+{
+    return 1;
 }
 
 void SequentialAsciifier::generate(const gray8c_view_t& imgv, TextSurface& text)
 {
     //single character size
-    int char_w = matcher().glyphWidth();
-    int char_h = matcher().glyphHeight();
+    int char_w = context_.cellWidth();
+    int char_h = context_.cellHeight();
     //text surface size
     int text_w = text.cols() * char_w;
     int text_h = text.rows() * char_h;
@@ -45,44 +56,28 @@ void SequentialAsciifier::generate(const gray8c_view_t& imgv, TextSurface& text)
     int roi_w = std::min(imgv.width(), text_w);
     int roi_h = std::min(imgv.height(), text_h);
 
-    gray8_view_t tmpview = view(cornerImg_);
-
     int y = 0, r = 0;
     for (; y + char_h <= roi_h; y += char_h, ++r) {
         int x = 0, c = 0;
         for (; x + char_w <= roi_w; x += char_w, ++c) {
-            text(r, c) = matcher().match(subimage_view(imgv, x, y, char_w, char_h));
+            text(r, c) = matcher_->match(subimage_view(imgv, x, y, char_w, char_h));
         }
         if (x < roi_w) {
             int dx = roi_w - x;
-            fill_pixels(tmpview, 0);
-            copy_pixels(subimage_view(imgv, x, y, dx, char_h), 
-                    subimage_view(tmpview, 0, 0, dx, char_h));
-            text(r, c) = matcher().match(tmpview);
+            text(r, c) = matcher_->match(subimage_view(imgv, x, y, dx, char_h));
         }
     }
     if (y < roi_h) {
         int dy = roi_h - y;
         int x = 0, c = 0;
-        fill_pixels(tmpview, 0);
         for (; x + char_w <= roi_w; x += char_w, ++c) {
-            copy_pixels(subimage_view(imgv, x, y, char_w, dy), 
-                    subimage_view(tmpview, 0, 0, char_w, dy));
-            text(r, c) = matcher().match(tmpview);
+            text(r, c) = matcher_->match(subimage_view(imgv, x, y, char_w, dy));
         }
         if (x < roi_w) {
             int dx = roi_w - x;
-            fill_pixels(tmpview, 0);
-            copy_pixels(subimage_view(imgv, x, y, dx, dy), 
-                    subimage_view(tmpview, 0, 0, dx, dy));
-            text(r, c) = matcher().match(tmpview);
+            text(r, c) = matcher_->match(subimage_view(imgv, x, y, dx, dy));
         }
     }
-}
-
-size_t SequentialAsciifier::threadCount() const
-{
-    return 1;
 }
 
 } } // namespace KG::Ascii

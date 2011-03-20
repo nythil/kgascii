@@ -22,6 +22,8 @@ SET(kgascii_SRCS
     taskqueue.hpp
     glyphmatcher.cpp
     glyphmatcher.hpp
+    glyphmatchercontext.cpp
+    glyphmatchercontext.hpp
     policybasedglyphmatcher.hpp
     squaredeuclideandistance.hpp
     meansdistance.hpp

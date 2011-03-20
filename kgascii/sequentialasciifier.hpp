@@ -19,25 +19,31 @@
 #define KGASCII_SEQUENTIALASCIIFIER_HPP
 
 #include <boost/noncopyable.hpp>
-#include <boost/gil/image.hpp>
 #include <boost/gil/typedefs.hpp>
+#include <boost/scoped_ptr.hpp>
 #include "asciifier.hpp"
 #include "kgascii_api.hpp"
 
 namespace KG { namespace Ascii {
 
+class GlyphMatcher;
+
 class KGASCII_API SequentialAsciifier: public Asciifier
 {
 public:
-    SequentialAsciifier(const GlyphMatcher& m);
+    SequentialAsciifier(const GlyphMatcherContext& c);
     
 public:
-    void generate(const boost::gil::gray8c_view_t& imgv, TextSurface& text);
+    const GlyphMatcherContext& context() const;
 
     size_t threadCount() const;
 
+public:
+    void generate(const boost::gil::gray8c_view_t& imgv, TextSurface& text);
+
 private:
-    boost::gil::gray8_image_t cornerImg_;
+    const GlyphMatcherContext& context_;
+    boost::scoped_ptr<GlyphMatcher> matcher_;
 };
 
 } } // namespace KG::Ascii

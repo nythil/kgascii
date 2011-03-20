@@ -16,32 +16,15 @@
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
 #include "glyphmatcher.hpp"
-#include "fontimage.hpp"
 
 namespace KG { namespace Ascii {
 
-GlyphMatcher::GlyphMatcher(const FontImage& f)
-    :font_(f)
+GlyphMatcher::GlyphMatcher()
 {
 }
 
 GlyphMatcher::~GlyphMatcher()
 {
-}
-
-int GlyphMatcher::glyphWidth() const
-{
-    return font_.glyphWidth();
-}
-
-int GlyphMatcher::glyphHeight() const
-{
-    return font_.glyphHeight();
-}
-
-const FontImage& GlyphMatcher::font() const
-{
-    return font_;
 }
 
 } } // namespace KG::Ascii

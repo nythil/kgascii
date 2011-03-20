@@ -15,50 +15,42 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#include "dynamicasciifier.hpp"
-#include "sequentialasciifier.hpp"
-#include "parallelasciifier.hpp"
+#include "glyphmatchercontext.hpp"
+#include "glyphmatcher.hpp"
+#include "fontimage.hpp"
+#include <boost/scoped_ptr.hpp>
 
 namespace KG { namespace Ascii {
 
-using namespace boost::gil;
-
-DynamicAsciifier::DynamicAsciifier(const GlyphMatcherContext& c)
-    :Asciifier()
-    ,context_(c)
-{
-    setSequential();
-}
-
-DynamicAsciifier::~DynamicAsciifier()
+GlyphMatcherContext::GlyphMatcherContext(const FontImage& f)
+    :font_(f)
 {
 }
 
-const GlyphMatcherContext& DynamicAsciifier::context() const
+GlyphMatcherContext::~GlyphMatcherContext()
 {
-    return context_;
 }
 
-size_t DynamicAsciifier::threadCount() const
+const FontImage& GlyphMatcherContext::font() const
 {
-    return strategy_->threadCount();
+    return font_;
 }
 
-void DynamicAsciifier::generate(const gray8c_view_t& imgv, TextSurface& text)
+int GlyphMatcherContext::cellWidth() const
 {
-    strategy_->generate(imgv, text);
+    return font_.glyphWidth();
 }
 
-void DynamicAsciifier::setSequential()
+int GlyphMatcherContext::cellHeight() const
 {
-    strategy_.reset(new SequentialAsciifier(context_));
+    return font_.glyphHeight();
 }
 
-void DynamicAsciifier::setParallel(size_t cnt)
+char GlyphMatcherContext::match(const boost::gil::gray8c_view_t& imgv) const
 {
-    strategy_.reset(new ParallelAsciifier(context_, cnt));
+    boost::scoped_ptr<GlyphMatcher> matcher(createMatcher());
+    return matcher->match(imgv);
 }
 
 } } // namespace KG::Ascii
-
 

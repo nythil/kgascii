@@ -16,20 +16,22 @@
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
 #include "parallelasciifier.hpp"
+#include "glyphmatchercontext.hpp"
 #include "glyphmatcher.hpp"
 #include "textsurface.hpp"
 #include <boost/gil/algorithm.hpp>
-#include <boost/gil/image.hpp>
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/image_view_factory.hpp>
 #include <boost/bind.hpp>
+#include <boost/scoped_ptr.hpp>
 
 namespace KG { namespace Ascii {
 
 using namespace boost::gil;
 
-ParallelAsciifier::ParallelAsciifier(const GlyphMatcher& m, size_t thr_cnt)
-    :Asciifier(m)
+ParallelAsciifier::ParallelAsciifier(const GlyphMatcherContext& c, size_t thr_cnt)
+    :Asciifier()
+    ,context_(c)
 {
     if (thr_cnt == 0) {
         thr_cnt = boost::thread::hardware_concurrency() + 1;
@@ -45,11 +47,21 @@ ParallelAsciifier::~ParallelAsciifier()
     group_.join_all();
 }
 
+const GlyphMatcherContext& ParallelAsciifier::context() const
+{
+    return context_;
+}
+
+size_t ParallelAsciifier::threadCount() const
+{
+    return group_.size();
+}
+
 void ParallelAsciifier::generate(const gray8c_view_t& imgv, TextSurface& text)
 {
     //single character size
-    int char_w = matcher().glyphWidth();
-    int char_h = matcher().glyphHeight();
+    int char_w = context_.cellWidth();
+    int char_h = context_.cellHeight();
     //text surface size
     int text_w = text.cols() * char_w;
     int text_h = text.rows() * char_h;
@@ -86,21 +98,13 @@ void ParallelAsciifier::generate(const gray8c_view_t& imgv, TextSurface& text)
     queue_.wait_empty();
 }
 
-size_t ParallelAsciifier::threadCount() const
-{
-    return group_.size();
-}
-
 void ParallelAsciifier::threadFunc()
 {
-    gray8_image_t corner_img(matcher().glyphWidth(), matcher().glyphHeight());
-    gray8_view_t corner_view = view(corner_img);
+    boost::scoped_ptr<GlyphMatcher> matcher(context_.createMatcher());
 
     WorkItem wi;
     while (queue_.wait_pop(wi)) {
-        fill_pixels(corner_view, 0);
-        copy_pixels(wi.imgv, subimage_view(corner_view, 0, 0, wi.imgv.width(), wi.imgv.height()));
-        *wi.outp = matcher().match(corner_view);
+        *wi.outp = matcher->match(wi.imgv);
         queue_.done();
     }
 }

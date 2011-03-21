@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#include "hexstring.hpp"
+#include <kgascii/hexstring.hpp>
 #include <boost/range.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/karma.hpp>

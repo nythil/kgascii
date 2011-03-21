@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#include "glyphmatchercontext.hpp"
-#include "glyphmatcher.hpp"
-#include "fontimage.hpp"
+#include <kgascii/glyphmatchercontext.hpp>
+#include <kgascii/glyphmatcher.hpp>
+#include <kgascii/fontimage.hpp>
 #include <boost/scoped_ptr.hpp>
 
 namespace KG { namespace Ascii {

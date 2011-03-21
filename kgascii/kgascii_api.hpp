@@ -18,11 +18,26 @@
 #ifndef KGASCII_API_HPP
 #define KGASCII_API_HPP
 
-#ifdef _WIN32
-    #ifdef KGASCII_EXPORTS
-        #define KGASCII_API   __declspec(dllexport)
+#include <kgascii/kgascii_config.hpp>
+
+#if defined _WIN32 || defined __CYGWIN__
+    #define KGASCII_DLL_DECL_IMPORT __declspec(dllimport)
+    #define KGASCII_DLL_DECL_EXPORT __declspec(dllexport)
+#else
+    #if __GNUC__ >= 4
+        #define KGASCII_DLL_DECL_IMPORT __attribute__ ((visibility("default")))
+        #define KGASCII_DLL_DECL_EXPORT __attribute__ ((visibility("default")))
     #else
-        #define KGASCII_API   __declspec(dllimport)
+        #define KGASCII_DLL_DECL_IMPORT
+        #define KGASCII_DLL_DECL_EXPORT
+    #endif
+#endif
+
+#ifdef KGASCII_DLL
+    #ifdef KGASCII_DLL_EXPORTS
+        #define KGASCII_API KGASCII_DLL_DECL_EXPORT
+    #else
+        #define KGASCII_API KGASCII_DLL_DECL_IMPORT
     #endif
 #else
     #define KGASCII_API

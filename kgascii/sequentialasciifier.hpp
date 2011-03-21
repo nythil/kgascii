@@ -21,8 +21,8 @@
 #include <boost/noncopyable.hpp>
 #include <boost/gil/typedefs.hpp>
 #include <boost/scoped_ptr.hpp>
-#include "asciifier.hpp"
-#include "kgascii_api.hpp"
+#include <kgascii/asciifier.hpp>
+#include <kgascii/kgascii_api.hpp>
 
 namespace KG { namespace Ascii {
 

@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#include "fontloader.hpp"
-#include "ft2pp/library.hpp"
-#include "ft2pp/face.hpp"
+#include <kgascii/fontloader.hpp>
+#include <kgascii/ft2pp/library.hpp>
+#include <kgascii/ft2pp/face.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
 

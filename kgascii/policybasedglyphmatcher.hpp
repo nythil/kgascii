@@ -25,9 +25,9 @@
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/image_view_factory.hpp>
 #include <boost/gil/typedefs.hpp>
-#include "glyphmatchercontext.hpp"
-#include "glyphmatcher.hpp"
-#include "fontimage.hpp"
+#include <kgascii/glyphmatchercontext.hpp>
+#include <kgascii/glyphmatcher.hpp>
+#include <kgascii/fontimage.hpp>
 
 namespace KG { namespace Ascii {
 

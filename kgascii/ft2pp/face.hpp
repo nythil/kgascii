@@ -26,7 +26,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-#include "error.hpp"
+#include <kgascii/ft2pp/error.hpp>
 
 namespace KG { namespace Ascii { namespace FT2pp {
 

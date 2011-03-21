@@ -20,7 +20,7 @@
 #include <windows.h>
 
 
-class ConsoleImpl:: boost::noncopyable
+class ConsoleImpl: boost::noncopyable
 {
 public:
     ConsoleImpl();

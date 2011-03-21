@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "kgascii_api.hpp"
+#include <kgascii/kgascii_api.hpp>
 
 namespace KG { namespace Ascii {
 

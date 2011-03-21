@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#include "dynamicasciifier.hpp"
-#include "sequentialasciifier.hpp"
-#include "parallelasciifier.hpp"
+#include <kgascii/dynamicasciifier.hpp>
+#include <kgascii/sequentialasciifier.hpp>
+#include <kgascii/parallelasciifier.hpp>
 
 namespace KG { namespace Ascii {
 

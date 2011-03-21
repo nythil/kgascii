@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#include "parallelasciifier.hpp"
-#include "glyphmatchercontext.hpp"
-#include "glyphmatcher.hpp"
-#include "textsurface.hpp"
+#include <kgascii/parallelasciifier.hpp>
+#include <kgascii/glyphmatchercontext.hpp>
+#include <kgascii/glyphmatcher.hpp>
+#include <kgascii/textsurface.hpp>
 #include <boost/gil/algorithm.hpp>
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/image_view_factory.hpp>

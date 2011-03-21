@@ -22,9 +22,9 @@
 #include <boost/gil/typedefs.hpp>
 #include <boost/gil/image_view.hpp>
 #include <boost/thread.hpp>
-#include "asciifier.hpp"
-#include "taskqueue.hpp"
-#include "kgascii_api.hpp"
+#include <kgascii/asciifier.hpp>
+#include <kgascii/taskqueue.hpp>
+#include <kgascii/kgascii_api.hpp>
 
 namespace KG { namespace Ascii {
 

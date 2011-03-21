@@ -24,7 +24,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/gil/image.hpp>
 #include <boost/gil/typedefs.hpp>
-#include "kgascii_api.hpp"
+#include <kgascii/kgascii_api.hpp>
 
 
 namespace KG { namespace Ascii {

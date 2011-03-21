@@ -25,7 +25,7 @@
 #include <boost/gil/image.hpp>
 #include <boost/gil/typedefs.hpp>
 #include <Eigen/Dense>
-#include "kgascii_api.hpp"
+#include <kgascii/kgascii_api.hpp>
 
 namespace KG { namespace Ascii {
 

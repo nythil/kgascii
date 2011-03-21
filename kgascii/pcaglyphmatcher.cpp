@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#include "pcaglyphmatcher.hpp"
-#include "fontimage.hpp"
+#include <kgascii/pcaglyphmatcher.hpp>
+#include <kgascii/fontimage.hpp>
 #include <iostream>
 #include <boost/gil/image_view.hpp>
 

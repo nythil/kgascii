@@ -22,9 +22,9 @@
 #include <boost/noncopyable.hpp>
 #include <boost/gil/typedefs.hpp>
 #include <Eigen/Dense>
-#include "glyphmatcher.hpp"
-#include "glyphmatchercontext.hpp"
-#include "kgascii_api.hpp"
+#include <kgascii/glyphmatcher.hpp>
+#include <kgascii/glyphmatchercontext.hpp>
+#include <kgascii/kgascii_api.hpp>
 
 namespace KG { namespace Ascii {
 

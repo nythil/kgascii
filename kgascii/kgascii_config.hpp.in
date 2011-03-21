@@ -15,43 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_TEXTSURFACE_HPP
-#define KGASCII_TEXTSURFACE_HPP
+#ifndef KGASCII_CONFIG_HPP
+#define KGASCII_CONFIG_HPP
 
-#include <vector>
-#include <kgascii/kgascii_api.hpp>
+#cmakedefine KGASCII_DLL
 
-namespace KG { namespace Ascii {
-
-class KGASCII_API TextSurface
-{
-public:
-    TextSurface();
-
-    TextSurface(int rr, int cc);
-
-public:
-    int rows() const;
-
-    int cols() const;
-
-    void resize(int rr, int cc);
-
-    void clear();
-
-    char operator()(int r, int c) const;
-
-    char& operator()(int r, int c);
-
-    const char* row(int r) const;
-
-private:
-    int rows_;
-    int cols_;
-    std::vector<char> data_;
-};
-
-} } // namespace KG::Ascii
-
-#endif // KGASCII_TEXTSURFACE_HPP
+#endif // KGASCII_CONFIG_HPP
 

@@ -66,8 +66,8 @@ void ParallelAsciifier::generate(const gray8c_view_t& imgv, TextSurface& text)
     int text_w = text.cols() * char_w;
     int text_h = text.rows() * char_h;
     //processed image region size
-    int roi_w = std::min(imgv.width(), text_w);
-    int roi_h = std::min(imgv.height(), text_h);
+    int roi_w = std::min<int>(imgv.width(), text_w);
+    int roi_h = std::min<int>(imgv.height(), text_h);
 
     int y = 0, r = 0;
     for (; y + char_h <= roi_h; y += char_h, ++r) {

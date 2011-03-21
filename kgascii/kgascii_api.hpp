@@ -18,10 +18,14 @@
 #ifndef KGASCII_API_HPP
 #define KGASCII_API_HPP
 
-#ifdef KGASCII_EXPORTS
-    #define KGASCII_API   __declspec(dllexport)
+#ifdef _WIN32
+    #ifdef KGASCII_EXPORTS
+        #define KGASCII_API   __declspec(dllexport)
+    #else
+        #define KGASCII_API   __declspec(dllimport)
+    #endif
 #else
-    #define KGASCII_API   __declspec(dllimport)
+    #define KGASCII_API
 #endif
 
 #endif // KGASCII_API_HPP

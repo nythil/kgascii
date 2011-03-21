@@ -18,8 +18,8 @@
 #include <iostream>
 #include <sstream>
 #include <boost/filesystem.hpp>
-#include <kgascii/fontimage.hpp>
-#include <kgascii/fontloader.hpp>
+#include <kgascii/font_image.hpp>
+#include <kgascii/font_loader.hpp>
 #include <common/cmdlinetool.hpp>
 
 

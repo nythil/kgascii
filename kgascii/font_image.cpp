@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#include <kgascii/fontimage.hpp>
-#include <kgascii/fontloader.hpp>
+#include <kgascii/font_image.hpp>
+#include <kgascii/font_loader.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <kgascii/hexstring.hpp>

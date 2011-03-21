@@ -28,14 +28,14 @@
 #include <common/cmdlinetool.hpp>
 #include <common/validateoptional.hpp>
 #include <common/console.hpp>
-#include <kgascii/fontimage.hpp>
-#include <kgascii/textsurface.hpp>
-#include <kgascii/glyphmatcher.hpp>
-#include <kgascii/dynamicasciifier.hpp>
-#include <kgascii/policybasedglyphmatcher.hpp>
-#include <kgascii/squaredeuclideandistance.hpp>
-#include <kgascii/meansdistance.hpp>
-#include <kgascii/pcaglyphmatcher.hpp>
+#include <kgascii/font_image.hpp>
+#include <kgascii/text_surface.hpp>
+#include <kgascii/glyph_matcher.hpp>
+#include <kgascii/dynamic_asciifier.hpp>
+#include <kgascii/policy_based_glyph_matcher.hpp>
+#include <kgascii/squared_euclidean_distance.hpp>
+#include <kgascii/means_distance.hpp>
+#include <kgascii/pca_glyph_matcher.hpp>
 
 using std::cout;
 

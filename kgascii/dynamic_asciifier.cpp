@@ -15,62 +15,50 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#include <kgascii/textsurface.hpp>
+#include <kgascii/dynamic_asciifier.hpp>
+#include <kgascii/sequential_asciifier.hpp>
+#include <kgascii/parallel_asciifier.hpp>
 
 namespace KG { namespace Ascii {
 
-TextSurface::TextSurface()
-    :rows_(0)
-    ,cols_(0)
+using namespace boost::gil;
+
+DynamicAsciifier::DynamicAsciifier(const GlyphMatcherContext& c)
+    :Asciifier()
+    ,context_(c)
+{
+    setSequential();
+}
+
+DynamicAsciifier::~DynamicAsciifier()
 {
 }
 
-TextSurface::TextSurface(int rr, int cc)
-    :rows_(rr)
-    ,cols_(cc)
-    ,data_(rr * cc)
+const GlyphMatcherContext& DynamicAsciifier::context() const
 {
+    return context_;
 }
 
-int TextSurface::rows() const
+size_t DynamicAsciifier::threadCount() const
 {
-    return rows_;
+    return strategy_->threadCount();
 }
 
-int TextSurface::cols() const
+void DynamicAsciifier::generate(const gray8c_view_t& imgv, TextSurface& text)
 {
-    return cols_;
+    strategy_->generate(imgv, text);
 }
 
-void TextSurface::resize(int rr, int cc)
+void DynamicAsciifier::setSequential()
 {
-    if (rows_ != rr || cols_ != cc) {
-        std::vector<char> new_data(rr * cc);
-        std::swap(rows_, rr);
-        std::swap(cols_, cc);
-        std::swap(data_, new_data);
-    }
+    strategy_.reset(new SequentialAsciifier(context_));
 }
 
-void TextSurface::clear()
+void DynamicAsciifier::setParallel(size_t cnt)
 {
-    std::fill(data_.begin(), data_.end(), ' ');
-}
-
-char TextSurface::operator()(int r, int c) const
-{
-    return data_.at(r * cols_ + c);
-}
-
-char& TextSurface::operator()(int r, int c)
-{
-    return data_.at(r * cols_ + c);
-}
-
-const char* TextSurface::row(int r) const
-{
-    return &data_.at(r * cols_);
+    strategy_.reset(new ParallelAsciifier(context_, cnt));
 }
 
 } } // namespace KG::Ascii
+
 

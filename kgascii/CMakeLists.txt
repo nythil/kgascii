@@ -5,32 +5,32 @@ SET(kgascii_SRCS
     ft2pp/face.hpp 
     ft2pp/library.hpp 
     ft2pp/util.hpp 
-    fontimage.cpp
-    fontimage.hpp
-    fontloader.cpp
-    fontloader.hpp
+    font_image.cpp
+    font_image.hpp
+    font_loader.cpp
+    font_loader.hpp
     hexstring.cpp
     hexstring.hpp
     asciifier.cpp
     asciifier.hpp
-    sequentialasciifier.cpp
-    sequentialasciifier.hpp
-    parallelasciifier.cpp
-    parallelasciifier.hpp
-    dynamicasciifier.cpp
-    dynamicasciifier.hpp
-    taskqueue.hpp
-    glyphmatcher.cpp
-    glyphmatcher.hpp
-    glyphmatchercontext.cpp
-    glyphmatchercontext.hpp
-    policybasedglyphmatcher.hpp
-    squaredeuclideandistance.hpp
-    meansdistance.hpp
-    textsurface.cpp
-    textsurface.hpp
-    pcaglyphmatcher.cpp
-    pcaglyphmatcher.hpp
+    sequential_asciifier.cpp
+    sequential_asciifier.hpp
+    parallel_asciifier.cpp
+    parallel_asciifier.hpp
+    dynamic_asciifier.cpp
+    dynamic_asciifier.hpp
+    task_queue.hpp
+    glyph_matcher.cpp
+    glyph_matcher.hpp
+    glyph_matcher_context.cpp
+    glyph_matcher_context.hpp
+    policy_based_glyph_matcher.hpp
+    squared_euclidean_distance.hpp
+    means_distance.hpp
+    text_surface.cpp
+    text_surface.hpp
+    pca_glyph_matcher.cpp
+    pca_glyph_matcher.hpp
     kgascii_config.hpp
     kgascii_api.hpp
 )

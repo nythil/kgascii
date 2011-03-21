@@ -15,50 +15,57 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_PARALLELASCIIFIER_HPP
-#define KGASCII_PARALLELASCIIFIER_HPP
+#ifndef KGASCII_PCAGLYPHMATCHER_HPP
+#define KGASCII_PCAGLYPHMATCHER_HPP
 
+#include <vector>
 #include <boost/noncopyable.hpp>
 #include <boost/gil/typedefs.hpp>
-#include <boost/gil/image_view.hpp>
-#include <boost/thread.hpp>
-#include <kgascii/asciifier.hpp>
-#include <kgascii/taskqueue.hpp>
+#include <Eigen/Dense>
+#include <kgascii/glyph_matcher.hpp>
+#include <kgascii/glyph_matcher_context.hpp>
 #include <kgascii/kgascii_api.hpp>
 
 namespace KG { namespace Ascii {
 
-class KGASCII_API ParallelAsciifier: public Asciifier
+class FontImage;
+
+class PcaGlyphMatcherContext: public GlyphMatcherContext
+{
+    friend class PcaGlyphMatcher;
+
+public:
+    explicit PcaGlyphMatcherContext(const FontImage& f);
+
+public:
+    GlyphMatcher* createMatcher() const;
+
+private:
+    std::vector<int> charcodes_;
+    int glyphSize_;
+    Eigen::VectorXf mean_;
+    Eigen::VectorXf energies_;
+    Eigen::MatrixXf features_;
+    Eigen::MatrixXf glyphs_;
+};
+
+class KGASCII_API PcaGlyphMatcher: public GlyphMatcher
 {
 public:
-    ParallelAsciifier(const GlyphMatcherContext& c, size_t thr_cnt);
+    explicit PcaGlyphMatcher(const PcaGlyphMatcherContext& c);
 
-    ~ParallelAsciifier();
-    
 public:
     const GlyphMatcherContext& context() const;
 
-    size_t threadCount() const;
-
-public:
-    void generate(const boost::gil::gray8c_view_t& imgv, TextSurface& text);
+    char match(const boost::gil::gray8c_view_t& imgv);
 
 private:
-    void threadFunc();
-
-    struct WorkItem
-    {
-        boost::gil::gray8c_view_t imgv;
-        char* outp;
-    };
-    
-private:
-    const GlyphMatcherContext& context_;
-    boost::thread_group group_;
-    TaskQueue<WorkItem> queue_;
+    const PcaGlyphMatcherContext& context_;
+    Eigen::VectorXf imgvec_;
+    Eigen::VectorXf components_;
 };
 
 } } // namespace KG::Ascii
 
-#endif // KGASCII_PARALLELASCIIFIER_HPP
+#endif // KGASCII_PCAGLYPHMATCHER_HPP
 

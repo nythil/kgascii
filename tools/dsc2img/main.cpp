@@ -19,7 +19,7 @@
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <kgascii/fontimage.hpp>
+#include <kgascii/font_image.hpp>
 #include <common/cmdlinetool.hpp>
 
 

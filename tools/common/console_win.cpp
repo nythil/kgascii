@@ -16,7 +16,7 @@
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
 #include "console.hpp"
-#include <kgascii/textsurface.hpp>
+#include <kgascii/text_surface.hpp>
 #include <windows.h>
 
 

@@ -29,6 +29,8 @@ SET(kgascii_SRCS
     meansdistance.hpp
     textsurface.cpp
     textsurface.hpp
+    pcaglyphmatcher.cpp
+    pcaglyphmatcher.hpp
 )
 SET(Boost_USE_STATIC_LIBS        ON)
 SET(Boost_USE_MULTITHREADED      ON)

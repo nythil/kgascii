@@ -20,7 +20,6 @@
 
 #include <vector>
 #include <boost/noncopyable.hpp>
-#include <boost/gil/typedefs.hpp>
 #include <Eigen/Dense>
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/glyph_matcher_context.hpp>
@@ -41,8 +40,8 @@ public:
     GlyphMatcher* createMatcher() const;
 
 private:
-    std::vector<int> charcodes_;
-    int glyphSize_;
+    std::vector<unsigned> charcodes_;
+    size_t glyphSize_;
     Eigen::VectorXf mean_;
     Eigen::VectorXf energies_;
     Eigen::MatrixXf features_;
@@ -57,7 +56,7 @@ public:
 public:
     const GlyphMatcherContext& context() const;
 
-    char match(const boost::gil::gray8c_view_t& imgv);
+    unsigned match(const Surface8c& imgv);
 
 private:
     const PcaGlyphMatcherContext& context_;

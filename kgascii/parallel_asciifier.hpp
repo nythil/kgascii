@@ -19,8 +19,6 @@
 #define KGASCII_PARALLELASCIIFIER_HPP
 
 #include <boost/noncopyable.hpp>
-#include <boost/gil/typedefs.hpp>
-#include <boost/gil/image_view.hpp>
 #include <boost/thread.hpp>
 #include <kgascii/asciifier.hpp>
 #include <kgascii/task_queue.hpp>
@@ -31,24 +29,24 @@ namespace KG { namespace Ascii {
 class KGASCII_API ParallelAsciifier: public Asciifier
 {
 public:
-    ParallelAsciifier(const GlyphMatcherContext& c, size_t thr_cnt);
+    ParallelAsciifier(const GlyphMatcherContext& c, unsigned thr_cnt);
 
     ~ParallelAsciifier();
     
 public:
     const GlyphMatcherContext& context() const;
 
-    size_t threadCount() const;
+    unsigned threadCount() const;
 
 public:
-    void generate(const boost::gil::gray8c_view_t& imgv, TextSurface& text);
+    void generate(const Surface8c& imgv, TextSurface& text);
 
 private:
     void threadFunc();
 
     struct WorkItem
     {
-        boost::gil::gray8c_view_t imgv;
+        Surface8c imgv;
         char* outp;
     };
     

@@ -90,8 +90,8 @@ void ConsoleImpl::setup(int rows, int cols)
 
 void ConsoleImpl::display(const KG::Ascii::TextSurface& text)
 {
-    for (int r = 0; r < text.rows(); ++r) {
-        for (int c = 0; c < text.cols(); ++c)
+    for (unsigned r = 0; r < text.rows(); ++r) {
+        for (unsigned c = 0; c < text.cols(); ++c)
             assert(32 <= text(r, c) && text(r, c) <= 127);
         COORD xy = { 0, r };
         DWORD written;

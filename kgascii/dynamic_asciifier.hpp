@@ -19,7 +19,6 @@
 #define KGASCII_DYNAMICASCIIFIER_HPP
 
 #include <boost/noncopyable.hpp>
-#include <boost/gil/typedefs.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <kgascii/asciifier.hpp>
 #include <kgascii/kgascii_api.hpp>
@@ -36,14 +35,14 @@ public:
 public:
     const GlyphMatcherContext& context() const;
 
-    size_t threadCount() const;
+    unsigned threadCount() const;
 
 public:
-    void generate(const boost::gil::gray8c_view_t& imgv, TextSurface& text);
+    void generate(const Surface8c& imgv, TextSurface& text);
 
     void setSequential();
 
-    void setParallel(size_t cnt);
+    void setParallel(unsigned cnt);
 
 private:
     const GlyphMatcherContext& context_;

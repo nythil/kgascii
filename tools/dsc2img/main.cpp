@@ -34,7 +34,7 @@ protected:
     int doExecute();
     
 private:
-    int maxWidth_;
+    unsigned maxWidth_;
     std::string inputFile_;
     std::string outputFile_;
 };
@@ -73,7 +73,6 @@ bool ExtractFont::processArgs()
 int ExtractFont::doExecute()
 {
     using namespace KG::Ascii;
-    using namespace boost::gil;
     
     FontImage image;
     if (!image.load(inputFile_)) {
@@ -81,29 +80,26 @@ int ExtractFont::doExecute()
         return -1;
     }
 
-    int max_chars_per_row = maxWidth_ / image.glyphWidth();
+    unsigned max_chars_per_row = maxWidth_ / image.glyphWidth();
     assert(max_chars_per_row > 1);
 
-    std::vector<int> charcodes = image.charcodes();
-    int row_count = (charcodes.size() + max_chars_per_row - 1) / max_chars_per_row;
+    std::vector<unsigned> charcodes = image.charcodes();
+    size_t row_count = (charcodes.size() + max_chars_per_row - 1) / max_chars_per_row;
 
-    int image_width = std::min<int>(max_chars_per_row, charcodes.size()) * image.glyphWidth();
-    int image_height = row_count * image.glyphHeight();
+    size_t image_width = std::min<size_t>(max_chars_per_row, charcodes.size()) * image.glyphWidth();
+    size_t image_height = row_count * image.glyphHeight();
 
     cv::Mat output_image(image_height, image_width, CV_8UC1);
-    gray8_view_t output_view = interleaved_view(image_width, image_height, 
-            reinterpret_cast<gray8_ptr_t>(output_image.data), output_image.step[0]);
+    Surface8 output_surface(image_width, image_height, output_image.data, output_image.step[0]);
 
     for (size_t ci = 0; ci < charcodes.size(); ++ci) {
-        int charcode = charcodes[ci];
-        gray8c_view_t glyph_view = image.getGlyph(charcode);
-        int row = ci % max_chars_per_row;
-        int rowX = row * image.glyphWidth();
-        int col = ci / max_chars_per_row;
-        int colY = col * image.glyphHeight();
-        gray8_view_t output_cell = subimage_view(output_view, rowX, colY, 
-                image.glyphWidth(), image.glyphHeight());
-        copy_pixels(glyph_view, output_cell);
+        Surface8c glyph_surface = image.glyphByIndex(ci);
+        unsigned row = ci % max_chars_per_row;
+        unsigned rowX = row * image.glyphWidth();
+        unsigned col = ci / max_chars_per_row;
+        unsigned colY = col * image.glyphHeight();
+        copyPixels(glyph_surface, output_surface.window(rowX, colY, 
+                image.glyphWidth(), image.glyphHeight()));
     }
 
     cv::imwrite(outputFile_, output_image);

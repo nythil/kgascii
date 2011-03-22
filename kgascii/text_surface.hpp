@@ -28,26 +28,26 @@ class KGASCII_API TextSurface
 public:
     TextSurface();
 
-    TextSurface(int rr, int cc);
+    TextSurface(unsigned rr, unsigned cc);
 
 public:
-    int rows() const;
+    unsigned rows() const;
 
-    int cols() const;
+    unsigned cols() const;
 
-    void resize(int rr, int cc);
+    void resize(unsigned rr, unsigned cc);
 
     void clear();
 
-    char operator()(int r, int c) const;
+    char operator()(unsigned r, unsigned c) const;
 
-    char& operator()(int r, int c);
+    char& operator()(unsigned r, unsigned c);
 
-    const char* row(int r) const;
+    const char* row(unsigned r) const;
 
 private:
-    int rows_;
-    int cols_;
+    unsigned rows_;
+    unsigned cols_;
     std::vector<char> data_;
 };
 

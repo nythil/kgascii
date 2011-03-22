@@ -20,14 +20,10 @@
 
 #include <vector>
 #include <limits>
-#include <boost/gil/algorithm.hpp>
-#include <boost/gil/image.hpp>
-#include <boost/gil/image_view.hpp>
-#include <boost/gil/image_view_factory.hpp>
-#include <boost/gil/typedefs.hpp>
 #include <kgascii/glyph_matcher_context.hpp>
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/font_image.hpp>
+#include <kgascii/surface_container.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -45,8 +41,8 @@ public:
     explicit PolicyBasedGlyphMatcher(const Context& c)
         :GlyphMatcher()
         ,context_(c)
-        ,image_(context_.cellWidth(), context_.cellHeight())
-        ,view_(boost::gil::view(image_))
+        ,container_(context_.cellWidth() * context_.cellHeight())
+        ,surface_(container_.surface())
     {
     }
 
@@ -56,12 +52,12 @@ public:
         return context_;
     }
 
-    char match(const boost::gil::gray8c_view_t& imgv);
+    unsigned match(const Surface8c& imgv);
 
 private:
     const Context& context_;
-    boost::gil::gray8_image_t image_;
-    boost::gil::gray8_view_t view_;
+    SurfaceContainer8 container_;
+    Surface8 surface_;
 };
 
 
@@ -78,11 +74,8 @@ public:
             const DistancePolicy& dist=DistancePolicy())
         :GlyphMatcherContext(f)
         ,charcodes_(font().charcodes())
-        ,glyphs_(charcodes_.size())
+        ,glyphs_(font().glyphs())
     {
-        for (size_t ci = 0; ci < charcodes_.size(); ++ci) {
-            glyphs_[ci] = font().getGlyph(charcodes_[ci]);
-        }
     }
 
 public:
@@ -92,31 +85,30 @@ public:
     }
 
 private:
-    std::vector<int> charcodes_;
-    std::vector<boost::gil::gray8c_view_t> glyphs_;
+    std::vector<unsigned> charcodes_;
+    std::vector<Surface8c> glyphs_;
     DistancePolicy distance_;
 };
 
 template<typename DistancePolicy>
-char PolicyBasedGlyphMatcher<DistancePolicy>::match(const boost::gil::gray8c_view_t& imgv)
+unsigned PolicyBasedGlyphMatcher<DistancePolicy>::match(const Surface8c& imgv)
 {
-    assert(imgv.width() <= view_.width());
-    assert(imgv.height() <= view_.height());
+    assert(imgv.width() <= surface_.width());
+    assert(imgv.height() <= surface_.height());
 
-    boost::gil::fill_pixels(view_, 0);
-    boost::gil::copy_pixels(imgv, 
-        boost::gil::subimage_view(view_, 0, 0, imgv.width(), imgv.height()));
+    fillPixels(surface_, 0);
+    copyPixels(imgv, surface_.window(0, 0, imgv.width(), imgv.height()));
 
     int d2_min = std::numeric_limits<int>::max();
-    int cc_min = ' ';
+    unsigned cc_min = ' ';
     for (size_t ci = 0; ci < context_.charcodes_.size(); ++ci) {
-        int d2 = context_.distance_(view_, context_.glyphs_[ci]);
+        int d2 = context_.distance_(surface_, context_.glyphs_[ci]);
         if (d2 < d2_min) {
             d2_min = d2;
             cc_min = context_.charcodes_[ci];
         }
     }
-    return (char)cc_min;
+    return cc_min;
 }
 
 } } // namespace KG::Ascii

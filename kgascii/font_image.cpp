@@ -37,40 +37,46 @@ const std::string& FontImage::styleName() const
     return styleName_;
 }
 
-int FontImage::pixelSize() const
+unsigned FontImage::pixelSize() const
 {
     return pixelSize_;
 }
 
-int FontImage::glyphWidth() const
+unsigned FontImage::glyphWidth() const
 {
     return glyphWidth_;
 }
 
-int FontImage::glyphHeight() const
+unsigned FontImage::glyphHeight() const
 {
     return glyphHeight_;
 }
 
-std::vector<int> FontImage::charcodes() const
+size_t FontImage::glyphCount() const
 {
-    std::vector<int> chcodes;
-    GlyphMap::const_iterator chmap_it;
-    for (chmap_it = charmap_.begin(); chmap_it != charmap_.end(); ++chmap_it) {
-        chcodes.push_back(chmap_it->first);
-    }
-    return chcodes;
+    return charcodes_.size();
 }
 
-boost::gil::gray8c_view_t FontImage::getGlyph(int charcode) const
+std::vector<unsigned> FontImage::charcodes() const
 {
-    GlyphMap::const_iterator it = charmap_.find(charcode);
-    assert(it != charmap_.end());
-    size_t row_offset = it->second * glyphs_.cols();
-    const unsigned char* glyph_data = glyphs_.data() + row_offset;
-    return boost::gil::interleaved_view(glyphWidth_, glyphHeight_, 
-        reinterpret_cast<const boost::gil::gray8c_pixel_t*>(glyph_data),
-        glyphWidth_);
+    return charcodes_;
+}
+
+std::vector<Surface8c> FontImage::glyphs() const
+{
+    return std::vector<Surface8c>(glyphs_.begin(), glyphs_.end());
+}
+
+Surface8c FontImage::glyphByIndex(size_t i) const
+{
+    return glyphs_[i];
+}
+
+Surface8c FontImage::glyphByCharcode(unsigned c) const
+{
+    std::vector<unsigned>::const_iterator it = std::find(charcodes_.begin(), 
+            charcodes_.end(), c);
+    return glyphByIndex(*it);
 }
 
 bool FontImage::save(const std::string& file_path) const
@@ -82,16 +88,11 @@ bool FontImage::save(const std::string& file_path) const
     pt.put("font.glyph_width", glyphWidth_);
     pt.put("font.glyph_height", glyphHeight_);
 
-    int glyphSize = glyphWidth_ * glyphHeight_;
-
-    GlyphMap::const_iterator it_end = charmap_.end();
-    for (GlyphMap::const_iterator it = charmap_.begin(); it != it_end; ++it) {
-        size_t row_offset = it->second * glyphSize;
-        const unsigned char* glyph_bytes_begin = glyphs_.data() + row_offset;
-        const unsigned char* glyph_bytes_end = glyph_bytes_begin + glyphSize;
+    for (size_t ci = 0; ci < charcodes_.size(); ++ci) {
+        const Surface8& glyph_surf = glyphs_[ci];
         boost::property_tree::ptree pt_glyph;
-        pt_glyph.put("charcode", it->first);
-        pt_glyph.put("data", hexlify(glyph_bytes_begin, glyph_bytes_end));
+        pt_glyph.put("charcode", charcodes_[ci]);
+        pt_glyph.put("data", hexlify(glyph_surf.data(), glyph_surf.dataEnd()));
         pt.add_child("font.glyphs.glyph", pt_glyph);
     }
 
@@ -109,35 +110,29 @@ bool FontImage::load(const std::string& file_path)
     
     familyName_ = pt.get<std::string>("font.family_name");
     styleName_ = pt.get<std::string>("font.style_name");
-    pixelSize_ = pt.get<int>("font.pixel_size");
-    glyphWidth_ = pt.get<int>("font.glyph_width");
-    glyphHeight_ = pt.get<int>("font.glyph_height");
-
-    int glyphSize = glyphWidth_ * glyphHeight_;
+    pixelSize_ = pt.get<unsigned>("font.pixel_size");
+    glyphWidth_ = pt.get<unsigned>("font.glyph_width");
+    glyphHeight_ = pt.get<unsigned>("font.glyph_height");
 
     const boost::property_tree::ptree& pt_glyphs = pt.get_child("font.glyphs");
     size_t ci_count = pt_glyphs.count("glyph");
     size_t ci = 0;
 
-    charmap_.clear();
-    glyphs_.resize(ci_count, glyphSize);
+    prepareStorage(ci_count, glyphWidth_, glyphHeight_);
 
     boost::property_tree::ptree::const_iterator it_end = pt_glyphs.end();
-    for (boost::property_tree::ptree::const_iterator it = pt_glyphs.begin(); it != it_end; ++it) {
-        int charcode = it->second.get<int>("charcode");
+    boost::property_tree::ptree::const_iterator it;
+    for (it = pt_glyphs.begin(); it != it_end; ++it, ++ci) {
+        charcodes_[ci] = it->second.get<unsigned>("charcode");
+
         std::string data = it->second.get<std::string>("data");
-
-        size_t row_offset = ci * glyphSize;
-        unsigned char* glyph_bytes_begin = glyphs_.data() + row_offset;
-        unhexlify(data, glyph_bytes_begin);
-
-        charmap_[charcode] = ci++;
+        unhexlify(data, glyphs_[ci].data());
     }
 
     return true;
 }
 
-bool FontImage::load(FontLoader& loader, int ci_min, int ci_max)
+bool FontImage::load(FontLoader& loader, unsigned ci_min, unsigned ci_max)
 {
     if (!loader.isFontOk())
         return false;
@@ -149,35 +144,30 @@ bool FontImage::load(FontLoader& loader, int ci_min, int ci_max)
     pixelSize_ = loader.pixelSize();
 
     glyphWidth_ = loader.maxAdvance();
-    glyphHeight_ = loader.ascender() - loader.descender();
-    int glyphSize = glyphWidth_ * glyphHeight_;
+    glyphHeight_ = loader.ascender() + loader.descender();
 
-    int ci_count = ci_max - ci_min + 1;
+    unsigned ci_count = ci_max - ci_min + 1;
 
-    charmap_.clear();
-    glyphs_.resize(ci_count, glyphSize);
+    prepareStorage(ci_count, glyphWidth_, glyphHeight_);
 
-    for (int ci = 0; ci < ci_count; ++ci) {
+    for (unsigned ci = 0; ci < ci_count; ++ci) {
         if (!loader.loadGlyph(ci + ci_min))
             continue;
 
-        size_t row_offset = ci * glyphs_.cols();
-        unsigned char* glyph_data = glyphs_.data() + row_offset;
-        boost::gil::gray8_view_t glyph_image_view = 
-            boost::gil::interleaved_view(glyphWidth_, glyphHeight_, 
-                reinterpret_cast<boost::gil::gray8_pixel_t*>(glyph_data),
-                glyphWidth_);
-        boost::gil::fill_pixels(glyph_image_view, 0);
+        charcodes_[ci] = ci + ci_min;
 
-        int bmp_off_x = std::max(-loader.glyphLeft(), 0);
-        int bmp_off_y = std::max(loader.glyphTop() - loader.ascender(), 0);
-        int bmp_width = std::min(loader.glyphWidth(), glyphWidth_ - bmp_off_x);
-        int bmp_height = std::min(loader.glyphHeight(), glyphHeight_ - bmp_off_y);
+        const Surface8& glyph_surf = glyphs_[ci];
+        fillPixels(glyph_surf, 0);
 
-        int img_off_x = std::max(loader.glyphLeft(), 0);
-        int img_off_y = std::max(loader.ascender() - loader.glyphTop(), 0);
-        int common_width = std::min(bmp_width, glyphWidth_ - img_off_x);
-        int common_height = std::min(bmp_height, glyphHeight_ - img_off_y);
+        unsigned bmp_off_x = std::max<int>(-loader.glyphLeft(), 0);
+        unsigned bmp_off_y = std::max<int>(loader.glyphTop() - loader.ascender(), 0);
+        unsigned bmp_width = std::min<unsigned>(loader.glyphWidth(), glyphWidth_ - bmp_off_x);
+        unsigned bmp_height = std::min<unsigned>(loader.glyphHeight(), glyphHeight_ - bmp_off_y);
+
+        unsigned img_off_x = std::max<int>(loader.glyphLeft(), 0);
+        unsigned img_off_y = std::max<int>(loader.ascender() - loader.glyphTop(), 0);
+        unsigned common_width = std::min<unsigned>(bmp_width, glyphWidth_ - img_off_x);
+        unsigned common_height = std::min<unsigned>(bmp_height, glyphHeight_ - img_off_y);
 
         //std::cout << "ci: " << ci << " ";
         //std::cout << bmp_off_x << "," << bmp_off_y << " - ";
@@ -188,16 +178,24 @@ bool FontImage::load(FontLoader& loader, int ci_min, int ci_max)
         assert(img_off_x + common_width <= glyphWidth_);
         assert(img_off_y + common_height <= glyphHeight_);
 
-        boost::gil::gray8_view_t glyph_subimage_view = boost::gil::subimage_view(
-            glyph_image_view, img_off_x, img_off_y, common_width, common_height);
-        boost::gil::gray8c_view_t bmp_subimage_view = boost::gil::subimage_view(
-            loader.glyph(), bmp_off_x, bmp_off_y, common_width, common_height);
-        boost::gil::copy_pixels(bmp_subimage_view, glyph_subimage_view);
-
-        charmap_[ci + ci_min] = ci;
+        copyPixels(loader.glyph().window(bmp_off_x, bmp_off_y, common_width, common_height),
+                glyph_surf.window(img_off_x, img_off_x, common_width, common_height));
     }
 
     return true;
+}
+
+void FontImage::prepareStorage(size_t count, unsigned w, unsigned h)
+{
+    unsigned glyphSize = w * h;
+    glyphStorage_.resize(count * glyphSize);
+    charcodes_.resize(count);
+    glyphs_.resize(count);
+
+    for (size_t ci = 0; ci < count; ++ci) {
+        unsigned char* glyph_data = &glyphStorage_[ci * glyphSize];
+        glyphs_[ci].assign(w, h, glyph_data, w);
+    }
 }
 
 } } // namespace KG::Ascii

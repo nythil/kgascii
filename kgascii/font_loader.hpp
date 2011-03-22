@@ -22,10 +22,8 @@
 #include <vector>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/gil/image.hpp>
-#include <boost/gil/typedefs.hpp>
 #include <kgascii/kgascii_api.hpp>
-
+#include <kgascii/surface.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -59,7 +57,7 @@ public:
     FontLoader();
 
 public:
-    bool loadFont(const std::string& file_path, int pixel_size);
+    bool loadFont(const std::string& file_path, unsigned pixel_size);
 
     bool isFontOk() const;
 
@@ -67,13 +65,13 @@ public:
 
     std::string styleName() const;
 
-    int pixelSize() const;
+    unsigned pixelSize() const;
 
-    int ascender() const;
+    unsigned ascender() const;
 
-    int descender() const;
+    unsigned descender() const;
 
-    int maxAdvance() const;
+    unsigned maxAdvance() const;
 
     bool fixedWidth() const;
 
@@ -99,11 +97,11 @@ public:
     
     int glyphTop() const;
 
-    int glyphWidth() const;
+    unsigned glyphWidth() const;
 
-    int glyphHeight() const;
+    unsigned glyphHeight() const;
 
-    boost::gil::gray8c_view_t glyph() const;
+    Surface8c glyph() const;
 
 private:
     int makeLoadFlags() const;
@@ -114,7 +112,8 @@ private:
     boost::shared_ptr<FT2pp::Library> library_;
     boost::shared_ptr<FT2pp::Face> face_;
     bool glyph_loaded_;
-    boost::gil::gray8_image_t glyph_;
+    Surface8 glyph_;
+    std::vector<Surface8::value_type> glyphData_;
     Hinting hinting_;
     AutoHinter autohint_;
     RenderMode mode_;

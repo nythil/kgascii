@@ -25,24 +25,24 @@ TextSurface::TextSurface()
 {
 }
 
-TextSurface::TextSurface(int rr, int cc)
+TextSurface::TextSurface(unsigned rr, unsigned cc)
     :rows_(rr)
     ,cols_(cc)
     ,data_(rr * cc)
 {
 }
 
-int TextSurface::rows() const
+unsigned TextSurface::rows() const
 {
     return rows_;
 }
 
-int TextSurface::cols() const
+unsigned TextSurface::cols() const
 {
     return cols_;
 }
 
-void TextSurface::resize(int rr, int cc)
+void TextSurface::resize(unsigned rr, unsigned cc)
 {
     if (rows_ != rr || cols_ != cc) {
         std::vector<char> new_data(rr * cc);
@@ -57,17 +57,17 @@ void TextSurface::clear()
     std::fill(data_.begin(), data_.end(), ' ');
 }
 
-char TextSurface::operator()(int r, int c) const
+char TextSurface::operator()(unsigned r, unsigned c) const
 {
     return data_.at(r * cols_ + c);
 }
 
-char& TextSurface::operator()(int r, int c)
+char& TextSurface::operator()(unsigned r, unsigned c)
 {
     return data_.at(r * cols_ + c);
 }
 
-const char* TextSurface::row(int r) const
+const char* TextSurface::row(unsigned r) const
 {
     return &data_.at(r * cols_);
 }

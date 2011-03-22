@@ -19,13 +19,10 @@
 #define KGASCII_FONTIMAGE_HPP
 
 #include <string>
-#include <map>
 #include <vector>
 #include <boost/noncopyable.hpp>
-#include <boost/gil/image.hpp>
-#include <boost/gil/typedefs.hpp>
-#include <Eigen/Dense>
 #include <kgascii/kgascii_api.hpp>
+#include <kgascii/surface.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -33,9 +30,6 @@ class FontLoader;
 
 class KGASCII_API FontImage: boost::noncopyable
 {
-    typedef Eigen::Array<unsigned char, Eigen::Dynamic, Eigen::Dynamic, Eigen::ColMajor> GlyphStorage;
-    typedef std::map<int, int> GlyphMap;
-
 public:
     FontImage();
 
@@ -44,30 +38,40 @@ public:
 
     const std::string& styleName() const;
 
-    int pixelSize() const;
+    unsigned pixelSize() const;
 
-    int glyphWidth() const;
+    unsigned glyphWidth() const;
 
-    int glyphHeight() const;
+    unsigned glyphHeight() const;
 
-    std::vector<int> charcodes() const;
+    size_t glyphCount() const;
 
-    boost::gil::gray8c_view_t getGlyph(int charcode) const;
+    std::vector<unsigned> charcodes() const;
+
+    std::vector<Surface8c> glyphs() const;
+
+    Surface8c glyphByIndex(size_t i) const;
+
+    Surface8c glyphByCharcode(unsigned c) const;
 
     bool save(const std::string& file_path) const;
 
     bool load(const std::string& file_path);
 
-    bool load(FontLoader& loader, int ci_min, int ci_max);
+    bool load(FontLoader& loader, unsigned ci_min, unsigned ci_max);
+
+private:
+    void prepareStorage(size_t count, unsigned w, unsigned h);
 
 private:
     std::string familyName_;
     std::string styleName_;
-    int pixelSize_;
-    int glyphWidth_;
-    int glyphHeight_;
-    GlyphStorage glyphs_;
-    GlyphMap charmap_;
+    unsigned pixelSize_;
+    unsigned glyphWidth_;
+    unsigned glyphHeight_;
+    std::vector<unsigned> charcodes_;
+    std::vector<Surface8> glyphs_;
+    std::vector<Surface8::value_type> glyphStorage_;
 };
 
 } } // namespace KG::Ascii

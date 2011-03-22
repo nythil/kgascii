@@ -32,7 +32,7 @@ FontLoader::FontLoader()
 {
 }
 
-bool FontLoader::loadFont(const std::string& file_path, int pixel_size)
+bool FontLoader::loadFont(const std::string& file_path, unsigned pixel_size)
 {
     int face_idx = 0;
     int num_faces = 1;
@@ -58,7 +58,7 @@ bool FontLoader::loadFont(const std::string& file_path, int pixel_size)
 
         for (int si = 0; si < ft_face->num_fixed_sizes; ++si) {
             FT_Bitmap_Size size = ft_face->available_sizes[si];
-            if (size.y_ppem / 64 == pixel_size) {
+            if (static_cast<unsigned>(size.y_ppem / 64) == pixel_size) {
                 ft_face.setPixelSizes(pixel_size, pixel_size);
                 face_ = ft_face_ptr;
                 return true;
@@ -86,25 +86,25 @@ std::string FontLoader::styleName() const
     return (*face_)->style_name;
 }
 
-int FontLoader::pixelSize() const
+unsigned FontLoader::pixelSize() const
 {
     assert(isFontOk());
     return (*face_)->size->metrics.y_ppem;
 }
 
-int FontLoader::ascender() const
+unsigned FontLoader::ascender() const
 {
     assert(isFontOk());
     return (*face_)->size->metrics.ascender / 64;
 }
 
-int FontLoader::descender() const
+unsigned FontLoader::descender() const
 {
     assert(isFontOk());
-    return (*face_)->size->metrics.descender / 64;
+    return -(*face_)->size->metrics.descender / 64;
 }
 
-int FontLoader::maxAdvance() const
+unsigned FontLoader::maxAdvance() const
 {
     assert(isFontOk());
     return (*face_)->size->metrics.max_advance / 64;
@@ -161,8 +161,8 @@ bool FontLoader::loadGlyph(int charcode)
     face_->renderChar(static_cast<FT_Render_Mode>(makeRenderFlags()));
 
     FT_Bitmap bmp = (*face_)->glyph->bitmap;
-    glyph_.recreate(bmp.width, bmp.rows);
-    boost::gil::gray8_view_t glyph_view = boost::gil::view(glyph_);
+    glyphData_.resize(bmp.width * bmp.rows);
+    glyph_.assign(bmp.width, bmp.rows, &glyphData_[0]);
 
     unsigned char* pbmp = bmp.buffer;
     if (bmp.pixel_mode == FT_PIXEL_MODE_MONO) {
@@ -171,7 +171,7 @@ bool FontLoader::loadGlyph(int charcode)
                 int xbyte = x >> 3;
                 int xbit = x & 7;
                 int pix = (pbmp[xbyte] >> (7 - xbit)) & 1;
-                glyph_view(x, y) = pix * 255;
+                glyph_(x, y) = pix * 255;
             }
             pbmp += bmp.pitch;
         }
@@ -179,7 +179,7 @@ bool FontLoader::loadGlyph(int charcode)
         int grays_max = bmp.num_grays - 1;
         for (int y = 0; y < bmp.rows; ++y) {
             for (int x = 0; x < bmp.width; ++x) {
-                glyph_view(x, y) = (pbmp[x] * 255) / grays_max;
+                glyph_(x, y) = (pbmp[x] * 255) / grays_max;
             }
             pbmp += bmp.pitch;
         }
@@ -212,25 +212,25 @@ int FontLoader::glyphTop() const
     return (*face_)->glyph->bitmap_top;
 }
 
-int FontLoader::glyphWidth() const
+unsigned FontLoader::glyphWidth() const
 {
     assert(isFontOk());
     assert(isGlyphOk());
     return (*face_)->glyph->bitmap.width;
 }
 
-int FontLoader::glyphHeight() const
+unsigned FontLoader::glyphHeight() const
 {
     assert(isFontOk());
     assert(isGlyphOk());
     return (*face_)->glyph->bitmap.rows;
 }
 
-boost::gil::gray8c_view_t FontLoader::glyph() const
+Surface8c FontLoader::glyph() const
 {
     assert(isFontOk());
     assert(isGlyphOk());
-    return boost::gil::const_view(glyph_);
+    return glyph_;
 }
 
 int FontLoader::makeLoadFlags() const

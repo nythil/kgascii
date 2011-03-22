@@ -19,13 +19,8 @@
 #include <kgascii/glyph_matcher_context.hpp>
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/text_surface.hpp>
-#include <boost/gil/algorithm.hpp>
-#include <boost/gil/image_view.hpp>
-#include <boost/gil/image_view_factory.hpp>
 
 namespace KG { namespace Ascii {
-
-using namespace boost::gil;
 
 SequentialAsciifier::SequentialAsciifier(const GlyphMatcherContext& c)
     :Asciifier()
@@ -39,43 +34,43 @@ const GlyphMatcherContext& SequentialAsciifier::context() const
     return context_;
 }
 
-size_t SequentialAsciifier::threadCount() const
+unsigned SequentialAsciifier::threadCount() const
 {
     return 1;
 }
 
-void SequentialAsciifier::generate(const gray8c_view_t& imgv, TextSurface& text)
+void SequentialAsciifier::generate(const Surface8c& imgv, TextSurface& text)
 {
     //single character size
-    int char_w = context_.cellWidth();
-    int char_h = context_.cellHeight();
+    size_t char_w = context_.cellWidth();
+    size_t char_h = context_.cellHeight();
     //text surface size
-    int text_w = text.cols() * char_w;
-    int text_h = text.rows() * char_h;
+    size_t text_w = text.cols() * char_w;
+    size_t text_h = text.rows() * char_h;
     //processed image region size
-    int roi_w = std::min<int>(imgv.width(), text_w);
-    int roi_h = std::min<int>(imgv.height(), text_h);
+    size_t roi_w = std::min(imgv.width(), text_w);
+    size_t roi_h = std::min(imgv.height(), text_h);
 
-    int y = 0, r = 0;
+    size_t y = 0, r = 0;
     for (; y + char_h <= roi_h; y += char_h, ++r) {
-        int x = 0, c = 0;
+        size_t x = 0, c = 0;
         for (; x + char_w <= roi_w; x += char_w, ++c) {
-            text(r, c) = matcher_->match(subimage_view(imgv, x, y, char_w, char_h));
+            text(r, c) = matcher_->match(imgv.window(x, y, char_w, char_h));
         }
         if (x < roi_w) {
-            int dx = roi_w - x;
-            text(r, c) = matcher_->match(subimage_view(imgv, x, y, dx, char_h));
+            size_t dx = roi_w - x;
+            text(r, c) = matcher_->match(imgv.window(x, y, dx, char_h));
         }
     }
     if (y < roi_h) {
-        int dy = roi_h - y;
-        int x = 0, c = 0;
+        size_t dy = roi_h - y;
+        size_t x = 0, c = 0;
         for (; x + char_w <= roi_w; x += char_w, ++c) {
-            text(r, c) = matcher_->match(subimage_view(imgv, x, y, char_w, dy));
+            text(r, c) = matcher_->match(imgv.window(x, y, char_w, dy));
         }
         if (x < roi_w) {
-            int dx = roi_w - x;
-            text(r, c) = matcher_->match(subimage_view(imgv, x, y, dx, dy));
+            size_t dx = roi_w - x;
+            text(r, c) = matcher_->match(imgv.window(x, y, dx, dy));
         }
     }
 }

@@ -21,8 +21,6 @@
 
 namespace KG { namespace Ascii {
 
-using namespace boost::gil;
-
 DynamicAsciifier::DynamicAsciifier(const GlyphMatcherContext& c)
     :Asciifier()
     ,context_(c)
@@ -39,12 +37,12 @@ const GlyphMatcherContext& DynamicAsciifier::context() const
     return context_;
 }
 
-size_t DynamicAsciifier::threadCount() const
+unsigned DynamicAsciifier::threadCount() const
 {
     return strategy_->threadCount();
 }
 
-void DynamicAsciifier::generate(const gray8c_view_t& imgv, TextSurface& text)
+void DynamicAsciifier::generate(const Surface8c& imgv, TextSurface& text)
 {
     strategy_->generate(imgv, text);
 }
@@ -54,7 +52,7 @@ void DynamicAsciifier::setSequential()
     strategy_.reset(new SequentialAsciifier(context_));
 }
 
-void DynamicAsciifier::setParallel(size_t cnt)
+void DynamicAsciifier::setParallel(unsigned cnt)
 {
     strategy_.reset(new ParallelAsciifier(context_, cnt));
 }

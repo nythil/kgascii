@@ -36,17 +36,17 @@ const FontImage& GlyphMatcherContext::font() const
     return font_;
 }
 
-int GlyphMatcherContext::cellWidth() const
+unsigned GlyphMatcherContext::cellWidth() const
 {
     return font_.glyphWidth();
 }
 
-int GlyphMatcherContext::cellHeight() const
+unsigned GlyphMatcherContext::cellHeight() const
 {
     return font_.glyphHeight();
 }
 
-char GlyphMatcherContext::match(const boost::gil::gray8c_view_t& imgv) const
+unsigned GlyphMatcherContext::match(const Surface8c& imgv) const
 {
     boost::scoped_ptr<GlyphMatcher> matcher(createMatcher());
     return matcher->match(imgv);

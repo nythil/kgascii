@@ -18,10 +18,8 @@
 #include <kgascii/pca_glyph_matcher.hpp>
 #include <kgascii/font_image.hpp>
 #include <iostream>
-#include <boost/gil/image_view.hpp>
 
 using std::cout;
-
 
 namespace KG { namespace Ascii {
 
@@ -32,9 +30,9 @@ PcaGlyphMatcherContext::PcaGlyphMatcherContext(const FontImage& f)
     glyphSize_ = font().glyphWidth() * font().glyphHeight();
     Eigen::MatrixXd input_samples(glyphSize_, charcodes_.size());
     for (size_t ci = 0; ci < charcodes_.size(); ++ci) {
-        boost::gil::gray8c_view_t glyph_view = font().getGlyph(charcodes_[ci]);
-        for (int yy = 0; yy < font().glyphHeight(); ++yy) {
-            for (int xx = 0; xx < font().glyphWidth(); ++xx) {
+        Surface8c glyph_view = font().glyphByIndex(ci);
+        for (unsigned yy = 0; yy < font().glyphHeight(); ++yy) {
+            for (unsigned xx = 0; xx < font().glyphWidth(); ++xx) {
                 input_samples(yy * font().glyphWidth() + xx, ci) = glyph_view(xx, yy);
             }
         }
@@ -95,7 +93,7 @@ const GlyphMatcherContext& PcaGlyphMatcher::context() const
     return context_;
 }
 
-char PcaGlyphMatcher::match(const boost::gil::gray8c_view_t& imgv)
+unsigned PcaGlyphMatcher::match(const Surface8c& imgv)
 {
     assert(imgv.width() <= context_.cellWidth());
     assert(imgv.height() <= context_.cellHeight());
@@ -108,9 +106,9 @@ char PcaGlyphMatcher::match(const boost::gil::gray8c_view_t& imgv)
     }
 
     components_ = (imgvec_ - context_.mean_).transpose() * context_.features_;
-    int cc_min = ' ';
+    unsigned cc_min = ' ';
     (context_.glyphs_.colwise() - components_).colwise().squaredNorm().minCoeff(&cc_min);
-    return (char)context_.charcodes_.at(cc_min);
+    return context_.charcodes_.at(cc_min);
 }
 
 } } // namespace KG::Ascii

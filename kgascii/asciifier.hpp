@@ -19,8 +19,8 @@
 #define KGASCII_ASCIIFIER_HPP
 
 #include <boost/noncopyable.hpp>
-#include <boost/gil/typedefs.hpp>
 #include <kgascii/kgascii_api.hpp>
+#include <kgascii/surface.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -35,10 +35,10 @@ public:
 public:
     virtual const GlyphMatcherContext& context() const = 0;
     
-    virtual size_t threadCount() const = 0;
+    virtual unsigned threadCount() const = 0;
 
 public:
-    virtual void generate(const boost::gil::gray8c_view_t& imgv, 
+    virtual void generate(const Surface8c& imgv, 
             TextSurface& text) = 0;
 
 protected:

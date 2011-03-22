@@ -18,23 +18,21 @@
 #ifndef KGASCII_SQUAREDEUCLIDEANDISTANCE_HPP
 #define KGASCII_SQUAREDEUCLIDEANDISTANCE_HPP
 
-#include <boost/gil/image_view.hpp>
-#include <boost/gil/typedefs.hpp>
+#include <kgascii/surface.hpp>
 
 namespace KG { namespace Ascii {
 
 class SquaredEuclideanDistance
 {
 public:
-    int operator()(const boost::gil::gray8c_view_t& img1, 
-            const boost::gil::gray8c_view_t& img2) const
+    int operator()(const Surface8c& img1, const Surface8c& img2) const
     {
-        assert(img1.size() == img2.size());
+        assert(img1.dimensions() == img2.dimensions());
         int result = 0;
-        for (int y = 0; y < img1.height(); ++y) {
-            boost::gil::gray8c_view_t::x_iterator img1_it = img1.row_begin(y);
-            boost::gil::gray8c_view_t::x_iterator img2_it = img2.row_begin(y);
-            for (int x = 0; x < img1.width(); ++x, ++img1_it, ++img2_it) {
+        for (size_t y = 0; y < img1.height(); ++y) {
+            Surface8c::const_pointer img1_it = img1.row(y);
+            Surface8c::const_pointer img2_it = img2.row(y);
+            for (size_t x = 0; x < img1.width(); ++x, ++img1_it, ++img2_it) {
                 int df = *img1_it - *img2_it;
                 result += df * df;
             }

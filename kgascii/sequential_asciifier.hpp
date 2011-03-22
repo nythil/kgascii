@@ -19,10 +19,10 @@
 #define KGASCII_SEQUENTIALASCIIFIER_HPP
 
 #include <boost/noncopyable.hpp>
-#include <boost/gil/typedefs.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <kgascii/asciifier.hpp>
 #include <kgascii/kgascii_api.hpp>
+#include <kgascii/surface.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -36,10 +36,10 @@ public:
 public:
     const GlyphMatcherContext& context() const;
 
-    size_t threadCount() const;
+    unsigned threadCount() const;
 
 public:
-    void generate(const boost::gil::gray8c_view_t& imgv, TextSurface& text);
+    void generate(const Surface8c& imgv, TextSurface& text);
 
 private:
     const GlyphMatcherContext& context_;

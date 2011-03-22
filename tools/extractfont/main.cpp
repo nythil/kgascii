@@ -34,8 +34,8 @@ protected:
     int doExecute();
     
 private:
-    int minChar_;
-    int maxChar_;
+    unsigned minChar_;
+    unsigned maxChar_;
     std::string strHint_;
     KG::Ascii::FontLoader::Hinting hint_;
     std::string strAutohint_;
@@ -43,7 +43,7 @@ private:
     std::string strMode_;
     KG::Ascii::FontLoader::RenderMode mode_;
     std::string fontFile_;
-    int fontSize_;
+    unsigned fontSize_;
     std::string outputFile_;
 };
 

@@ -19,8 +19,8 @@
 #define KGASCII_GLYPHMATCHER_HPP
 
 #include <boost/noncopyable.hpp>
-#include <boost/gil/typedefs.hpp>
 #include <kgascii/kgascii_api.hpp>
+#include <kgascii/surface.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -34,7 +34,7 @@ public:
 public:
     virtual const GlyphMatcherContext& context() const = 0;
 
-    virtual char match(const boost::gil::gray8c_view_t& imgv) = 0;
+    virtual unsigned match(const Surface8c& imgv) = 0;
 
 protected:
     GlyphMatcher();

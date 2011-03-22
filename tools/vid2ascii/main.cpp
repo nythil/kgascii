@@ -19,7 +19,6 @@
 #include <limits>
 #include <cmath>
 #include <boost/optional.hpp>
-#include <boost/gil/gil_all.hpp>
 #include <boost/timer.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/xtime.hpp>
@@ -29,13 +28,13 @@
 #include <common/validate_optional.hpp>
 #include <common/console.hpp>
 #include <kgascii/font_image.hpp>
-#include <kgascii/text_surface.hpp>
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/dynamic_asciifier.hpp>
 #include <kgascii/policy_based_glyph_matcher.hpp>
 #include <kgascii/squared_euclidean_distance.hpp>
 #include <kgascii/means_distance.hpp>
 #include <kgascii/pca_glyph_matcher.hpp>
+#include <kgascii/text_surface.hpp>
 
 using std::cout;
 
@@ -51,16 +50,16 @@ protected:
     
 private:
     std::string inputFile_;
-    boost::optional<int> startFrame_;
-    boost::optional<int> endFrame_;
-    boost::optional<int> maxFrames_;
+    boost::optional<unsigned> startFrame_;
+    boost::optional<unsigned> endFrame_;
+    boost::optional<unsigned> maxFrames_;
     boost::optional<double> startTime_;
     boost::optional<double> endTime_;
     boost::optional<double> maxTime_;
     std::string fontFile_;
-    int maxCols_;
-    int maxRows_;
-    int threads_;
+    unsigned maxCols_;
+    unsigned maxRows_;
+    unsigned threads_;
 };
 
 int main(int argc, char* argv[])
@@ -114,24 +113,22 @@ bool VideoToAscii::processArgs()
 
 int VideoToAscii::doExecute()
 {
-    using namespace boost::gil;
-
     cv::VideoCapture capture(inputFile_);
     if (!capture.isOpened())
         return -1;
 
-    int frame_width = static_cast<int>(capture.get(CV_CAP_PROP_FRAME_WIDTH));
-    int frame_height = static_cast<int>(capture.get(CV_CAP_PROP_FRAME_HEIGHT));
+    unsigned frame_width = static_cast<unsigned>(capture.get(CV_CAP_PROP_FRAME_WIDTH));
+    unsigned frame_height = static_cast<unsigned>(capture.get(CV_CAP_PROP_FRAME_HEIGHT));
 
     KG::Ascii::FontImage font;
     if (!font.load(fontFile_))
         return -1;
-    int char_width = font.glyphWidth();
-    int char_height = font.glyphHeight();
+    unsigned char_width = font.glyphWidth();
+    unsigned char_height = font.glyphHeight();
 
-    int hint_width = maxCols_ * char_width;
-    int hint_height = maxRows_ * char_height;
-    int out_width, out_height;
+    unsigned hint_width = maxCols_ * char_width;
+    unsigned hint_height = maxRows_ * char_height;
+    unsigned out_width, out_height;
     if (hint_width * frame_height / frame_width < hint_height) {
         out_width = hint_width;
         out_height = out_width * frame_height / frame_width;
@@ -140,8 +137,8 @@ int VideoToAscii::doExecute()
         out_width = out_height * frame_width / frame_height;
     }
 
-    int col_count = (out_width + char_width - 1) / char_width;
-    int row_count = (out_height + char_height - 1) / char_height;
+    unsigned col_count = (out_width + char_width - 1) / char_width;
+    unsigned row_count = (out_height + char_height - 1) / char_height;
 
     KG::Ascii::TextSurface text(row_count, col_count);
     //KG::Ascii::PolicyBasedGlyphMatcher<KG::Ascii::SquaredEuclideanDistance> matcher(font);
@@ -175,14 +172,14 @@ int VideoToAscii::doExecute()
     Console con;
     con.setup(row_count, col_count);
 
-    startFrame_ = static_cast<int>(capture.get(CV_CAP_PROP_POS_FRAMES));
+    startFrame_ = static_cast<unsigned>(capture.get(CV_CAP_PROP_POS_FRAMES));
     startTime_ = capture.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
-    int frame_count = 0;
+    unsigned frame_count = 0;
 
     boost::timer timer;
 
     while (true) {
-        int current_frame = static_cast<int>(capture.get(CV_CAP_PROP_POS_FRAMES));
+        unsigned current_frame = static_cast<unsigned>(capture.get(CV_CAP_PROP_POS_FRAMES));
         if (maxFrames_ && (current_frame - *startFrame_) >= *maxFrames_)
             break;
         if (endFrame_ && current_frame >= *endFrame_)
@@ -216,16 +213,15 @@ int VideoToAscii::doExecute()
         cv::cvtColor(scaled_frame, gray_frame, CV_BGR2GRAY);
 
         assert(gray_frame.dims == 2);
-        assert(gray_frame.cols == out_width);
-        assert(gray_frame.rows == out_height);
+        assert(static_cast<unsigned>(gray_frame.cols) == out_width);
+        assert(static_cast<unsigned>(gray_frame.rows) == out_height);
         assert(gray_frame.type() == CV_8UC1);
 
-        gray8c_view_t gray_view = interleaved_view(out_width, out_height, 
-                reinterpret_cast<gray8c_ptr_t>(gray_frame.data), 
-                gray_frame.step[0]);
+        KG::Ascii::Surface8c gray_surface(out_width, out_height, 
+                gray_frame.data, gray_frame.step[0]);
 
         text.clear();
-        asciifier.generate(gray_view, text);
+        asciifier.generate(gray_surface, text);
 
         con.display(text);
         frame_count++;
@@ -248,7 +244,7 @@ int VideoToAscii::doExecute()
 
     double total_time = timer.elapsed();
 
-    endFrame_ = static_cast<int>(capture.get(CV_CAP_PROP_POS_FRAMES));
+    endFrame_ = static_cast<unsigned>(capture.get(CV_CAP_PROP_POS_FRAMES));
     endTime_ = capture.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
 
     cout << "total frames " << (*endFrame_ - *startFrame_) << "\n";

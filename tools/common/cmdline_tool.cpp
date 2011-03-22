@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#include "cmdlinetool.hpp"
+#include "cmdline_tool.hpp"
 #include <iostream>
 #include <stdexcept>
 #include <boost/format.hpp>

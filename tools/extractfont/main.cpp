@@ -20,7 +20,7 @@
 #include <boost/filesystem.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_loader.hpp>
-#include <common/cmdlinetool.hpp>
+#include <common/cmdline_tool.hpp>
 
 
 class ExtractFont: public CmdlineTool

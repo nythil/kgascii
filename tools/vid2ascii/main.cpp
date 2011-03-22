@@ -25,8 +25,8 @@
 #include <boost/thread/xtime.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-#include <common/cmdlinetool.hpp>
-#include <common/validateoptional.hpp>
+#include <common/cmdline_tool.hpp>
+#include <common/validate_optional.hpp>
 #include <common/console.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/text_surface.hpp>

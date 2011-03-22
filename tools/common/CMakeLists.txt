@@ -1,6 +1,7 @@
 SET(tools_common_SRCS
-    cmdlinetool.cpp
-    cmdlinetool.hpp
+    cmdline_tool.cpp
+    cmdline_tool.hpp
+    validate_optional.hpp
     console.hpp
 )
 IF(WIN32)

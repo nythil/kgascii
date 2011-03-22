@@ -22,7 +22,7 @@
 #include <kgascii/ft2pp/library.hpp>
 #include <kgascii/ft2pp/face.hpp>
 #include <kgascii/ft2pp/util.hpp>
-#include <common/cmdlinetool.hpp>
+#include <common/cmdline_tool.hpp>
 
 namespace FT2pp = KG::Ascii::FT2pp;
 

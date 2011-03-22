@@ -19,7 +19,6 @@
 #define KGASCII_SURFACE_HPP
 
 #include <cassert>
-#include <algorithm>
 #include <utility>
 
 namespace KG { namespace Ascii {
@@ -162,48 +161,6 @@ typedef SurfaceBase<unsigned char> Surface8;
 typedef SurfaceBase<const unsigned char> Surface8c;
 typedef SurfaceBase<float> Surface32f;
 typedef SurfaceBase<const float> Surface32fc;
-
-namespace Detail {
-
-template<typename T, typename U>
-static void fill(T* dst, U val, size_t cnt)
-{
-    std::fill(dst, dst + cnt, val);
-}
-
-template<typename T, typename U>
-static void copy(U* dst, const T* src, size_t cnt)
-{
-    std::copy(src, src + cnt, dst);
-}
-
-} // namespace Detail
-
-template<typename T, typename U>
-void fillPixels(const SurfaceBase<T>& surf, U val)
-{
-    if (surf.isContinuous()) {
-        Detail::fill(surf.data(), val, surf.size());
-    } else {
-        for (size_t y = 0; y < surf.height(); ++y) {
-            Detail::fill(surf.row(y), val, surf.width());
-        }
-    }
-}
-
-template<typename T, typename U>
-void copyPixels(const SurfaceBase<T>& src, const SurfaceBase<U>& dst)
-{
-    assert(src.dimensions() == dst.dimensions());
-    if (src.isContinuous() && dst.isContinuous()) {
-        assert(src.size() == dst.size());
-        Detail::copy(dst.data(), src.data(), src.size());
-    } else {
-        for (size_t y = 0; y < src.height(); ++y) {
-            Detail::copy(dst.row(y), src.row(y), src.width());
-        }
-    }
-}
 
 } } // namespace KG::Ascii
 

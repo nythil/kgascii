@@ -24,6 +24,7 @@
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/surface_container.hpp>
+#include <kgascii/surface_algorithm.hpp>
 
 namespace KG { namespace Ascii {
 

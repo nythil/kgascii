@@ -37,21 +37,17 @@ PcaGlyphMatcherContext::PcaGlyphMatcherContext(const FontImage& f)
             }
         }
     }
-    cout << "input_samples\n";
     Eigen::VectorXd mean_sample = input_samples.rowwise().sum() / charcodes_.size();
     Eigen::MatrixXd normalized_samples = input_samples.colwise() - mean_sample;
-    cout << "normalized_samples\n";
 
     Eigen::MatrixXd covariance(glyphSize_, glyphSize_);
     covariance.setZero();
     covariance.selfadjointView<Eigen::Lower>().rankUpdate(normalized_samples, 1.0 / (normalized_samples.cols() - 1));
-    cout << "covariance\n";
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver(covariance);
     Eigen::VectorXd eigvals_tmp = eigen_solver.eigenvalues();
     Eigen::VectorXd eigvals = eigvals_tmp.cwiseMax(Eigen::VectorXd::Zero(glyphSize_));
     Eigen::MatrixXd eigvecs = eigen_solver.eigenvectors();
-    cout << "eigenvalues\n";
 
     Eigen::VectorXd featvals = eigvals.tail(10).reverse();
     Eigen::MatrixXd featvecs = eigvecs.rightCols(10).rowwise().reverse();
@@ -60,18 +56,11 @@ PcaGlyphMatcherContext::PcaGlyphMatcherContext(const FontImage& f)
     }
 
     Eigen::MatrixXd glyphs = featvecs.transpose() * normalized_samples;
-    cout << "glyphs\n";
 
     mean_ = mean_sample.cast<float>();
     energies_ = featvals.cast<float>();
-    cout << "energies: " << energies_ << "\n";
-    cout << "perc: " << featvals.sum() / eigvals.sum() << "\n";
     features_ = featvecs.cast<float>();
-    cout << "features-min: " << features_.colwise().minCoeff() << "\n";
-    cout << "features-max: " << features_.colwise().maxCoeff() << "\n";
     glyphs_ = glyphs.cast<float>();
-    cout << "glyphs-min: " << glyphs_.rowwise().minCoeff() << "\n";
-    cout << "glyphs-max: " << glyphs_.rowwise().maxCoeff() << "\n";
 }
 
 GlyphMatcher* PcaGlyphMatcherContext::createMatcher() const
@@ -98,10 +87,14 @@ unsigned PcaGlyphMatcher::match(const Surface8c& imgv)
     assert(imgv.width() <= context_.cellWidth());
     assert(imgv.height() <= context_.cellHeight());
 
-    imgvec_.setZero();
-    for (size_t y = 0; y < imgv.height(); ++y) {
-        for (size_t x = 0; x < imgv.width(); ++x) {
-            imgvec_(x + context_.cellWidth() * y) = imgv(x, y);
+    typedef Eigen::Matrix<Surface8::value_type, Eigen::Dynamic, 1> VectorXuc;
+    if (imgv.isContinuous() && imgv.size() == static_cast<size_t>(imgvec_.size())) {
+        imgvec_ = VectorXuc::Map(imgv.data(), imgv.size()).cast<float>();
+    } else {
+        imgvec_.setZero();
+        size_t img_w = imgv.width();
+        for (size_t y = 0; y < imgv.height(); ++y) {
+            imgvec_.segment(y * img_w, img_w) = VectorXuc::Map(imgv.row(y), img_w).cast<float>();
         }
     }
 

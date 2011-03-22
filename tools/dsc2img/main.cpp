@@ -20,6 +20,7 @@
 #include <boost/filesystem.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <kgascii/font_image.hpp>
+#include <kgascii/surface_algorithm.hpp>
 #include <common/cmdline_tool.hpp>
 
 

@@ -20,6 +20,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <kgascii/hexstring.hpp>
+#include <kgascii/surface_algorithm.hpp>
 
 namespace KG { namespace Ascii {
 

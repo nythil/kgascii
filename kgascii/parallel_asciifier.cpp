@@ -66,29 +66,13 @@ void ParallelAsciifier::generate(const Surface8c& imgv, TextSurface& text)
 
     size_t y = 0, r = 0;
     for (; y + char_h <= roi_h; y += char_h, ++r) {
-        size_t x = 0, c = 0;
-        for (; x + char_w <= roi_w; x += char_w, ++c) {
-            WorkItem wi = { imgv.window(x, y, char_w, char_h), &text(r, c) };
-            queue_.push(wi);
-        }
-        if (x < roi_w) {
-            size_t dx = roi_w - x;
-            WorkItem wi = { imgv.window(x, y, dx, char_h), &text(r, c) };
-            queue_.push(wi);
-        }
+        WorkItem wi = { imgv.window(0, y, roi_w, char_h), &text(r, 0) };
+        queue_.push(wi);
     }
     if (y < roi_h) {
         size_t dy = roi_h - y;
-        size_t x = 0, c = 0;
-        for (; x + char_w <= roi_w; x += char_w, ++c) {
-            WorkItem wi = { imgv.window(x, y, char_w, dy), &text(r, c) };
-            queue_.push(wi);
-        }
-        if (x < roi_w) {
-            size_t dx = roi_w - x;
-            WorkItem wi = { imgv.window(x, y, dx, dy), &text(r, c) };
-            queue_.push(wi);
-        }
+        WorkItem wi = { imgv.window(0, y, roi_w, dy), &text(r, 0) };
+        queue_.push(wi);
     }
     queue_.wait_empty();
 }
@@ -96,10 +80,22 @@ void ParallelAsciifier::generate(const Surface8c& imgv, TextSurface& text)
 void ParallelAsciifier::threadFunc()
 {
     boost::scoped_ptr<GlyphMatcher> matcher(context_.createMatcher());
+    //single character size
+    size_t char_w = context_.cellWidth();
 
     WorkItem wi;
     while (queue_.wait_pop(wi)) {
-        *wi.outp = matcher->match(wi.imgv);
+        //processed image region size
+        size_t roi_w = wi.imgv.width();
+        size_t roi_h = wi.imgv.height();
+        size_t x = 0, c = 0;
+        for (; x + char_w <= roi_w; x += char_w, ++c) {
+            wi.outp[c] = matcher->match(wi.imgv.window(x, 0, char_w, roi_h));
+        }
+        if (x < roi_w) {
+            size_t dx = roi_w - x;
+            wi.outp[c] = matcher->match(wi.imgv.window(x, 0, dx, roi_h));
+        }
         queue_.done();
     }
 }

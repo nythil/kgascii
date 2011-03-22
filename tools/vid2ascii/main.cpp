@@ -60,6 +60,7 @@ private:
     unsigned maxCols_;
     unsigned maxRows_;
     unsigned threads_;
+    bool renderAll_;
 };
 
 int main(int argc, char* argv[])
@@ -84,6 +85,7 @@ VideoToAscii::VideoToAscii()
         ("cols", value(&maxCols_)->default_value(79), "suggested number of text columns")
         ("rows", value(&maxRows_)->default_value(49), "suggested number of text rows")
         ("threads", value(&threads_)->default_value(0), "number of worker threads (0 = auto)")
+        ("render-all", bool_switch(&renderAll_), "render all frames")
     ;
     posDesc_.add("input-file", 1);
 }
@@ -193,7 +195,7 @@ int VideoToAscii::doExecute()
 
         double elapsed_time = timer.elapsed();
 
-        if (current_time - *startTime_ < elapsed_time) {
+        if (!renderAll_ && current_time - *startTime_ < elapsed_time) {
             if (!capture.grab())
                 break;
             continue;
@@ -227,7 +229,7 @@ int VideoToAscii::doExecute()
         frame_count++;
 
         elapsed_time = timer.elapsed();
-        if (current_time - *startTime_ > elapsed_time) {
+        if (!renderAll_ && current_time - *startTime_ > elapsed_time) {
             double dtime = (current_time - *startTime_) - elapsed_time;
             dtime *= 0.8;
             double dtime_sec = 0.0;

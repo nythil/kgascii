@@ -116,9 +116,9 @@ bool FT2FontLoader::fixedWidth() const
     return FT_IS_FIXED_WIDTH(face_->handle());
 }
 
-std::vector<int> FT2FontLoader::charcodes() const
+std::vector<unsigned> FT2FontLoader::charcodes() const
 {
-    return std::vector<int>();
+    return std::vector<unsigned>();
 }
 
 FT2FontLoader::Hinting FT2FontLoader::hinting() const
@@ -151,7 +151,7 @@ void FT2FontLoader::setRenderMode(RenderMode val)
     mode_ = val;
 }
 
-bool FT2FontLoader::loadGlyph(int charcode)
+bool FT2FontLoader::loadGlyph(unsigned charcode)
 {
     assert(isFontOk());
 

@@ -42,9 +42,9 @@ public:
 
     unsigned glyphHeight() const;
 
-    std::vector<int> charcodes() const;
+    std::vector<unsigned> charcodes() const;
 
-    bool loadGlyph(int charcode);
+    bool loadGlyph(unsigned charcode);
 
     Surface8c glyph() const;
 

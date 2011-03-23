@@ -75,7 +75,7 @@ public:
 
     bool fixedWidth() const;
 
-    std::vector<int> charcodes() const;
+    std::vector<unsigned> charcodes() const;
 
     Hinting hinting() const;
 
@@ -89,7 +89,7 @@ public:
 
     void setRenderMode(RenderMode val);
 
-    bool loadGlyph(int charcode);
+    bool loadGlyph(unsigned charcode);
 
     bool isGlyphOk() const;
 

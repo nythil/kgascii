@@ -51,12 +51,12 @@ unsigned FT2FontImageLoader::glyphHeight() const
     return loader_.ascender() + loader_.descender();
 }
 
-std::vector<int> FT2FontImageLoader::charcodes() const
+std::vector<unsigned> FT2FontImageLoader::charcodes() const
 {
     return loader_.charcodes();
 }
 
-bool FT2FontImageLoader::loadGlyph(int charcode)
+bool FT2FontImageLoader::loadGlyph(unsigned charcode)
 {
     if (!loader_.loadGlyph(charcode))
         return false;

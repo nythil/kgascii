@@ -41,6 +41,8 @@ SET(kgascii_SRCS
     font_pcanalyzer.hpp
     font_pca.cpp
     font_pca.hpp
+    pca_reconstruction_font_image_loader.cpp
+    pca_reconstruction_font_image_loader.hpp
 )
 SET(Boost_USE_STATIC_LIBS        ON)
 SET(Boost_USE_MULTITHREADED      ON)

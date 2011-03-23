@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <utility>
 #include <boost/type_traits.hpp>
+#include <Eigen/Dense>
 #include <kgascii/surface.hpp>
 
 namespace KG { namespace Ascii {
@@ -99,6 +100,36 @@ void copyPixels(const SurfaceBase<T>& src, const SurfaceBase<U>& dst)
             Detail::copy(dst_rowp, src_rowp, src.width());
             src_rowp += src.pitch();
             dst_rowp += dst.pitch();
+        }
+    }
+}
+
+template<typename T>
+void copyPixels(const Eigen::VectorXf& src, const SurfaceBase<T>& dst)
+{
+    assert(src.size() == dst.size());
+    typedef Eigen::Matrix<T, Eigen::Dynamic, 1> VectorXuc;
+    if (dst.isContinuous()) {
+        VectorXuc::Map(dst.data(), dst.size()) = src.cast<T>();
+    } else {
+        size_t img_w = dst.width();
+        for (size_t y = 0; y < dst.height(); ++y) {
+            VectorXuc::Map(dst.row(y), img_w) = src.segment(y * img_w, img_w).cast<T>();
+        }
+    }
+}
+
+template<typename T>
+void copyPixels(const SurfaceBase<T>& src, Eigen::VectorXf& dst)
+{
+    assert(src.size() == dst.size());
+    typedef Eigen::Matrix<T, Eigen::Dynamic, 1> VectorXuc;
+    if (src.isContinuous()) {
+        dst = (VectorXuc::Map(src.data(), src.size()));
+    } else {
+        size_t img_w = src.width();
+        for (size_t y = 0; y < src.height(); ++y) {
+            dst.segment(y * img_w, img_w) = VectorXuc::Map(src.row(y), img_w);
         }
     }
 }

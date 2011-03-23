@@ -32,6 +32,10 @@ public:
     FontPCA(const FontPCAnalyzer& analyzer, size_t feat_cnt);
 
 public:
+    Eigen::VectorXf combine(const Eigen::VectorXf& vec) const;
+
+    Eigen::VectorXf& combine(const Eigen::VectorXf& vec, Eigen::VectorXf& out) const;
+
     Eigen::VectorXf project(const Eigen::VectorXf& vec) const;
 
     Eigen::VectorXf& project(const Eigen::VectorXf& vec, Eigen::VectorXf& out) const;

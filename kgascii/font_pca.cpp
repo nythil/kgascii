@@ -47,6 +47,19 @@ FontPCA::FontPCA(const FontPCAnalyzer& analyzer, size_t feat_cnt)
     assert(static_cast<size_t>(glyphs_.rows()) == feat_cnt);
 }
 
+Eigen::VectorXf FontPCA::combine(const Eigen::VectorXf& vec) const
+{
+    Eigen::VectorXf out;
+    combine(vec, out);
+    return out;
+}
+
+Eigen::VectorXf& FontPCA::combine(const Eigen::VectorXf& vec, Eigen::VectorXf& out) const
+{
+    out = features_ * energies_.asDiagonal().inverse() * vec + mean_;
+    return out;
+}
+
 Eigen::VectorXf FontPCA::project(const Eigen::VectorXf& vec) const
 {
     Eigen::VectorXf out;

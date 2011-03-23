@@ -7,8 +7,12 @@ SET(kgascii_SRCS
     ft2pp/util.hpp 
     font_image.cpp
     font_image.hpp
-    font_loader.cpp
-    font_loader.hpp
+    font_image_loader.cpp
+    font_image_loader.hpp
+    ft2_font_image_loader.cpp
+    ft2_font_image_loader.hpp
+    ft2_font_loader.cpp
+    ft2_font_loader.hpp
     hexstring.cpp
     hexstring.hpp
     asciifier.cpp

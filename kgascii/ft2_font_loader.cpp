@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#include <kgascii/font_loader.hpp>
+#include <kgascii/ft2_font_loader.hpp>
 #include <kgascii/ft2pp/library.hpp>
 #include <kgascii/ft2pp/face.hpp>
 #include <boost/make_shared.hpp>
@@ -23,7 +23,7 @@
 
 namespace KG { namespace Ascii {
 
-FontLoader::FontLoader()
+FT2FontLoader::FT2FontLoader()
     :library_(boost::make_shared<FT2pp::Library>())
     ,glyph_loaded_(false)
     ,hinting_(HintingNormal)
@@ -32,7 +32,7 @@ FontLoader::FontLoader()
 {
 }
 
-bool FontLoader::loadFont(const std::string& file_path, unsigned pixel_size)
+bool FT2FontLoader::loadFont(const std::string& file_path, unsigned pixel_size)
 {
     int face_idx = 0;
     int num_faces = 1;
@@ -69,89 +69,89 @@ bool FontLoader::loadFont(const std::string& file_path, unsigned pixel_size)
     return false;
 }
 
-bool FontLoader::isFontOk() const
+bool FT2FontLoader::isFontOk() const
 {
     return face_;
 }
 
-std::string FontLoader::familyName() const
+std::string FT2FontLoader::familyName() const
 {
     assert(isFontOk());
     return (*face_)->family_name;
 }
 
-std::string FontLoader::styleName() const
+std::string FT2FontLoader::styleName() const
 {
     assert(isFontOk());
     return (*face_)->style_name;
 }
 
-unsigned FontLoader::pixelSize() const
+unsigned FT2FontLoader::pixelSize() const
 {
     assert(isFontOk());
     return (*face_)->size->metrics.y_ppem;
 }
 
-unsigned FontLoader::ascender() const
+unsigned FT2FontLoader::ascender() const
 {
     assert(isFontOk());
     return (*face_)->size->metrics.ascender / 64;
 }
 
-unsigned FontLoader::descender() const
+unsigned FT2FontLoader::descender() const
 {
     assert(isFontOk());
     return -(*face_)->size->metrics.descender / 64;
 }
 
-unsigned FontLoader::maxAdvance() const
+unsigned FT2FontLoader::maxAdvance() const
 {
     assert(isFontOk());
     return (*face_)->size->metrics.max_advance / 64;
 }
 
-bool FontLoader::fixedWidth() const
+bool FT2FontLoader::fixedWidth() const
 {
     assert(isFontOk());
     return FT_IS_FIXED_WIDTH(face_->handle());
 }
 
-std::vector<int> FontLoader::charcodes() const
+std::vector<int> FT2FontLoader::charcodes() const
 {
     return std::vector<int>();
 }
 
-FontLoader::Hinting FontLoader::hinting() const
+FT2FontLoader::Hinting FT2FontLoader::hinting() const
 {
     return hinting_;
 }
 
-void FontLoader::setHinting(Hinting val)
+void FT2FontLoader::setHinting(Hinting val)
 {
     hinting_ = val;
 }
 
-FontLoader::AutoHinter FontLoader::autohinter() const
+FT2FontLoader::AutoHinter FT2FontLoader::autohinter() const
 {
     return autohint_;
 }
 
-void FontLoader::setAutohinter(AutoHinter val)
+void FT2FontLoader::setAutohinter(AutoHinter val)
 {
     autohint_ = val;
 }
 
-FontLoader::RenderMode FontLoader::renderMode() const
+FT2FontLoader::RenderMode FT2FontLoader::renderMode() const
 {
     return mode_;
 }
 
-void FontLoader::setRenderMode(RenderMode val)
+void FT2FontLoader::setRenderMode(RenderMode val)
 {
     mode_ = val;
 }
 
-bool FontLoader::loadGlyph(int charcode)
+bool FT2FontLoader::loadGlyph(int charcode)
 {
     assert(isFontOk());
 
@@ -193,47 +193,47 @@ bool FontLoader::loadGlyph(int charcode)
     return true;
 }
 
-bool FontLoader::isGlyphOk() const
+bool FT2FontLoader::isGlyphOk() const
 {
     return glyph_loaded_;
 }
 
-int FontLoader::glyphLeft() const
+int FT2FontLoader::glyphLeft() const
 {
     assert(isFontOk());
     assert(isGlyphOk());
     return (*face_)->glyph->bitmap_left;
 }
 
-int FontLoader::glyphTop() const
+int FT2FontLoader::glyphTop() const
 {
     assert(isFontOk());
     assert(isGlyphOk());
     return (*face_)->glyph->bitmap_top;
 }
 
-unsigned FontLoader::glyphWidth() const
+unsigned FT2FontLoader::glyphWidth() const
 {
     assert(isFontOk());
     assert(isGlyphOk());
     return (*face_)->glyph->bitmap.width;
 }
 
-unsigned FontLoader::glyphHeight() const
+unsigned FT2FontLoader::glyphHeight() const
 {
     assert(isFontOk());
     assert(isGlyphOk());
     return (*face_)->glyph->bitmap.rows;
 }
 
-Surface8c FontLoader::glyph() const
+Surface8c FT2FontLoader::glyph() const
 {
     assert(isFontOk());
     assert(isGlyphOk());
     return glyph_;
 }
 
-int FontLoader::makeLoadFlags() const
+int FT2FontLoader::makeLoadFlags() const
 {
     int loadf = FT_LOAD_DEFAULT;
 
@@ -252,7 +252,7 @@ int FontLoader::makeLoadFlags() const
     return loadf;
 }
 
-int FontLoader::makeRenderFlags() const
+int FT2FontLoader::makeRenderFlags() const
 {
     switch (mode_) {
     case RenderGrayscale: return FT_RENDER_MODE_NORMAL;

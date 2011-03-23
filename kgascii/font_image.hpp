@@ -26,7 +26,7 @@
 
 namespace KG { namespace Ascii {
 
-class FontLoader;
+class FontImageLoader;
 
 class KGASCII_API FontImage: boost::noncopyable
 {
@@ -60,7 +60,7 @@ public:
 
     bool load(const std::string& file_path);
 
-    bool load(FontLoader& loader, unsigned ci_min, unsigned ci_max);
+    bool load(FontImageLoader& loader, unsigned ci_min, unsigned ci_max);
 
 private:
     void prepareStorage(size_t count, unsigned w, unsigned h);

@@ -16,7 +16,7 @@
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
 #include <kgascii/font_image.hpp>
-#include <kgascii/font_loader.hpp>
+#include <kgascii/font_image_loader.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <kgascii/hexstring.hpp>
@@ -138,19 +138,14 @@ bool FontImage::load(const std::string& file_path)
     return true;
 }
 
-bool FontImage::load(FontLoader& loader, unsigned ci_min, unsigned ci_max)
+bool FontImage::load(FontImageLoader& loader, unsigned ci_min, unsigned ci_max)
 {
-    if (!loader.isFontOk())
-        return false;
-    if (!loader.fixedWidth())
-        return false;
-
     familyName_ = loader.familyName();
     styleName_ = loader.styleName();
     pixelSize_ = loader.pixelSize();
 
-    glyphWidth_ = loader.maxAdvance();
-    glyphHeight_ = loader.ascender() + loader.descender();
+    glyphWidth_ = loader.glyphWidth();
+    glyphHeight_ = loader.glyphHeight();
 
     unsigned ci_count = ci_max - ci_min + 1;
 
@@ -161,31 +156,7 @@ bool FontImage::load(FontLoader& loader, unsigned ci_min, unsigned ci_max)
             continue;
 
         charcodes_[ci] = ci + ci_min;
-
-        const Surface8& glyph_surf = glyphs_[ci];
-        fillPixels(glyph_surf, 0);
-
-        unsigned bmp_off_x = std::max<int>(-loader.glyphLeft(), 0);
-        unsigned bmp_off_y = std::max<int>(loader.glyphTop() - loader.ascender(), 0);
-        unsigned bmp_width = std::min<unsigned>(loader.glyphWidth(), glyphWidth_ - bmp_off_x);
-        unsigned bmp_height = std::min<unsigned>(loader.glyphHeight(), glyphHeight_ - bmp_off_y);
-
-        unsigned img_off_x = std::max<int>(loader.glyphLeft(), 0);
-        unsigned img_off_y = std::max<int>(loader.ascender() - loader.glyphTop(), 0);
-        unsigned common_width = std::min<unsigned>(bmp_width, glyphWidth_ - img_off_x);
-        unsigned common_height = std::min<unsigned>(bmp_height, glyphHeight_ - img_off_y);
-
-        //std::cout << "ci: " << ci << " ";
-        //std::cout << bmp_off_x << "," << bmp_off_y << " - ";
-        //std::cout << common_width << "x" << common_height << " -- ";
-        //std::cout << loader.glyphLeft() << "," << loader.glyphTop() << " - ";
-        //std::cout << loader.glyphWidth() << "x" << loader.glyphHeight() << "\n";
-
-        assert(img_off_x + common_width <= glyphWidth_);
-        assert(img_off_y + common_height <= glyphHeight_);
-
-        copyPixels(loader.glyph().window(bmp_off_x, bmp_off_y, common_width, common_height),
-                glyph_surf.window(img_off_x, img_off_x, common_width, common_height));
+        copyPixels(loader.glyph(), glyphs_[ci]);
     }
 
     return true;

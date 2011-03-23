@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_FONTLOADER_HPP
-#define KGASCII_FONTLOADER_HPP
+#ifndef KGASCII_FT2_FONTLOADER_HPP
+#define KGASCII_FT2_FONTLOADER_HPP
 
 #include <string>
 #include <vector>
@@ -32,7 +32,7 @@ class Library;
 class Face;
 } // namespace FT2pp
 
-class KGASCII_API FontLoader: boost::noncopyable
+class KGASCII_API FT2FontLoader: boost::noncopyable
 {
 public:
     enum Hinting
@@ -54,7 +54,7 @@ public:
     };
     
 public:
-    FontLoader();
+    FT2FontLoader();
 
 public:
     bool loadFont(const std::string& file_path, unsigned pixel_size);
@@ -121,5 +121,5 @@ private:
 
 } } // namespace KG::Ascii
 
-#endif // KGASCII_FONTLOADER_HPP
+#endif // KGASCII_FT2_FONTLOADER_HPP
 

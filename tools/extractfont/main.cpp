@@ -19,7 +19,8 @@
 #include <sstream>
 #include <boost/filesystem.hpp>
 #include <kgascii/font_image.hpp>
-#include <kgascii/font_loader.hpp>
+#include <kgascii/ft2_font_loader.hpp>
+#include <kgascii/ft2_font_image_loader.hpp>
 #include <common/cmdline_tool.hpp>
 
 
@@ -37,11 +38,11 @@ private:
     unsigned minChar_;
     unsigned maxChar_;
     std::string strHint_;
-    KG::Ascii::FontLoader::Hinting hint_;
+    KG::Ascii::FT2FontLoader::Hinting hint_;
     std::string strAutohint_;
-    KG::Ascii::FontLoader::AutoHinter autohint_;
+    KG::Ascii::FT2FontLoader::AutoHinter autohint_;
     std::string strMode_;
-    KG::Ascii::FontLoader::RenderMode mode_;
+    KG::Ascii::FT2FontLoader::RenderMode mode_;
     std::string fontFile_;
     unsigned fontSize_;
     std::string outputFile_;
@@ -78,27 +79,27 @@ bool ExtractFont::processArgs()
     requireOption("pixel-size");
 
     if (strHint_ == "normal")
-        hint_ = FontLoader::HintingNormal;
+        hint_ = FT2FontLoader::HintingNormal;
     else if (strHint_ == "light")
-        hint_ = FontLoader::HintingLight;
+        hint_ = FT2FontLoader::HintingLight;
     else if (strHint_ == "off")
-        hint_ = FontLoader::HintingOff;
+        hint_ = FT2FontLoader::HintingOff;
     else
         throw std::logic_error("bad option");
 
     if (strAutohint_ == "on")
-        autohint_ = FontLoader::AutoHinterOn;
+        autohint_ = FT2FontLoader::AutoHinterOn;
     else if (strAutohint_ == "off")
-        autohint_ = FontLoader::AutoHinterOff;
+        autohint_ = FT2FontLoader::AutoHinterOff;
     else if (strAutohint_ == "force")
-        autohint_ = FontLoader::AutoHinterForce;
+        autohint_ = FT2FontLoader::AutoHinterForce;
     else
         throw std::logic_error("bad option");
 
     if (strMode_ == "gray")
-        mode_ = FontLoader::RenderGrayscale;
+        mode_ = FT2FontLoader::RenderGrayscale;
     else if (strMode_ == "mono")
-        mode_ = FontLoader::RenderMonochrome;
+        mode_ = FT2FontLoader::RenderMonochrome;
     else
         throw std::logic_error("bad option");
 
@@ -119,7 +120,7 @@ int ExtractFont::doExecute()
 {
     using namespace KG::Ascii;
 
-    FontLoader loader;
+    FT2FontLoader loader;
     if (!loader.loadFont(fontFile_, fontSize_)) {
         std::cout << "font not found\n";
         return -1;
@@ -128,8 +129,10 @@ int ExtractFont::doExecute()
     loader.setHinting(hint_);
     loader.setRenderMode(mode_);
 
+    FT2FontImageLoader image_loader(loader);
+
     FontImage image;
-    if (!image.load(loader, minChar_, maxChar_)) {
+    if (!image.load(image_loader, minChar_, maxChar_)) {
         std::cout << "loading error\n";
         return -1;
     }

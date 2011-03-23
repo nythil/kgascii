@@ -44,9 +44,9 @@ public:
 
     virtual unsigned glyphHeight() const = 0;
 
-    virtual std::vector<int> charcodes() const = 0;
+    virtual std::vector<unsigned> charcodes() const = 0;
 
-    virtual bool loadGlyph(int charcode) = 0;
+    virtual bool loadGlyph(unsigned charcode) = 0;
 
     virtual Surface8c glyph() const = 0;
 };

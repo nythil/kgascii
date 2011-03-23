@@ -31,6 +31,8 @@ FontPCA::FontPCA(const FontPCAnalyzer& analyzer, size_t feat_cnt)
     assert(static_cast<size_t>(mean_.size()) == glyph_size);
 
     Eigen::VectorXd energies_dbl = analyzer.energies().head(feat_cnt);
+    energies_dbl /= energies_dbl.sum();
+    energies_dbl *= energies_dbl.size();
     energies_ = energies_dbl.cast<float>();
     assert(static_cast<size_t>(energies_.size()) == feat_cnt);
 
@@ -39,10 +41,10 @@ FontPCA::FontPCA(const FontPCAnalyzer& analyzer, size_t feat_cnt)
     assert(static_cast<size_t>(features_.rows()) == glyph_size);
     assert(static_cast<size_t>(features_.cols()) == feat_cnt);
 
-    Eigen::MatrixXd glyphs_dbl = features_dbl.transpose() * analyzer.samples();
+    Eigen::MatrixXd glyphs_dbl = (features_dbl * energies_dbl.asDiagonal()).transpose() * analyzer.samples();
     glyphs_ = glyphs_dbl.cast<float>();
-    assert(static_cast<size_t>(glyphs_.rows()) == samples_cnt);
-    assert(static_cast<size_t>(glyphs_.cols()) == feat_cnt);
+    assert(static_cast<size_t>(glyphs_.cols()) == samples_cnt);
+    assert(static_cast<size_t>(glyphs_.rows()) == feat_cnt);
 }
 
 Eigen::VectorXf FontPCA::project(const Eigen::VectorXf& vec) const
@@ -55,7 +57,7 @@ Eigen::VectorXf FontPCA::project(const Eigen::VectorXf& vec) const
 Eigen::VectorXf& FontPCA::project(const Eigen::VectorXf& vec, Eigen::VectorXf& out) const
 {
     assert(vec.size() == features_.rows());
-    out = (vec - mean_).transpose() * features_;
+    out = (features_.transpose() * (vec - mean_)).cwiseProduct(energies_);
     return out;
 }
 

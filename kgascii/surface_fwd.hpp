@@ -15,37 +15,26 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_ASCIIFIER_HPP
-#define KGASCII_ASCIIFIER_HPP
-
-#include <boost/noncopyable.hpp>
-#include <kgascii/kgascii_api.hpp>
-#include <kgascii/surface_fwd.hpp>
+#ifndef KGASCII_SURFACE_FWD_HPP
+#define KGASCII_SURFACE_FWD_HPP
 
 namespace KG { namespace Ascii {
 
-class GlyphMatcherContext;
-class TextSurface;
+template<typename T>
+class SurfaceBase;
 
-class KGASCII_API Asciifier: boost::noncopyable
-{
-public:
-    virtual ~Asciifier();
+template<typename T>
+class SurfaceContainerBase;
 
-public:
-    virtual const GlyphMatcherContext& context() const = 0;
-    
-    virtual unsigned threadCount() const = 0;
+typedef SurfaceBase<unsigned char> Surface8;
+typedef SurfaceBase<const unsigned char> Surface8c;
+typedef SurfaceBase<float> Surface32f;
+typedef SurfaceBase<const float> Surface32fc;
 
-public:
-    virtual void generate(const Surface8c& imgv, 
-            TextSurface& text) = 0;
-
-protected:
-    Asciifier();
-};
+typedef SurfaceContainerBase<unsigned char> SurfaceContainer8;
+typedef SurfaceContainerBase<float> SurfaceContainer32f;
 
 } } // namespace KG::Ascii
 
-#endif // KGASCII_ASCIIFIER_HPP
+#endif // KGASCII_SURFACE_FWD_HPP
 

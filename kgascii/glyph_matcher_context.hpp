@@ -20,7 +20,7 @@
 
 #include <boost/noncopyable.hpp>
 #include <kgascii/kgascii_api.hpp>
-#include <kgascii/surface.hpp>
+#include <kgascii/surface_fwd.hpp>
 
 namespace KG { namespace Ascii {
 

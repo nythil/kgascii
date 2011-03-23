@@ -44,13 +44,8 @@ public:
 private:
     void threadFunc();
 
-    struct WorkItem
-    {
-        Surface8c imgv;
-        char* outp;
-    };
-    
 private:
+    struct WorkItem;
     const GlyphMatcherContext& context_;
     boost::thread_group group_;
     TaskQueue<WorkItem> queue_;

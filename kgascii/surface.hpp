@@ -20,6 +20,7 @@
 
 #include <cassert>
 #include <utility>
+#include <kgascii/surface_fwd.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -156,11 +157,6 @@ private:
     size_t height_;
     ptrdiff_t pitch_;
 };
-
-typedef SurfaceBase<unsigned char> Surface8;
-typedef SurfaceBase<const unsigned char> Surface8c;
-typedef SurfaceBase<float> Surface32f;
-typedef SurfaceBase<const float> Surface32fc;
 
 } } // namespace KG::Ascii
 

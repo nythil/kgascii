@@ -19,11 +19,18 @@
 #include <kgascii/glyph_matcher_context.hpp>
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/text_surface.hpp>
+#include <kgascii/surface.hpp>
 #include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>
 
 namespace KG { namespace Ascii {
 
+struct ParallelAsciifier::WorkItem
+{
+    Surface8c imgv;
+    char* outp;
+};
+    
 ParallelAsciifier::ParallelAsciifier(const GlyphMatcherContext& c, unsigned thr_cnt)
     :Asciifier()
     ,context_(c)

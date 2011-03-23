@@ -21,27 +21,27 @@
 
 namespace KG { namespace Ascii {
 
-FontPCA::FontPCA(const FontPCAnalyzer& analyzer, size_t feat_cnt)
-    :font_(analyzer.font())
+FontPCA::FontPCA(const FontPCAnalyzer* analyzer, size_t feat_cnt)
+    :font_(analyzer->font())
 {
-    size_t glyph_size = font_.glyphWidth() * font_.glyphHeight();
-    size_t samples_cnt = font_.glyphCount();
+    size_t glyph_size = font_->glyphWidth() * font_->glyphHeight();
+    size_t samples_cnt = font_->glyphCount();
 
-    mean_ = analyzer.mean().cast<float>();
+    mean_ = analyzer->mean().cast<float>();
     assert(static_cast<size_t>(mean_.size()) == glyph_size);
 
-    Eigen::VectorXd energies_dbl = analyzer.energies().head(feat_cnt);
+    Eigen::VectorXd energies_dbl = analyzer->energies().head(feat_cnt);
     energies_dbl /= energies_dbl.sum();
     energies_dbl *= energies_dbl.size();
     energies_ = energies_dbl.cast<float>();
     assert(static_cast<size_t>(energies_.size()) == feat_cnt);
 
-    Eigen::MatrixXd features_dbl = analyzer.features().leftCols(feat_cnt);
+    Eigen::MatrixXd features_dbl = analyzer->features().leftCols(feat_cnt);
     features_ = features_dbl.cast<float>();
     assert(static_cast<size_t>(features_.rows()) == glyph_size);
     assert(static_cast<size_t>(features_.cols()) == feat_cnt);
 
-    Eigen::MatrixXd glyphs_dbl = (features_dbl * energies_dbl.asDiagonal()).transpose() * analyzer.samples();
+    Eigen::MatrixXd glyphs_dbl = (features_dbl * energies_dbl.asDiagonal()).transpose() * analyzer->samples();
     glyphs_ = glyphs_dbl.cast<float>();
     assert(static_cast<size_t>(glyphs_.cols()) == samples_cnt);
     assert(static_cast<size_t>(glyphs_.rows()) == feat_cnt);
@@ -86,7 +86,7 @@ size_t FontPCA::featureCount() const
     return energies_.size();
 }
 
-const FontImage& FontPCA::font() const
+const FontImage* FontPCA::font() const
 {
     return font_;
 }

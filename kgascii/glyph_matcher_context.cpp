@@ -22,7 +22,7 @@
 
 namespace KG { namespace Ascii {
 
-GlyphMatcherContext::GlyphMatcherContext(const FontImage& f)
+GlyphMatcherContext::GlyphMatcherContext(const FontImage* f)
     :font_(f)
 {
 }
@@ -31,19 +31,19 @@ GlyphMatcherContext::~GlyphMatcherContext()
 {
 }
 
-const FontImage& GlyphMatcherContext::font() const
+const FontImage* GlyphMatcherContext::font() const
 {
     return font_;
 }
 
 unsigned GlyphMatcherContext::cellWidth() const
 {
-    return font_.glyphWidth();
+    return font_->glyphWidth();
 }
 
 unsigned GlyphMatcherContext::cellHeight() const
 {
-    return font_.glyphHeight();
+    return font_->glyphHeight();
 }
 
 unsigned GlyphMatcherContext::match(const Surface8c& imgv) const

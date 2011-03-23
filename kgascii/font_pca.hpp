@@ -29,7 +29,7 @@ class FontPCAnalyzer;
 class FontPCA
 {
 public:
-    FontPCA(const FontPCAnalyzer& analyzer, size_t feat_cnt);
+    FontPCA(const FontPCAnalyzer* analyzer, size_t feat_cnt);
 
 public:
     Eigen::VectorXf combine(const Eigen::VectorXf& vec) const;
@@ -45,7 +45,7 @@ public:
 public:
     size_t featureCount() const;
 
-    const FontImage& font() const;
+    const FontImage* font() const;
 
     const Eigen::VectorXf& mean() const;
 
@@ -56,7 +56,7 @@ public:
     const Eigen::MatrixXf& glyphs() const;
 
 private:
-    const FontImage& font_;
+    const FontImage* font_;
     Eigen::VectorXf mean_;
     Eigen::VectorXf energies_;
     Eigen::MatrixXf features_;

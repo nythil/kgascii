@@ -32,7 +32,7 @@ public:
     virtual ~GlyphMatcher();
 
 public:
-    virtual const GlyphMatcherContext& context() const = 0;
+    virtual const GlyphMatcherContext* context() const = 0;
 
     virtual unsigned match(const Surface8c& imgv) = 0;
 

@@ -31,10 +31,10 @@ class GlyphMatcher;
 class KGASCII_API SequentialAsciifier: public Asciifier
 {
 public:
-    SequentialAsciifier(const GlyphMatcherContext& c);
+    SequentialAsciifier(const GlyphMatcherContext* c);
     
 public:
-    const GlyphMatcherContext& context() const;
+    const GlyphMatcherContext* context() const;
 
     unsigned threadCount() const;
 
@@ -42,7 +42,7 @@ public:
     void generate(const Surface8c& imgv, TextSurface& text);
 
 private:
-    const GlyphMatcherContext& context_;
+    const GlyphMatcherContext* context_;
     boost::scoped_ptr<GlyphMatcher> matcher_;
 };
 

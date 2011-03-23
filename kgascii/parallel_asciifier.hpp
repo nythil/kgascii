@@ -29,12 +29,12 @@ namespace KG { namespace Ascii {
 class KGASCII_API ParallelAsciifier: public Asciifier
 {
 public:
-    ParallelAsciifier(const GlyphMatcherContext& c, unsigned thr_cnt);
+    ParallelAsciifier(const GlyphMatcherContext* c, unsigned thr_cnt);
 
     ~ParallelAsciifier();
     
 public:
-    const GlyphMatcherContext& context() const;
+    const GlyphMatcherContext* context() const;
 
     unsigned threadCount() const;
 
@@ -46,7 +46,7 @@ private:
 
 private:
     struct WorkItem;
-    const GlyphMatcherContext& context_;
+    const GlyphMatcherContext* context_;
     boost::thread_group group_;
     TaskQueue<WorkItem> queue_;
 };

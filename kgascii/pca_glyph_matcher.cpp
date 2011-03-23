@@ -21,36 +21,36 @@
 
 namespace KG { namespace Ascii {
 
-PcaGlyphMatcherContext::PcaGlyphMatcherContext(const FontPCA& pca)
-    :GlyphMatcherContext(pca.font())
+PcaGlyphMatcherContext::PcaGlyphMatcherContext(const FontPCA* pca)
+    :GlyphMatcherContext(pca->font())
     ,pca_(pca)
-    ,charcodes_(font().charcodes())
+    ,charcodes_(font()->charcodes())
 {
 }
 
 GlyphMatcher* PcaGlyphMatcherContext::createMatcher() const
 {
-    return new PcaGlyphMatcher(*this);
+    return new PcaGlyphMatcher(this);
 }
 
 
-PcaGlyphMatcher::PcaGlyphMatcher(const PcaGlyphMatcherContext& c)
+PcaGlyphMatcher::PcaGlyphMatcher(const PcaGlyphMatcherContext* c)
     :GlyphMatcher()
     ,context_(c)
-    ,imgvec_(context_.font().glyphSize())
-    ,components_(context_.pca_.featureCount())
+    ,imgvec_(context_->font()->glyphSize())
+    ,components_(context_->pca_->featureCount())
 {
 }
 
-const GlyphMatcherContext& PcaGlyphMatcher::context() const
+const GlyphMatcherContext* PcaGlyphMatcher::context() const
 {
     return context_;
 }
 
 unsigned PcaGlyphMatcher::match(const Surface8c& imgv)
 {
-    assert(imgv.width() <= context_.cellWidth());
-    assert(imgv.height() <= context_.cellHeight());
+    assert(imgv.width() <= context_->cellWidth());
+    assert(imgv.height() <= context_->cellHeight());
 
     typedef Eigen::Matrix<Surface8::value_type, Eigen::Dynamic, 1> VectorXuc;
     if (imgv.isContinuous() && imgv.size() == static_cast<size_t>(imgvec_.size())) {
@@ -63,8 +63,8 @@ unsigned PcaGlyphMatcher::match(const Surface8c& imgv)
         }
     }
 
-    context_.pca_.project(imgvec_, components_);
-    return context_.charcodes_.at(context_.pca_.findClosestGlyph(components_));
+    context_->pca_->project(imgvec_, components_);
+    return context_->charcodes_.at(context_->pca_->findClosestGlyph(components_));
 }
 
 } } // namespace KG::Ascii

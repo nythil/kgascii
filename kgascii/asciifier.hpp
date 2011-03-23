@@ -33,7 +33,7 @@ public:
     virtual ~Asciifier();
 
 public:
-    virtual const GlyphMatcherContext& context() const = 0;
+    virtual const GlyphMatcherContext* context() const = 0;
     
     virtual unsigned threadCount() const = 0;
 

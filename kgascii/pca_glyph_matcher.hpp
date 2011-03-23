@@ -35,28 +35,28 @@ class PcaGlyphMatcherContext: public GlyphMatcherContext
     friend class PcaGlyphMatcher;
 
 public:
-    explicit PcaGlyphMatcherContext(const FontPCA& pca);
+    explicit PcaGlyphMatcherContext(const FontPCA* pca);
 
 public:
     GlyphMatcher* createMatcher() const;
 
 private:
-    const FontPCA& pca_;
+    const FontPCA* pca_;
     std::vector<unsigned> charcodes_;
 };
 
 class KGASCII_API PcaGlyphMatcher: public GlyphMatcher
 {
 public:
-    explicit PcaGlyphMatcher(const PcaGlyphMatcherContext& c);
+    explicit PcaGlyphMatcher(const PcaGlyphMatcherContext* c);
 
 public:
-    const GlyphMatcherContext& context() const;
+    const GlyphMatcherContext* context() const;
 
     unsigned match(const Surface8c& imgv);
 
 private:
-    const PcaGlyphMatcherContext& context_;
+    const PcaGlyphMatcherContext* context_;
     Eigen::VectorXf imgvec_;
     Eigen::VectorXf components_;
 };

@@ -33,7 +33,7 @@ public:
     virtual ~GlyphMatcherContext();
 
 public:
-    const FontImage& font() const;
+    const FontImage* font() const;
 
     virtual unsigned cellWidth() const;
 
@@ -44,10 +44,10 @@ public:
     virtual GlyphMatcher* createMatcher() const = 0;
 
 protected:
-    GlyphMatcherContext(const FontImage& f);
+    GlyphMatcherContext(const FontImage* f);
 
 private:
-    const FontImage& font_;
+    const FontImage* font_;
 };
 
 } } // namespace KG::Ascii

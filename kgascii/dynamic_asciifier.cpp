@@ -21,7 +21,7 @@
 
 namespace KG { namespace Ascii {
 
-DynamicAsciifier::DynamicAsciifier(const GlyphMatcherContext& c)
+DynamicAsciifier::DynamicAsciifier(const GlyphMatcherContext* c)
     :Asciifier()
     ,context_(c)
 {
@@ -32,7 +32,7 @@ DynamicAsciifier::~DynamicAsciifier()
 {
 }
 
-const GlyphMatcherContext& DynamicAsciifier::context() const
+const GlyphMatcherContext* DynamicAsciifier::context() const
 {
     return context_;
 }

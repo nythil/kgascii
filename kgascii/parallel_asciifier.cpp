@@ -31,7 +31,7 @@ struct ParallelAsciifier::WorkItem
     char* outp;
 };
     
-ParallelAsciifier::ParallelAsciifier(const GlyphMatcherContext& c, unsigned thr_cnt)
+ParallelAsciifier::ParallelAsciifier(const GlyphMatcherContext* c, unsigned thr_cnt)
     :Asciifier()
     ,context_(c)
 {
@@ -49,7 +49,7 @@ ParallelAsciifier::~ParallelAsciifier()
     group_.join_all();
 }
 
-const GlyphMatcherContext& ParallelAsciifier::context() const
+const GlyphMatcherContext* ParallelAsciifier::context() const
 {
     return context_;
 }
@@ -62,8 +62,8 @@ unsigned ParallelAsciifier::threadCount() const
 void ParallelAsciifier::generate(const Surface8c& imgv, TextSurface& text)
 {
     //single character size
-    size_t char_w = context_.cellWidth();
-    size_t char_h = context_.cellHeight();
+    size_t char_w = context_->cellWidth();
+    size_t char_h = context_->cellHeight();
     //text surface size
     size_t text_w = text.cols() * char_w;
     size_t text_h = text.rows() * char_h;
@@ -86,9 +86,9 @@ void ParallelAsciifier::generate(const Surface8c& imgv, TextSurface& text)
 
 void ParallelAsciifier::threadFunc()
 {
-    boost::scoped_ptr<GlyphMatcher> matcher(context_.createMatcher());
+    boost::scoped_ptr<GlyphMatcher> matcher(context_->createMatcher());
     //single character size
-    size_t char_w = context_.cellWidth();
+    size_t char_w = context_->cellWidth();
 
     WorkItem wi;
     while (queue_.wait_pop(wi)) {

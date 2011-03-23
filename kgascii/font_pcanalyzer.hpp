@@ -29,12 +29,12 @@ class FontImage;
 class FontPCAnalyzer
 {
 public:
-    explicit FontPCAnalyzer(const FontImage& f);
+    explicit FontPCAnalyzer(const FontImage* f);
 
     FontPCA extract(size_t cnt) const;
 
 public:
-    const FontImage& font() const;
+    const FontImage* font() const;
 
     const Eigen::VectorXd& mean() const;
 
@@ -45,7 +45,7 @@ public:
     const Eigen::MatrixXd& features() const;
 
 private:
-    const FontImage& font_;
+    const FontImage* font_;
     Eigen::VectorXd mean_;
     Eigen::MatrixXd samples_;
     Eigen::VectorXd energies_;

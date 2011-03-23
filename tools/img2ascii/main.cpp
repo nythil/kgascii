@@ -119,12 +119,12 @@ int ImageToAscii::doExecute()
     unsigned row_count = (out_height + char_height - 1) / char_height;
 
     KG::Ascii::TextSurface text(row_count, col_count);
-    KG::Ascii::FontPCAnalyzer pcanalyzer(font);
-    KG::Ascii::FontPCA pca(pcanalyzer, nfeatures_);
+    KG::Ascii::FontPCAnalyzer pcanalyzer(&font);
+    KG::Ascii::FontPCA pca(&pcanalyzer, nfeatures_);
     //KG::Ascii::PolicyBasedGlyphMatcher<KG::Ascii::SquaredEuclideanDistance> matcher(font);
     //KG::Ascii::PolicyBasedGlyphMatcherContext<KG::Ascii::MeansDistance> matcher_ctx(font);
-    KG::Ascii::PcaGlyphMatcherContext matcher_ctx(pca);
-    KG::Ascii::SequentialAsciifier asciifier(matcher_ctx);
+    KG::Ascii::PcaGlyphMatcherContext matcher_ctx(&pca);
+    KG::Ascii::SequentialAsciifier asciifier(&matcher_ctx);
 
     cout << "image width " << frame_width << "\n";
     cout << "image height " << frame_height << "\n";

@@ -23,14 +23,14 @@
 
 namespace KG { namespace Ascii {
 
-SequentialAsciifier::SequentialAsciifier(const GlyphMatcherContext& c)
+SequentialAsciifier::SequentialAsciifier(const GlyphMatcherContext* c)
     :Asciifier()
     ,context_(c)
-    ,matcher_(context_.createMatcher())
+    ,matcher_(context_->createMatcher())
 {
 }
 
-const GlyphMatcherContext& SequentialAsciifier::context() const
+const GlyphMatcherContext* SequentialAsciifier::context() const
 {
     return context_;
 }
@@ -43,8 +43,8 @@ unsigned SequentialAsciifier::threadCount() const
 void SequentialAsciifier::generate(const Surface8c& imgv, TextSurface& text)
 {
     //single character size
-    size_t char_w = context_.cellWidth();
-    size_t char_h = context_.cellHeight();
+    size_t char_w = context_->cellWidth();
+    size_t char_h = context_->cellHeight();
     //text surface size
     size_t text_w = text.cols() * char_w;
     size_t text_h = text.rows() * char_h;

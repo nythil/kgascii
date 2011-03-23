@@ -91,8 +91,8 @@ int PcaDump::doExecute()
         return -1;
     }
 
-    FontPCAnalyzer pcanalyzer(image);
-    FontPCA pca(pcanalyzer, featureCnt_);
+    FontPCAnalyzer pcanalyzer(&image);
+    FontPCA pca(&pcanalyzer, featureCnt_);
 
     std::cout << "features: " << featureCnt_ << "\n";
     std::cout << "energy: " << pca.energies().sum() / pcanalyzer.energies().sum() << "\n";
@@ -110,8 +110,8 @@ void PcaDump::dumpFeatures(const KG::Ascii::FontPCA& pca)
     if (outputFeatures_.empty())
         return;
 
-    size_t glyph_w = pca.font().glyphWidth();
-    size_t glyph_h = pca.font().glyphHeight();
+    size_t glyph_w = pca.font()->glyphWidth();
+    size_t glyph_h = pca.font()->glyphHeight();
 
     size_t image_width = glyph_w * 2;
     size_t image_height = glyph_h * (pca.featureCount() + 1);
@@ -144,7 +144,7 @@ void PcaDump::dumpDsc(const KG::Ascii::FontPCA& pca)
     if (outputDsc_.empty())
         return;
 
-    KG::Ascii::PcaReconstructionFontImageLoader pca_loader(pca);
+    KG::Ascii::PcaReconstructionFontImageLoader pca_loader(&pca);
     FontImage restored_font;
     restored_font.load(pca_loader, 32, 126);
     restored_font.save(outputDsc_);

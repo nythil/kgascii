@@ -64,6 +64,7 @@ private:
     unsigned maxRows_;
     unsigned threads_;
     bool renderAll_;
+    bool showVideo_;
     unsigned nfeatures_;
 };
 
@@ -90,6 +91,7 @@ VideoToAscii::VideoToAscii()
         ("rows", value(&maxRows_)->default_value(49), "suggested number of text rows")
         ("threads", value(&threads_)->default_value(0), "number of worker threads (0 = auto)")
         ("render-all", bool_switch(&renderAll_), "render all frames")
+        ("show-video", bool_switch(&showVideo_), "show original video")
         ("nfeatures", value(&nfeatures_)->default_value(15), "number of pca features to extract")
     ;
     posDesc_.add("input-file", 1);
@@ -153,12 +155,12 @@ int VideoToAscii::doExecute()
     unsigned row_count = (out_height + char_height - 1) / char_height;
 
     KG::Ascii::TextSurface text(row_count, col_count);
-    KG::Ascii::FontPCAnalyzer pcanalyzer(font);
-    KG::Ascii::FontPCA pca(pcanalyzer, nfeatures_);
+    KG::Ascii::FontPCAnalyzer pcanalyzer(&font);
+    KG::Ascii::FontPCA pca(&pcanalyzer, nfeatures_);
     //KG::Ascii::PolicyBasedGlyphMatcher<KG::Ascii::SquaredEuclideanDistance> matcher(font);
     //KG::Ascii::PolicyBasedGlyphMatcherContext<KG::Ascii::MeansDistance> matcher_ctx(font);
-    KG::Ascii::PcaGlyphMatcherContext matcher_ctx(pca);
-    KG::Ascii::DynamicAsciifier asciifier(matcher_ctx);
+    KG::Ascii::PcaGlyphMatcherContext matcher_ctx(&pca);
+    KG::Ascii::DynamicAsciifier asciifier(&matcher_ctx);
     if (threads_ == 1) {
         asciifier.setSequential();
     } else {
@@ -191,7 +193,7 @@ int VideoToAscii::doExecute()
     startTime_ = capture.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
     unsigned frame_count = 0;
 
-    if (!renderAll_) {
+    if (!renderAll_ && showVideo_) {
         cv::namedWindow("test", 1);
     }
 
@@ -239,7 +241,7 @@ int VideoToAscii::doExecute()
         assert(static_cast<unsigned>(gray_frame.rows) == out_height);
         assert(gray_frame.type() == CV_8UC1);
 
-        if (!renderAll_) {
+        if (!renderAll_ && showVideo_) {
             cv::imshow("test", gray_frame);
         }
 
@@ -256,16 +258,17 @@ int VideoToAscii::doExecute()
         if (!renderAll_ && current_time - *startTime_ > elapsed_time) {
             double dtime = (current_time - *startTime_) - elapsed_time;
             dtime *= 0.8;
-            cv::waitKey(std::max(10, static_cast<int>(dtime)));
-#if 0
-            double dtime_sec = 0.0;
-            double dtime_frac = modf(dtime, &dtime_sec);
-            boost::xtime xt;
-            boost::xtime_get(&xt, boost::TIME_UTC);
-            xt.sec += static_cast<int>(dtime_sec);
-            xt.nsec += static_cast<int>(dtime_frac * 1000000000);
-            boost::thread::sleep(xt);
-#endif
+            if (showVideo_) {
+                cv::waitKey(std::max(10, static_cast<int>(dtime)));
+            } else {
+                double dtime_sec = 0.0;
+                double dtime_frac = modf(dtime, &dtime_sec);
+                boost::xtime xt;
+                boost::xtime_get(&xt, boost::TIME_UTC);
+                xt.sec += static_cast<int>(dtime_sec);
+                xt.nsec += static_cast<int>(dtime_frac * 1000000000);
+                boost::thread::sleep(xt);
+            }
         }
         if (!capture.grab())
             break;

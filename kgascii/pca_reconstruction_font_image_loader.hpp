@@ -29,7 +29,7 @@ class FontPCA;
 class KGASCII_API PcaReconstructionFontImageLoader: public FontImageLoader
 {
 public:
-    PcaReconstructionFontImageLoader(const FontPCA& pca);
+    PcaReconstructionFontImageLoader(const FontPCA* pca);
 
 public:
     std::string familyName() const;
@@ -49,7 +49,7 @@ public:
     Surface8c glyph() const;
 
 private:
-    const FontPCA& pca_;
+    const FontPCA* pca_;
     std::vector<unsigned> charcodes_;
     SurfaceContainer8 glyphData_;
 };

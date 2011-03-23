@@ -20,17 +20,17 @@
 
 namespace KG { namespace Ascii {
 
-FontPCAnalyzer::FontPCAnalyzer(const FontImage& f)
+FontPCAnalyzer::FontPCAnalyzer(const FontImage* f)
     :font_(f)
 {
-    size_t glyph_size = f.glyphWidth() * f.glyphHeight();
-    size_t samples_cnt = f.glyphCount();
+    size_t glyph_size = f->glyphWidth() * f->glyphHeight();
+    size_t samples_cnt = f->glyphCount();
 
     typedef Eigen::Matrix<Surface8::value_type, Eigen::Dynamic, 1> VectorXuc;
 
     Eigen::MatrixXd input_samples(glyph_size, samples_cnt);
     for (size_t ci = 0; ci < samples_cnt; ++ci) {
-        Surface8c glyph_surface = f.glyphByIndex(ci);
+        Surface8c glyph_surface = f->glyphByIndex(ci);
         assert(glyph_surface.isContinuous());
         input_samples.col(ci) = VectorXuc::Map(glyph_surface.data(), glyph_surface.size()).cast<double>();
     }
@@ -61,10 +61,10 @@ FontPCAnalyzer::FontPCAnalyzer(const FontImage& f)
 
 FontPCA FontPCAnalyzer::extract(size_t cnt) const
 {
-    return FontPCA(*this, cnt);
+    return FontPCA(this, cnt);
 }
 
-const FontImage& FontPCAnalyzer::font() const
+const FontImage* FontPCAnalyzer::font() const
 {
     return font_;
 }

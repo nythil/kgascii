@@ -22,36 +22,36 @@
 
 namespace KG { namespace Ascii {
 
-PcaReconstructionFontImageLoader::PcaReconstructionFontImageLoader(const FontPCA& pca)
+PcaReconstructionFontImageLoader::PcaReconstructionFontImageLoader(const FontPCA* pca)
     :pca_(pca)
-    ,charcodes_(pca_.font().charcodes())
+    ,charcodes_(pca_->font()->charcodes())
 {
-    glyphData_.resize(pca_.font().glyphWidth(), pca_.font().glyphHeight());
+    glyphData_.resize(pca_->font()->glyphWidth(), pca_->font()->glyphHeight());
 }
 
 std::string PcaReconstructionFontImageLoader::familyName() const
 {
-    return pca_.font().familyName();
+    return pca_->font()->familyName();
 }
 
 std::string PcaReconstructionFontImageLoader::styleName() const
 {
-    return pca_.font().styleName();
+    return pca_->font()->styleName();
 }        
 
 unsigned PcaReconstructionFontImageLoader::pixelSize() const
 {
-    return pca_.font().pixelSize();
+    return pca_->font()->pixelSize();
 }
 
 unsigned PcaReconstructionFontImageLoader::glyphWidth() const
 {
-    return pca_.font().glyphWidth();
+    return pca_->font()->glyphWidth();
 }
 
 unsigned PcaReconstructionFontImageLoader::glyphHeight() const
 {
-    return pca_.font().glyphHeight();
+    return pca_->font()->glyphHeight();
 }
 
 std::vector<unsigned> PcaReconstructionFontImageLoader::charcodes() const
@@ -65,8 +65,8 @@ bool PcaReconstructionFontImageLoader::loadGlyph(unsigned charcode)
     if (it == charcodes_.end())
         return false;
     size_t it_idx = std::distance(charcodes_.begin(), it);
-    Eigen::VectorXf proj_glyph_vec = pca_.glyphs().col(it_idx);
-    Eigen::VectorXf glyph_vec = pca_.combine(proj_glyph_vec);
+    Eigen::VectorXf proj_glyph_vec = pca_->glyphs().col(it_idx);
+    Eigen::VectorXf glyph_vec = pca_->combine(proj_glyph_vec);
     glyph_vec = glyph_vec.cwiseMax(Eigen::VectorXf::Zero(glyph_vec.size()));
     glyph_vec = glyph_vec.cwiseMin(255 * Eigen::VectorXf::Ones(glyph_vec.size()));
     copyPixels(glyph_vec, glyphData_.surface());

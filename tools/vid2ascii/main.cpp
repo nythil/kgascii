@@ -31,13 +31,8 @@
 #include <kgascii/font_image.hpp>
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/dynamic_asciifier.hpp>
-#include <kgascii/policy_based_glyph_matcher.hpp>
-#include <kgascii/squared_euclidean_distance.hpp>
-#include <kgascii/means_distance.hpp>
-#include <kgascii/pca_glyph_matcher.hpp>
-#include <kgascii/font_pcanalyzer.hpp>
-#include <kgascii/font_pca.hpp>
 #include <kgascii/text_surface.hpp>
+#include <kgascii/glyph_matcher_context_factory.hpp>
 
 using std::cout;
 
@@ -65,7 +60,7 @@ private:
     unsigned threads_;
     bool renderAll_;
     bool showVideo_;
-    unsigned nfeatures_;
+    std::string algorithm_;
 };
 
 int main(int argc, char* argv[])
@@ -92,7 +87,7 @@ VideoToAscii::VideoToAscii()
         ("threads", value(&threads_)->default_value(0), "number of worker threads (0 = auto)")
         ("render-all", bool_switch(&renderAll_), "render all frames")
         ("show-video", bool_switch(&showVideo_), "show original video")
-        ("nfeatures", value(&nfeatures_)->default_value(15), "number of pca features to extract")
+        ("algorithm,a", value(&algorithm_)->default_value("pca"), "glyph matching algorithm")
     ;
     posDesc_.add("input-file", 1);
 }
@@ -101,6 +96,7 @@ bool VideoToAscii::processArgs()
 {
     requireOption("input-file");
     requireOption("font-file");
+    requireOption("algorithm");
     
     conflictingOptions("start-frame", "start-time");
     conflictingOptions("start-frame", "end-time");
@@ -155,12 +151,9 @@ int VideoToAscii::doExecute()
     unsigned row_count = (out_height + char_height - 1) / char_height;
 
     KG::Ascii::TextSurface text(row_count, col_count);
-    KG::Ascii::FontPCAnalyzer pcanalyzer(&font);
-    KG::Ascii::FontPCA pca(&pcanalyzer, nfeatures_);
-    //KG::Ascii::PolicyBasedGlyphMatcher<KG::Ascii::SquaredEuclideanDistance> matcher(font);
-    //KG::Ascii::PolicyBasedGlyphMatcherContext<KG::Ascii::MeansDistance> matcher_ctx(font);
-    KG::Ascii::PcaGlyphMatcherContext matcher_ctx(&pca);
-    KG::Ascii::DynamicAsciifier asciifier(&matcher_ctx);
+    KG::Ascii::GlyphMatcherContextFactory matcher_ctx_factory;
+    KG::Ascii::GlyphMatcherContext* matcher_ctx = matcher_ctx_factory.create(&font, algorithm_);
+    KG::Ascii::DynamicAsciifier asciifier(matcher_ctx);
     if (threads_ == 1) {
         asciifier.setSequential();
     } else {
@@ -176,7 +169,6 @@ int VideoToAscii::doExecute()
     cout << "output columns " << col_count << "\n";
     cout << "output rows " << row_count << "\n";
     cout << "worker threads " << asciifier.threadCount() << "\n";
-    cout << "principal components " << pca.featureCount() << "\n";
 
     if (startFrame_) {
         capture.set(CV_CAP_PROP_POS_FRAMES, *startFrame_);

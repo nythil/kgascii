@@ -28,6 +28,8 @@ SET(kgascii_SRCS
     glyph_matcher.hpp
     glyph_matcher_context.cpp
     glyph_matcher_context.hpp
+    glyph_matcher_context_factory.cpp
+    glyph_matcher_context_factory.hpp
     policy_based_glyph_matcher.hpp
     squared_euclidean_distance.hpp
     means_distance.hpp

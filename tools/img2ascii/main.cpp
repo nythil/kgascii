@@ -28,10 +28,8 @@
 #include <kgascii/font_image.hpp>
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/sequential_asciifier.hpp>
-#include <kgascii/pca_glyph_matcher.hpp>
-#include <kgascii/font_pcanalyzer.hpp>
-#include <kgascii/font_pca.hpp>
 #include <kgascii/text_surface.hpp>
+#include <kgascii/glyph_matcher_context_factory.hpp>
 
 using std::cout;
 
@@ -52,6 +50,7 @@ private:
     unsigned maxCols_;
     unsigned maxRows_;
     unsigned nfeatures_;
+    std::string algorithm_;
 };
 
 int main(int argc, char* argv[])
@@ -71,6 +70,7 @@ ImageToAscii::ImageToAscii()
         ("rows", value(&maxRows_)->default_value(49), "suggested number of text rows")
         ("nfeatures", value(&nfeatures_)->default_value(15), "number of pca features to extract")
         ("output-file,o", value(&outputFile_), "output text file")
+        ("algorithm,a", value(&algorithm_)->default_value("pca"), "glyph matching algorithm")
     ;
     posDesc_.add("input-file", 1);
 }
@@ -79,6 +79,7 @@ bool ImageToAscii::processArgs()
 {
     requireOption("input-file");
     requireOption("font-file");
+    requireOption("algorithm");
     
     if (!vm_.count("output-file")) {
         boost::filesystem::path input_path(inputFile_);
@@ -119,12 +120,9 @@ int ImageToAscii::doExecute()
     unsigned row_count = (out_height + char_height - 1) / char_height;
 
     KG::Ascii::TextSurface text(row_count, col_count);
-    KG::Ascii::FontPCAnalyzer pcanalyzer(&font);
-    KG::Ascii::FontPCA pca(&pcanalyzer, nfeatures_);
-    //KG::Ascii::PolicyBasedGlyphMatcher<KG::Ascii::SquaredEuclideanDistance> matcher(font);
-    //KG::Ascii::PolicyBasedGlyphMatcherContext<KG::Ascii::MeansDistance> matcher_ctx(font);
-    KG::Ascii::PcaGlyphMatcherContext matcher_ctx(&pca);
-    KG::Ascii::SequentialAsciifier asciifier(&matcher_ctx);
+    KG::Ascii::GlyphMatcherContextFactory matcher_ctx_factory;
+    KG::Ascii::GlyphMatcherContext* matcher_ctx = matcher_ctx_factory.create(&font, algorithm_);
+    KG::Ascii::SequentialAsciifier asciifier(matcher_ctx);
 
     cout << "image width " << frame_width << "\n";
     cout << "image height " << frame_height << "\n";
@@ -132,7 +130,6 @@ int ImageToAscii::doExecute()
     cout << "output height " << out_height << "\n";
     cout << "output columns " << col_count << "\n";
     cout << "output rows " << row_count << "\n";
-    cout << "principal components " << pca.featureCount() << "\n";
 
     cv::Mat scaled_frame;
     if (frame_width == out_width && frame_height == out_height) {

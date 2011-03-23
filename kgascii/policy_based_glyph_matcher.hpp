@@ -39,16 +39,16 @@ public:
     typedef PolicyBasedGlyphMatcherContext<DistancePolicy> Context;
 
 public:
-    explicit PolicyBasedGlyphMatcher(const Context& c)
+    explicit PolicyBasedGlyphMatcher(const Context* c)
         :GlyphMatcher()
         ,context_(c)
-        ,container_(context_.cellWidth() * context_.cellHeight())
+        ,container_(context_->cellWidth(), context_->cellHeight())
         ,surface_(container_.surface())
     {
     }
 
 public:
-    const Context& context() const
+    const Context* context() const
     {
         return context_;
     }
@@ -56,7 +56,7 @@ public:
     unsigned match(const Surface8c& imgv);
 
 private:
-    const Context& context_;
+    const Context* context_;
     SurfaceContainer8 container_;
     Surface8 surface_;
 };
@@ -71,18 +71,18 @@ public:
     typedef PolicyBasedGlyphMatcher<DistancePolicy> Matcher;
 
 public:
-    explicit PolicyBasedGlyphMatcherContext(const FontImage& f, 
+    explicit PolicyBasedGlyphMatcherContext(const FontImage* f, 
             const DistancePolicy& dist=DistancePolicy())
         :GlyphMatcherContext(f)
-        ,charcodes_(font().charcodes())
-        ,glyphs_(font().glyphs())
+        ,charcodes_(font()->charcodes())
+        ,glyphs_(font()->glyphs())
     {
     }
 
 public:
     Matcher* createMatcher() const
     {
-        return new Matcher(*this);
+        return new Matcher(this);
     }
 
 private:
@@ -102,11 +102,11 @@ unsigned PolicyBasedGlyphMatcher<DistancePolicy>::match(const Surface8c& imgv)
 
     int d2_min = std::numeric_limits<int>::max();
     unsigned cc_min = ' ';
-    for (size_t ci = 0; ci < context_.charcodes_.size(); ++ci) {
-        int d2 = context_.distance_(surface_, context_.glyphs_[ci]);
+    for (size_t ci = 0; ci < context_->charcodes_.size(); ++ci) {
+        int d2 = context_->distance_(surface_, context_->glyphs_[ci]);
         if (d2 < d2_min) {
             d2_min = d2;
-            cc_min = context_.charcodes_[ci];
+            cc_min = context_->charcodes_[ci];
         }
     }
     return cc_min;

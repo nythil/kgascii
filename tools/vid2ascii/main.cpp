@@ -64,6 +64,7 @@ private:
     unsigned maxRows_;
     unsigned threads_;
     bool renderAll_;
+    unsigned nfeatures_;
 };
 
 int main(int argc, char* argv[])
@@ -89,6 +90,7 @@ VideoToAscii::VideoToAscii()
         ("rows", value(&maxRows_)->default_value(49), "suggested number of text rows")
         ("threads", value(&threads_)->default_value(0), "number of worker threads (0 = auto)")
         ("render-all", bool_switch(&renderAll_), "render all frames")
+        ("nfeatures", value(&nfeatures_)->default_value(15), "number of pca features to extract")
     ;
     posDesc_.add("input-file", 1);
 }
@@ -152,7 +154,7 @@ int VideoToAscii::doExecute()
 
     KG::Ascii::TextSurface text(row_count, col_count);
     KG::Ascii::FontPCAnalyzer pcanalyzer(font);
-    KG::Ascii::FontPCA pca(pcanalyzer, 10);
+    KG::Ascii::FontPCA pca(pcanalyzer, nfeatures_);
     //KG::Ascii::PolicyBasedGlyphMatcher<KG::Ascii::SquaredEuclideanDistance> matcher(font);
     //KG::Ascii::PolicyBasedGlyphMatcherContext<KG::Ascii::MeansDistance> matcher_ctx(font);
     KG::Ascii::PcaGlyphMatcherContext matcher_ctx(pca);
@@ -172,6 +174,7 @@ int VideoToAscii::doExecute()
     cout << "output columns " << col_count << "\n";
     cout << "output rows " << row_count << "\n";
     cout << "worker threads " << asciifier.threadCount() << "\n";
+    cout << "principal components " << pca.featureCount() << "\n";
 
     if (startFrame_) {
         capture.set(CV_CAP_PROP_POS_FRAMES, *startFrame_);
@@ -187,6 +190,10 @@ int VideoToAscii::doExecute()
     startFrame_ = static_cast<unsigned>(capture.get(CV_CAP_PROP_POS_FRAMES));
     startTime_ = capture.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
     unsigned frame_count = 0;
+
+    if (!renderAll_) {
+        cv::namedWindow("test", 1);
+    }
 
     boost::timer timer;
 
@@ -221,13 +228,20 @@ int VideoToAscii::doExecute()
             cv::resize(capture_frame, scaled_frame, cv::Size(out_width, out_height));
         }
 
+        //cv::GaussianBlur(scaled_frame, scaled_frame, cv::Size(7,7), 1.5, 1.5);
+
         cv::Mat gray_frame;
         cv::cvtColor(scaled_frame, gray_frame, CV_BGR2GRAY);
+        //cv::equalizeHist(gray_frame, gray_frame);
 
         assert(gray_frame.dims == 2);
         assert(static_cast<unsigned>(gray_frame.cols) == out_width);
         assert(static_cast<unsigned>(gray_frame.rows) == out_height);
         assert(gray_frame.type() == CV_8UC1);
+
+        if (!renderAll_) {
+            cv::imshow("test", gray_frame);
+        }
 
         KG::Ascii::Surface8c gray_surface(out_width, out_height, 
                 gray_frame.data, gray_frame.step[0]);
@@ -242,6 +256,8 @@ int VideoToAscii::doExecute()
         if (!renderAll_ && current_time - *startTime_ > elapsed_time) {
             double dtime = (current_time - *startTime_) - elapsed_time;
             dtime *= 0.8;
+            cv::waitKey(std::max(10, static_cast<int>(dtime)));
+#if 0
             double dtime_sec = 0.0;
             double dtime_frac = modf(dtime, &dtime_sec);
             boost::xtime xt;
@@ -249,6 +265,7 @@ int VideoToAscii::doExecute()
             xt.sec += static_cast<int>(dtime_sec);
             xt.nsec += static_cast<int>(dtime_frac * 1000000000);
             boost::thread::sleep(xt);
+#endif
         }
         if (!capture.grab())
             break;

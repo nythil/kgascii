@@ -34,6 +34,8 @@
 #include <kgascii/squared_euclidean_distance.hpp>
 #include <kgascii/means_distance.hpp>
 #include <kgascii/pca_glyph_matcher.hpp>
+#include <kgascii/font_pcanalyzer.hpp>
+#include <kgascii/font_pca.hpp>
 #include <kgascii/text_surface.hpp>
 
 using std::cout;
@@ -143,9 +145,11 @@ int VideoToAscii::doExecute()
     unsigned row_count = (out_height + char_height - 1) / char_height;
 
     KG::Ascii::TextSurface text(row_count, col_count);
+    KG::Ascii::FontPCAnalyzer pcanalyzer(font);
+    KG::Ascii::FontPCA pca(pcanalyzer, 10);
     //KG::Ascii::PolicyBasedGlyphMatcher<KG::Ascii::SquaredEuclideanDistance> matcher(font);
     //KG::Ascii::PolicyBasedGlyphMatcherContext<KG::Ascii::MeansDistance> matcher_ctx(font);
-    KG::Ascii::PcaGlyphMatcherContext matcher_ctx(font);
+    KG::Ascii::PcaGlyphMatcherContext matcher_ctx(pca);
     KG::Ascii::DynamicAsciifier asciifier(matcher_ctx);
     if (threads_ == 1) {
         asciifier.setSequential();

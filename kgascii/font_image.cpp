@@ -53,6 +53,11 @@ unsigned FontImage::glyphHeight() const
     return glyphHeight_;
 }
 
+unsigned FontImage::glyphSize() const
+{
+    return glyphWidth_ * glyphHeight_;
+}
+
 size_t FontImage::glyphCount() const
 {
     return charcodes_.size();

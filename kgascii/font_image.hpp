@@ -44,6 +44,8 @@ public:
 
     unsigned glyphHeight() const;
 
+    unsigned glyphSize() const;
+
     size_t glyphCount() const;
 
     std::vector<unsigned> charcodes() const;

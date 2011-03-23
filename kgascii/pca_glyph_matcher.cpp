@@ -17,50 +17,15 @@
 
 #include <kgascii/pca_glyph_matcher.hpp>
 #include <kgascii/font_image.hpp>
-#include <iostream>
-
-using std::cout;
+#include <kgascii/font_pca.hpp>
 
 namespace KG { namespace Ascii {
 
-PcaGlyphMatcherContext::PcaGlyphMatcherContext(const FontImage& f)
-    :GlyphMatcherContext(f)
+PcaGlyphMatcherContext::PcaGlyphMatcherContext(const FontPCA& pca)
+    :GlyphMatcherContext(pca.font())
+    ,pca_(pca)
     ,charcodes_(font().charcodes())
 {
-    glyphSize_ = font().glyphWidth() * font().glyphHeight();
-    Eigen::MatrixXd input_samples(glyphSize_, charcodes_.size());
-    for (size_t ci = 0; ci < charcodes_.size(); ++ci) {
-        Surface8c glyph_view = font().glyphByIndex(ci);
-        for (unsigned yy = 0; yy < font().glyphHeight(); ++yy) {
-            for (unsigned xx = 0; xx < font().glyphWidth(); ++xx) {
-                input_samples(yy * font().glyphWidth() + xx, ci) = glyph_view(xx, yy);
-            }
-        }
-    }
-    Eigen::VectorXd mean_sample = input_samples.rowwise().sum() / charcodes_.size();
-    Eigen::MatrixXd normalized_samples = input_samples.colwise() - mean_sample;
-
-    Eigen::MatrixXd covariance(glyphSize_, glyphSize_);
-    covariance.setZero();
-    covariance.selfadjointView<Eigen::Lower>().rankUpdate(normalized_samples, 1.0 / (normalized_samples.cols() - 1));
-
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver(covariance);
-    Eigen::VectorXd eigvals_tmp = eigen_solver.eigenvalues();
-    Eigen::VectorXd eigvals = eigvals_tmp.cwiseMax(Eigen::VectorXd::Zero(glyphSize_));
-    Eigen::MatrixXd eigvecs = eigen_solver.eigenvectors();
-
-    Eigen::VectorXd featvals = eigvals.tail(10).reverse();
-    Eigen::MatrixXd featvecs = eigvecs.rightCols(10).rowwise().reverse();
-    for (int i = 0; i < 10; ++i) {
-        //featvecs.col(i) *= featvals(i) / featvals.sum();
-    }
-
-    Eigen::MatrixXd glyphs = featvecs.transpose() * normalized_samples;
-
-    mean_ = mean_sample.cast<float>();
-    energies_ = featvals.cast<float>();
-    features_ = featvecs.cast<float>();
-    glyphs_ = glyphs.cast<float>();
 }
 
 GlyphMatcher* PcaGlyphMatcherContext::createMatcher() const
@@ -72,8 +37,8 @@ GlyphMatcher* PcaGlyphMatcherContext::createMatcher() const
 PcaGlyphMatcher::PcaGlyphMatcher(const PcaGlyphMatcherContext& c)
     :GlyphMatcher()
     ,context_(c)
-    ,imgvec_(context_.glyphSize_)
-    ,components_(10)
+    ,imgvec_(context_.font().glyphSize())
+    ,components_(context_.pca_.featureCount())
 {
 }
 
@@ -98,10 +63,8 @@ unsigned PcaGlyphMatcher::match(const Surface8c& imgv)
         }
     }
 
-    components_ = (imgvec_ - context_.mean_).transpose() * context_.features_;
-    unsigned cc_min = ' ';
-    (context_.glyphs_.colwise() - components_).colwise().squaredNorm().minCoeff(&cc_min);
-    return context_.charcodes_.at(cc_min);
+    context_.pca_.project(imgvec_, components_);
+    return context_.charcodes_.at(context_.pca_.findClosestGlyph(components_));
 }
 
 } } // namespace KG::Ascii

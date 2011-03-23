@@ -15,53 +15,44 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_PCAGLYPHMATCHER_HPP
-#define KGASCII_PCAGLYPHMATCHER_HPP
+#ifndef KGASCII_FONT_PCANALYZER_HPP
+#define KGASCII_FONT_PCANALYZER_HPP
 
-#include <vector>
-#include <boost/noncopyable.hpp>
 #include <Eigen/Dense>
-#include <kgascii/glyph_matcher.hpp>
-#include <kgascii/glyph_matcher_context.hpp>
 #include <kgascii/kgascii_api.hpp>
+#include <kgascii/font_pca.hpp>
 
 namespace KG { namespace Ascii {
 
 class FontImage;
-class FontPCA;
 
-class PcaGlyphMatcherContext: public GlyphMatcherContext
-{
-    friend class PcaGlyphMatcher;
-
-public:
-    explicit PcaGlyphMatcherContext(const FontPCA& pca);
-
-public:
-    GlyphMatcher* createMatcher() const;
-
-private:
-    const FontPCA& pca_;
-    std::vector<unsigned> charcodes_;
-};
-
-class KGASCII_API PcaGlyphMatcher: public GlyphMatcher
+class FontPCAnalyzer
 {
 public:
-    explicit PcaGlyphMatcher(const PcaGlyphMatcherContext& c);
+    explicit FontPCAnalyzer(const FontImage& f);
+
+    FontPCA extract(size_t cnt) const;
 
 public:
-    const GlyphMatcherContext& context() const;
+    const FontImage& font() const;
 
-    unsigned match(const Surface8c& imgv);
+    const Eigen::VectorXd& mean() const;
+
+    const Eigen::MatrixXd& samples() const;
+
+    const Eigen::VectorXd& energies() const;
+
+    const Eigen::MatrixXd& features() const;
 
 private:
-    const PcaGlyphMatcherContext& context_;
-    Eigen::VectorXf imgvec_;
-    Eigen::VectorXf components_;
+    const FontImage& font_;
+    Eigen::VectorXd mean_;
+    Eigen::MatrixXd samples_;
+    Eigen::VectorXd energies_;
+    Eigen::MatrixXd features_;
 };
 
 } } // namespace KG::Ascii
 
-#endif // KGASCII_PCAGLYPHMATCHER_HPP
+#endif // KGASCII_FONT_PCANALYZER_HPP
 

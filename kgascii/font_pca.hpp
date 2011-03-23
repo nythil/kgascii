@@ -15,53 +15,51 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_PCAGLYPHMATCHER_HPP
-#define KGASCII_PCAGLYPHMATCHER_HPP
+#ifndef KGASCII_FONT_PCA_HPP
+#define KGASCII_FONT_PCA_HPP
 
-#include <vector>
-#include <boost/noncopyable.hpp>
 #include <Eigen/Dense>
-#include <kgascii/glyph_matcher.hpp>
-#include <kgascii/glyph_matcher_context.hpp>
 #include <kgascii/kgascii_api.hpp>
 
 namespace KG { namespace Ascii {
 
 class FontImage;
-class FontPCA;
+class FontPCAnalyzer;
 
-class PcaGlyphMatcherContext: public GlyphMatcherContext
-{
-    friend class PcaGlyphMatcher;
-
-public:
-    explicit PcaGlyphMatcherContext(const FontPCA& pca);
-
-public:
-    GlyphMatcher* createMatcher() const;
-
-private:
-    const FontPCA& pca_;
-    std::vector<unsigned> charcodes_;
-};
-
-class KGASCII_API PcaGlyphMatcher: public GlyphMatcher
+class FontPCA
 {
 public:
-    explicit PcaGlyphMatcher(const PcaGlyphMatcherContext& c);
+    FontPCA(const FontPCAnalyzer& analyzer, size_t feat_cnt);
 
 public:
-    const GlyphMatcherContext& context() const;
+    Eigen::VectorXf project(const Eigen::VectorXf& vec) const;
 
-    unsigned match(const Surface8c& imgv);
+    Eigen::VectorXf& project(const Eigen::VectorXf& vec, Eigen::VectorXf& out) const;
+
+    size_t findClosestGlyph(const Eigen::VectorXf& vec) const;
+
+public:
+    size_t featureCount() const;
+
+    const FontImage& font() const;
+
+    const Eigen::VectorXf& mean() const;
+
+    const Eigen::VectorXf& energies() const;
+
+    const Eigen::MatrixXf& features() const;
+
+    const Eigen::MatrixXf& glyphs() const;
 
 private:
-    const PcaGlyphMatcherContext& context_;
-    Eigen::VectorXf imgvec_;
-    Eigen::VectorXf components_;
+    const FontImage& font_;
+    Eigen::VectorXf mean_;
+    Eigen::VectorXf energies_;
+    Eigen::MatrixXf features_;
+    Eigen::MatrixXf glyphs_;
 };
 
 } } // namespace KG::Ascii
 
-#endif // KGASCII_PCAGLYPHMATCHER_HPP
+#endif // KGASCII_FONT_PCA_HPP
 

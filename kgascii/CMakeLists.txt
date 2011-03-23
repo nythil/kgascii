@@ -33,6 +33,10 @@ SET(kgascii_SRCS
     pca_glyph_matcher.hpp
     kgascii_config.hpp
     kgascii_api.hpp
+    font_pcanalyzer.cpp
+    font_pcanalyzer.hpp
+    font_pca.cpp
+    font_pca.hpp
 )
 SET(Boost_USE_STATIC_LIBS        ON)
 SET(Boost_USE_MULTITHREADED      ON)

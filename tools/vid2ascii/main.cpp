@@ -18,6 +18,7 @@
 #include <iostream>
 #include <limits>
 #include <cmath>
+#include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
 #include <boost/timer.hpp>
 #include <boost/thread/thread.hpp>
@@ -117,7 +118,12 @@ bool VideoToAscii::processArgs()
 
 int VideoToAscii::doExecute()
 {
-    cv::VideoCapture capture(inputFile_);
+    cv::VideoCapture capture;
+    try {
+        capture.open(boost::lexical_cast<int>(inputFile_));
+    } catch (boost::bad_lexical_cast&) {
+        capture.open(inputFile_);
+    }
     if (!capture.isOpened())
         return -1;
 

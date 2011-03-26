@@ -20,6 +20,7 @@
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/policy_based_glyph_matcher.hpp>
+#include <kgascii/mutual_information_glyph_matcher.hpp>
 #include <kgascii/squared_euclidean_distance.hpp>
 #include <kgascii/means_distance.hpp>
 #include <kgascii/pca_glyph_matcher.hpp>
@@ -72,6 +73,12 @@ GlyphMatcherContext* GlyphMatcherContextFactory::create(const FontImage* font,
         return new PolicyBasedGlyphMatcherContext<SquaredEuclideanDistance>(font);
     } else if (algo_name == "md") {
         return new PolicyBasedGlyphMatcherContext<MeansDistance>(font);
+    } else if (algo_name == "mi") {
+        size_t bins = 16;
+        try {
+            bins = boost::lexical_cast<size_t>(options_map["bins"]);
+        } catch (boost::bad_lexical_cast&) { }
+        return new MutualInformationGlyphMatcherContext(font, bins);
     } else {
         throw std::runtime_error("unknown algo name");
     }

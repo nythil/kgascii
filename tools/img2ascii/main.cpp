@@ -27,7 +27,7 @@
 #include <common/validate_optional.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/glyph_matcher.hpp>
-#include <kgascii/sequential_asciifier.hpp>
+#include <kgascii/dynamic_asciifier.hpp>
 #include <kgascii/text_surface.hpp>
 #include <kgascii/glyph_matcher_context_factory.hpp>
 
@@ -51,6 +51,7 @@ private:
     unsigned maxRows_;
     unsigned nfeatures_;
     std::string algorithm_;
+    unsigned threadCount_;
 };
 
 int main(int argc, char* argv[])
@@ -71,6 +72,7 @@ ImageToAscii::ImageToAscii()
         ("nfeatures", value(&nfeatures_)->default_value(15), "number of pca features to extract")
         ("output-file,o", value(&outputFile_), "output text file")
         ("algorithm,a", value(&algorithm_)->default_value("pca"), "glyph matching algorithm")
+        ("threads", value(&threadCount_)->default_value(0), "worker thread count")
     ;
     posDesc_.add("input-file", 1);
 }
@@ -122,7 +124,12 @@ int ImageToAscii::doExecute()
     KG::Ascii::TextSurface text(row_count, col_count);
     KG::Ascii::GlyphMatcherContextFactory matcher_ctx_factory;
     KG::Ascii::GlyphMatcherContext* matcher_ctx = matcher_ctx_factory.create(&font, algorithm_);
-    KG::Ascii::SequentialAsciifier asciifier(matcher_ctx);
+    KG::Ascii::DynamicAsciifier asciifier(matcher_ctx);
+    if (threadCount_ == 1) {
+        asciifier.setSequential();
+    } else {
+        asciifier.setParallel(threadCount_);
+    }
 
     cout << "image width " << frame_width << "\n";
     cout << "image height " << frame_height << "\n";

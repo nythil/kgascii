@@ -45,6 +45,8 @@ public:
 
     const char* row(unsigned r) const;
 
+    char* row(unsigned r);
+
 private:
     unsigned rows_;
     unsigned cols_;

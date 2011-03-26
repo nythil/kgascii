@@ -30,6 +30,7 @@ class TaskQueue: boost::noncopyable
 public:
     TaskQueue()
         :closing_(false)
+        ,index_(0)
     {
     }
 
@@ -44,18 +45,21 @@ public:
     bool wait_pop(Task& t)
     {
         boost::unique_lock<boost::mutex> lock(mutex_);
-        while (!closing_ && queue_.empty()) {
+        while (!closing_ && queue_.size() <= index_) {
             activeCondition_.wait(lock);
         }
         if (closing_)
             return false;
-        t = queue_.front();
-        queue_.pop_front();
+        t = queue_[index_++];
         return true;
     }
 
     void done()
     {
+        boost::unique_lock<boost::mutex> lock(mutex_);
+        queue_.pop_front();
+        index_--;
+        lock.unlock();
         doneCondition_.notify_one();
     }
 
@@ -78,6 +82,7 @@ public:
 private:
     bool closing_;
     std::deque<Task> queue_;
+    size_t index_;
     boost::mutex mutex_;
     boost::condition_variable activeCondition_;
     boost::condition_variable doneCondition_;

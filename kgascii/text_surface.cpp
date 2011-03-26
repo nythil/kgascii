@@ -72,5 +72,10 @@ const char* TextSurface::row(unsigned r) const
     return &data_.at(r * cols_);
 }
 
+char* TextSurface::row(unsigned r)
+{
+    return &data_.at(r * cols_);
+}
+
 } } // namespace KG::Ascii
 

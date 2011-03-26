@@ -73,12 +73,12 @@ void ParallelAsciifier::generate(const Surface8c& imgv, TextSurface& text)
 
     size_t y = 0, r = 0;
     for (; y + char_h <= roi_h; y += char_h, ++r) {
-        WorkItem wi = { imgv.window(0, y, roi_w, char_h), &text(r, 0) };
+        WorkItem wi = { imgv.window(0, y, roi_w, char_h), text.row(r) };
         queue_.push(wi);
     }
     if (y < roi_h) {
         size_t dy = roi_h - y;
-        WorkItem wi = { imgv.window(0, y, roi_w, dy), &text(r, 0) };
+        WorkItem wi = { imgv.window(0, y, roi_w, dy), text.row(r) };
         queue_.push(wi);
     }
     queue_.wait_empty();

@@ -19,9 +19,8 @@
 #define KGASCII_PARALLELASCIIFIER_HPP
 
 #include <boost/noncopyable.hpp>
-#include <boost/thread.hpp>
+#include <boost/shared_ptr.hpp>
 #include <kgascii/asciifier.hpp>
-#include <kgascii/task_queue.hpp>
 #include <kgascii/kgascii_api.hpp>
 
 namespace KG { namespace Ascii {
@@ -42,13 +41,8 @@ public:
     void generate(const Surface8c& imgv, TextSurface& text);
 
 private:
-    void threadFunc();
-
-private:
-    struct WorkItem;
-    const GlyphMatcherContext* context_;
-    boost::thread_group group_;
-    TaskQueue<WorkItem> queue_;
+	class Impl;
+	boost::shared_ptr<Impl> impl_;
 };
 
 } } // namespace KG::Ascii

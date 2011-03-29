@@ -113,7 +113,7 @@ unsigned FT2FontLoader::maxAdvance() const
 bool FT2FontLoader::fixedWidth() const
 {
     assert(isFontOk());
-    return FT_IS_FIXED_WIDTH(face_->handle());
+    return (FT_IS_FIXED_WIDTH(face_->handle()) != 0);
 }
 
 std::vector<unsigned> FT2FontLoader::charcodes() const
@@ -258,6 +258,7 @@ int FT2FontLoader::makeRenderFlags() const
     case RenderGrayscale: return FT_RENDER_MODE_NORMAL;
     case RenderMonochrome: return FT_RENDER_MODE_MONO;
     }
+	return 0;
 }
 
 } } // namespace KG::Ascii

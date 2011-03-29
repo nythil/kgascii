@@ -22,69 +22,65 @@
 #include <kgascii/surface.hpp>
 #include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/thread.hpp>
+#include <boost/make_shared.hpp>
+#include <kgascii/task_queue.hpp>
 
 namespace KG { namespace Ascii {
 
-struct ParallelAsciifier::WorkItem
+class ParallelAsciifier::Impl: boost::noncopyable
 {
-    Surface8c imgv;
-    char* outp;
+public:
+	explicit Impl(const GlyphMatcherContext* c);
+
+	void setupThreads(unsigned thr_cnt);
+
+	void endThreads();
+
+	void enqueue(const Surface8c& surf, char* outp);
+
+private:
+    void threadFunc();
+
+public:
+    const GlyphMatcherContext* context_;
+    boost::thread_group group_;
+	struct WorkItem
+	{
+		Surface8c imgv;
+		char* outp;
+	};
+    TaskQueue<WorkItem> queue_;
 };
-    
-ParallelAsciifier::ParallelAsciifier(const GlyphMatcherContext* c, unsigned thr_cnt)
-    :Asciifier()
-    ,context_(c)
+
+ParallelAsciifier::Impl::Impl(const GlyphMatcherContext* c)
+	:context_(c)
+{
+}
+
+void ParallelAsciifier::Impl::setupThreads(unsigned thr_cnt)
 {
     if (thr_cnt == 0) {
         thr_cnt = boost::thread::hardware_concurrency() + 1;
     }
     for (unsigned i = 0; i < thr_cnt; ++i) {
-        group_.create_thread(boost::bind(&ParallelAsciifier::threadFunc, this));
+		group_.create_thread(boost::bind(&ParallelAsciifier::Impl::threadFunc, this));
     }
 }
 
-ParallelAsciifier::~ParallelAsciifier()
+void ParallelAsciifier::Impl::endThreads()
 {
     queue_.close();
     group_.join_all();
 }
 
-const GlyphMatcherContext* ParallelAsciifier::context() const
+void ParallelAsciifier::Impl::enqueue(const Surface8c& surf, char* outp)
 {
-    return context_;
+    WorkItem wi = { surf, outp };
+    queue_.push(wi);
 }
 
-unsigned ParallelAsciifier::threadCount() const
-{
-    return group_.size();
-}
-
-void ParallelAsciifier::generate(const Surface8c& imgv, TextSurface& text)
-{
-    //single character size
-    size_t char_w = context_->cellWidth();
-    size_t char_h = context_->cellHeight();
-    //text surface size
-    size_t text_w = text.cols() * char_w;
-    size_t text_h = text.rows() * char_h;
-    //processed image region size
-    size_t roi_w = std::min(imgv.width(), text_w);
-    size_t roi_h = std::min(imgv.height(), text_h);
-
-    size_t y = 0, r = 0;
-    for (; y + char_h <= roi_h; y += char_h, ++r) {
-        WorkItem wi = { imgv.window(0, y, roi_w, char_h), text.row(r) };
-        queue_.push(wi);
-    }
-    if (y < roi_h) {
-        size_t dy = roi_h - y;
-        WorkItem wi = { imgv.window(0, y, roi_w, dy), text.row(r) };
-        queue_.push(wi);
-    }
-    queue_.wait_empty();
-}
-
-void ParallelAsciifier::threadFunc()
+void ParallelAsciifier::Impl::threadFunc()
 {
     boost::scoped_ptr<GlyphMatcher> matcher(context_->createMatcher());
     //single character size
@@ -105,6 +101,52 @@ void ParallelAsciifier::threadFunc()
         }
         queue_.done();
     }
+}
+
+    
+ParallelAsciifier::ParallelAsciifier(const GlyphMatcherContext* c, unsigned thr_cnt)
+    :Asciifier()
+	,impl_(boost::make_shared<Impl>(c))
+{
+	impl_->setupThreads(thr_cnt);
+}
+
+ParallelAsciifier::~ParallelAsciifier()
+{
+	impl_->endThreads();
+}
+
+const GlyphMatcherContext* ParallelAsciifier::context() const
+{
+    return impl_->context_;
+}
+
+unsigned ParallelAsciifier::threadCount() const
+{
+    return impl_->group_.size();
+}
+
+void ParallelAsciifier::generate(const Surface8c& imgv, TextSurface& text)
+{
+    //single character size
+    size_t char_w = impl_->context_->cellWidth();
+    size_t char_h = impl_->context_->cellHeight();
+    //text surface size
+    size_t text_w = text.cols() * char_w;
+    size_t text_h = text.rows() * char_h;
+    //processed image region size
+    size_t roi_w = std::min(imgv.width(), text_w);
+    size_t roi_h = std::min(imgv.height(), text_h);
+
+    size_t y = 0, r = 0;
+    for (; y + char_h <= roi_h; y += char_h, ++r) {
+        impl_->enqueue(imgv.window(0, y, roi_w, char_h), text.row(r));
+    }
+    if (y < roi_h) {
+        size_t dy = roi_h - y;
+        impl_->enqueue(imgv.window(0, y, roi_w, dy), text.row(r));
+    }
+    impl_->queue_.wait_empty();
 }
 
 } } // namespace KG::Ascii

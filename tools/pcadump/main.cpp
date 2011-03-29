@@ -125,7 +125,7 @@ void PcaDump::dumpFeatures(const KG::Ascii::FontPCA& pca)
 
     for (size_t i = 0; i < pca.featureCount(); ++i) {
         Eigen::VectorXf feat = pca.features().col(i);
-        float fc = 3.0f / sqrt(feat.size());
+		float fc = 3.0f / sqrt(static_cast<float>(feat.size()));
         Eigen::VectorXf feat_plus = feat.cwiseMax(Eigen::VectorXf::Zero(feat.size())) / fc;
         feat_plus = feat_plus.cwiseMin(Eigen::VectorXf::Ones(feat.size()));
         Eigen::VectorXf feat_minus = -feat.cwiseMin(Eigen::VectorXf::Zero(feat.size())) / fc;

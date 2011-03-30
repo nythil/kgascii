@@ -78,7 +78,7 @@ bool FT2FontImageLoader::loadGlyph(unsigned charcode)
     const Surface8& glyph_surf = glyphData_.surface();
     fillPixels(glyph_surf, 0);
     copyPixels(loader_.glyph().window(bmp_off_x, bmp_off_y, common_width, common_height),
-            glyph_surf.window(img_off_x, img_off_x, common_width, common_height));
+            glyph_surf.window(img_off_x, img_off_y, common_width, common_height));
 
     return true;
 }

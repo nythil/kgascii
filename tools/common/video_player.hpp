@@ -94,21 +94,34 @@ protected:
     virtual void onFrameDisplay(cv::Mat frm);
 
 private:
+    bool positionVideo();
+
+private:
     cv::VideoCapture video_;
+
     bool loaded_;
     bool playing_;
+
     bool canDropFrames_;
     bool canWaitForFrame_;
+
     unsigned frameWidth_;
     unsigned frameHeight_;
     unsigned frameCount_;
+
     unsigned startFrameNo_;
     double startFrameTime_;
+
     unsigned currentFrameNo_;
     double currentFrameTime_;
-    double currentTime_;
+
+    int seekedFrameNo_;
+    double seekedFrameTime_;
+
     boost::timer timer_;
     double timerOffset_;
+    double currentTime_;
+
     unsigned lastDroppedFrames_;
     unsigned allReadFrames_;
     unsigned readFrames_;

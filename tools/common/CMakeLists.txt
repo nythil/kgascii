@@ -1,6 +1,8 @@
 SET(tools_common_SRCS
     cmdline_tool.cpp
     cmdline_tool.hpp
+    video_player.cpp
+    video_player.hpp
     validate_optional.hpp
     console.hpp
 )

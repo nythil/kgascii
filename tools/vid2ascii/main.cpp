@@ -20,24 +20,25 @@
 #include <cmath>
 #include <boost/lexical_cast.hpp>
 #include <boost/optional.hpp>
-#include <boost/timer.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/xtime.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <common/cmdline_tool.hpp>
 #include <common/validate_optional.hpp>
 #include <common/console.hpp>
+#include <common/video_player.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/glyph_matcher.hpp>
+#include <kgascii/glyph_matcher_context.hpp>
 #include <kgascii/dynamic_asciifier.hpp>
 #include <kgascii/text_surface.hpp>
 #include <kgascii/glyph_matcher_context_factory.hpp>
 
 using std::cout;
+using std::cerr;
 
 class VideoToAscii: public CmdlineTool
 {
+	friend class MyVideoPlayer;
 public:
     VideoToAscii();
 
@@ -115,168 +116,194 @@ bool VideoToAscii::processArgs()
     return true;
 }
 
-
-int VideoToAscii::doExecute()
+class MyVideoPlayer: public VideoPlayer
 {
-    cv::VideoCapture capture;
-    try {
-        capture.open(boost::lexical_cast<int>(inputFile_));
-    } catch (boost::bad_lexical_cast&) {
-        capture.open(inputFile_);
-    }
-    if (!capture.isOpened())
-        return -1;
+public:
+	explicit MyVideoPlayer(const VideoToAscii* ctx, KG::Ascii::Asciifier* asc, Console* con)
+		:context_(ctx)
+		,asciifier_(asc)
+		,console_(con)
+	{
+	}
 
-    unsigned frame_width = static_cast<unsigned>(capture.get(CV_CAP_PROP_FRAME_WIDTH));
-    unsigned frame_height = static_cast<unsigned>(capture.get(CV_CAP_PROP_FRAME_HEIGHT));
+protected:
+    virtual void onLoaded()
+    {
+    	cout << "initializing...\n";
 
-    KG::Ascii::FontImage font;
-    if (!font.load(fontFile_))
-        return -1;
-    unsigned char_width = font.glyphWidth();
-    unsigned char_height = font.glyphHeight();
+        unsigned char_width = asciifier_->context()->cellWidth();
+        unsigned char_height = asciifier_->context()->cellHeight();
 
-    unsigned hint_width = maxCols_ * char_width;
-    unsigned hint_height = maxRows_ * char_height;
-    unsigned out_width, out_height;
-    if (hint_width * frame_height / frame_width < hint_height) {
-        out_width = hint_width;
-        out_height = out_width * frame_height / frame_width;
-    } else {
-        out_height = hint_height;
-        out_width = out_height * frame_width / frame_height;
-    }
-
-    unsigned col_count = (out_width + char_width - 1) / char_width;
-    unsigned row_count = (out_height + char_height - 1) / char_height;
-
-    KG::Ascii::TextSurface text(row_count, col_count);
-    KG::Ascii::GlyphMatcherContextFactory matcher_ctx_factory;
-    KG::Ascii::GlyphMatcherContext* matcher_ctx = matcher_ctx_factory.create(&font, algorithm_);
-    KG::Ascii::DynamicAsciifier asciifier(matcher_ctx);
-    if (threads_ == 1) {
-        asciifier.setSequential();
-    } else {
-        asciifier.setParallel(threads_);
-    }
-
-    cout << "video width " << frame_width << "\n";
-    cout << "video height " << frame_height << "\n";
-    cout << "video frame count " << capture.get(CV_CAP_PROP_FRAME_COUNT) << "\n";
-    cout << "video fps " << capture.get(CV_CAP_PROP_FPS) << "\n";
-    cout << "output width " << out_width << "\n";
-    cout << "output height " << out_height << "\n";
-    cout << "output columns " << col_count << "\n";
-    cout << "output rows " << row_count << "\n";
-    cout << "worker threads " << asciifier.threadCount() << "\n";
-
-    if (startFrame_) {
-        capture.set(CV_CAP_PROP_POS_FRAMES, *startFrame_);
-    } else if (startTime_) {
-        capture.set(CV_CAP_PROP_POS_MSEC, *startTime_ * 1000.0);
-    }
-    if (!capture.grab())
-        return 0;
-
-    Console con;
-    con.setup(row_count, col_count);
-
-    startFrame_ = static_cast<unsigned>(capture.get(CV_CAP_PROP_POS_FRAMES));
-    startTime_ = capture.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
-    unsigned frame_count = 0;
-
-    if (!renderAll_ && showVideo_) {
-        cv::namedWindow("test", 1);
-    }
-
-    boost::timer timer;
-
-    while (true) {
-        unsigned current_frame = static_cast<unsigned>(capture.get(CV_CAP_PROP_POS_FRAMES));
-        if (maxFrames_ && (current_frame - *startFrame_) >= *maxFrames_)
-            break;
-        if (endFrame_ && current_frame >= *endFrame_)
-            break;
-
-        double current_time = capture.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
-        if (endTime_ && current_time >= *endTime_)
-            break;
-        if (maxTime_ && (current_time - *startTime_) >= *maxTime_)
-            break;
-
-        double elapsed_time = timer.elapsed();
-
-        if (!renderAll_ && current_time - *startTime_ < elapsed_time) {
-            if (!capture.grab())
-                break;
-            continue;
+        unsigned hint_width = context_->maxCols_ * char_width;
+        unsigned hint_height = context_->maxRows_ * char_height;
+        if (hint_width * frameHeight() / frameWidth() < hint_height) {
+            outWidth_ = hint_width;
+            outHeight_ = outWidth_ * frameHeight() / frameWidth();
+        } else {
+        	outHeight_ = hint_height;
+        	outWidth_ = outHeight_ * frameWidth() / frameHeight();
         }
 
-        cv::Mat capture_frame;
-        if (!capture.retrieve(capture_frame))
-            break;
+        cols_ = (outWidth_ + char_width - 1) / char_width;
+        rows_ = (outHeight_ + char_height - 1) / char_height;
+
+        cout << "video width " << frameWidth() << "\n";
+        cout << "video height " << frameHeight() << "\n";
+        cout << "video frame count " << frameCount() << "\n";
+        cout << "output width " << outWidth_ << "\n";
+        cout << "output height " << outHeight_ << "\n";
+        cout << "output columns " << cols_ << "\n";
+        cout << "output rows " << rows_ << "\n";
+        cout << "worker threads " << asciifier_->threadCount() << "\n";
+
+        if (context_->startFrame_) {
+        	cout << "positioning...\n";
+        	seekToFrame(context_->startFrame_.get());
+        } else if (context_->startTime_) {
+        	cout << "positioning...\n";
+        	seekToTime(context_->startTime_.get());
+        }
+    }
+
+    virtual void onPlaybackStart()
+    {
+    	cout << "playback start\n";
+    	if (context_->renderAll_) {
+    		setCanDropFrames(false);
+			setCanWaitForFrame(false);
+    	}
+    	if (context_->showVideo_) {
+    		cv::namedWindow("test", 1);
+    	}
+        text_.resize(rows_, cols_);
+        console_->setup(rows_, cols_);
+    }
+
+    virtual void onPlaybackEnd()
+    {
+    	cout << "playback end\n";
+    	if (context_->showVideo_) {
+        	cv::destroyWindow("test");
+    	}
+    }
+
+    virtual bool onBeforeReadFrame(double tm_left)
+    {
+        if (context_->maxFrames_) {
+        	unsigned frm_cnt = currentFrameNo() - startFrameNo();
+        	if (frm_cnt >= context_->maxFrames_.get())
+        		return false;
+        }
+        if (context_->endFrame_) {
+        	if (currentFrameNo() >= context_->endFrame_.get())
+        		return false;
+        }
+        if (context_->maxTime_) {
+        	double tm_span = currentFrameTime() - startFrameTime();
+        	if (tm_span >= context_->maxTime_.get())
+        		return false;
+        }
+        if (context_->endTime_) {
+        	if (currentFrameTime() >= context_->endTime_.get())
+        		return false;
+        }
+        if (tm_left > 0 && context_->showVideo_) {
+            if (cv::waitKey(1) >= 0)
+            	return false;
+        }
+        return true;
+    }
+
+    virtual void onFrameRead(cv::Mat frm, double tm_left)
+    {
         cv::Mat scaled_frame;
-        if (frame_width == out_width && frame_height == out_height) {
-            scaled_frame = capture_frame;
+        if (frameWidth() == outWidth_ && frameHeight() == outHeight_) {
+            scaled_frame = frm;
         } else {
-            cv::resize(capture_frame, scaled_frame, cv::Size(out_width, out_height));
+            cv::resize(frm, scaled_frame, cv::Size(outWidth_, outHeight_));
         }
 
         //cv::GaussianBlur(scaled_frame, scaled_frame, cv::Size(7,7), 1.5, 1.5);
 
-        cv::Mat gray_frame;
-        cv::cvtColor(scaled_frame, gray_frame, CV_BGR2GRAY);
+        cv::cvtColor(scaled_frame, grayFrame_, CV_BGR2GRAY);
         //cv::equalizeHist(gray_frame, gray_frame);
 
-        assert(gray_frame.dims == 2);
-        assert(static_cast<unsigned>(gray_frame.cols) == out_width);
-        assert(static_cast<unsigned>(gray_frame.rows) == out_height);
-        assert(gray_frame.type() == CV_8UC1);
+        assert(grayFrame_.dims == 2);
+        assert(static_cast<unsigned>(grayFrame_.cols) == outWidth_);
+        assert(static_cast<unsigned>(grayFrame_.rows) == outHeight_);
+        assert(grayFrame_.type() == CV_8UC1);
 
-        if (!renderAll_ && showVideo_) {
-            cv::imshow("test", gray_frame);
-        }
+        KG::Ascii::Surface8c gray_surface(outWidth_, outHeight_,
+        		grayFrame_.data, grayFrame_.step[0]);
 
-        KG::Ascii::Surface8c gray_surface(out_width, out_height, 
-                gray_frame.data, gray_frame.step[0]);
-
-        text.clear();
-        asciifier.generate(gray_surface, text);
-
-        con.display(text);
-        frame_count++;
-
-        elapsed_time = timer.elapsed();
-        if (!renderAll_ && current_time - *startTime_ > elapsed_time) {
-            double dtime = (current_time - *startTime_) - elapsed_time;
-            dtime *= 0.8;
-            if (showVideo_) {
-                cv::waitKey(std::max(10, static_cast<int>(dtime)));
-            } else {
-                double dtime_sec = 0.0;
-                double dtime_frac = modf(dtime, &dtime_sec);
-                boost::xtime xt;
-                boost::xtime_get(&xt, boost::TIME_UTC);
-                xt.sec += static_cast<int>(dtime_sec);
-                xt.nsec += static_cast<int>(dtime_frac * 1000000000);
-                boost::thread::sleep(xt);
-            }
-        }
-        if (!capture.grab())
-            break;
+        text_.clear();
+        asciifier_->generate(gray_surface, text_);
     }
 
-    double total_time = timer.elapsed();
+    virtual void onFrameDisplay(cv::Mat frm)
+    {
+        if (context_->showVideo_) {
+            cv::imshow("test", grayFrame_);
+        }
+        console_->display(text_);
+    }
 
-    endFrame_ = static_cast<unsigned>(capture.get(CV_CAP_PROP_POS_FRAMES));
-    endTime_ = capture.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
+private:
+    const VideoToAscii* context_;
+    KG::Ascii::Asciifier* asciifier_;
+    Console* console_;
+    KG::Ascii::TextSurface text_;
+    unsigned outWidth_;
+    unsigned outHeight_;
+    unsigned cols_;
+    unsigned rows_;
+    cv::Mat grayFrame_;
+};
 
-    cout << "total frames " << (*endFrame_ - *startFrame_) << "\n";
-    cout << "displayed frames " << frame_count << "\n";
-    cout << "skipped frames " << (*endFrame_ - *startFrame_ - frame_count) << "\n";
-    cout << "total video time " << (*endTime_ - *startTime_) << "\n";
-    cout << "processing time " << total_time << "\n";
-    cout << "processing time / frame " << total_time / frame_count << "\n";
+int VideoToAscii::doExecute()
+{
+	try {
+		cout << "loading font\n";
+	    KG::Ascii::FontImage font;
+	    if (!font.load(fontFile_)) {
+	    	cerr << "problem loading font\n";
+	        return 1;
+	    }
+		cout << "creating glyph matcher\n";
+	    KG::Ascii::GlyphMatcherContextFactory matcher_ctx_factory;
+	    KG::Ascii::GlyphMatcherContext* matcher_ctx = matcher_ctx_factory.create(&font, algorithm_);
+	    assert(matcher_ctx);
+	    KG::Ascii::DynamicAsciifier asciifier(matcher_ctx);
+	    assert(asciifier.context() == matcher_ctx);
+	    if (threads_ == 1) {
+	        asciifier.setSequential();
+	    } else {
+	        asciifier.setParallel(threads_);
+	    }
+
+	    Console con;
+
+		cout << "loading video\n";
+
+		MyVideoPlayer vplayer(this, &asciifier, &con);
+		if (!vplayer.load(inputFile_))
+			return -1;
+
+		vplayer.play();
+
+		double frm_tm_spn = vplayer.currentFrameTime() - vplayer.startFrameTime();
+		double plr_tm_spn = vplayer.currentTime() - vplayer.startTime();
+
+		cout << "total frames " << vplayer.allReadFrames() << "\n";
+		cout << "displayed frames " << vplayer.readFrames() << "\n";
+		cout << "skipped frames " << (vplayer.allReadFrames() - vplayer.readFrames()) << "\n";
+		cout << "total video time " << frm_tm_spn << "\n";
+		cout << "processing time " << plr_tm_spn << "\n";
+		cout << "processing time / frame " << plr_tm_spn / vplayer.readFrames() << "\n";
+	} catch (std::exception& e) {
+		cerr << "error: " << e.what() << "\n";
+		return 1;
+	}
 
     return 0;
 }

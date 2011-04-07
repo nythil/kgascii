@@ -41,8 +41,8 @@ public:
     void generate(const Surface8c& imgv, TextSurface& text);
 
 private:
-	class Impl;
-	boost::shared_ptr<Impl> impl_;
+    class Impl;
+    boost::shared_ptr<Impl> impl_;
 };
 
 } } // namespace KG::Ascii

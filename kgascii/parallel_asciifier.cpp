@@ -31,13 +31,13 @@ namespace KG { namespace Ascii {
 class ParallelAsciifier::Impl: boost::noncopyable
 {
 public:
-	explicit Impl(const GlyphMatcherContext* c);
+    explicit Impl(const GlyphMatcherContext* c);
 
-	void setupThreads(unsigned thr_cnt);
+    void setupThreads(unsigned thr_cnt);
 
-	void endThreads();
+    void endThreads();
 
-	void enqueue(const Surface8c& surf, char* outp);
+    void enqueue(const Surface8c& surf, char* outp);
 
 private:
     void threadFunc();
@@ -45,16 +45,16 @@ private:
 public:
     const GlyphMatcherContext* context_;
     boost::thread_group group_;
-	struct WorkItem
-	{
-		Surface8c imgv;
-		char* outp;
-	};
+    struct WorkItem
+    {
+        Surface8c imgv;
+        char* outp;
+    };
     TaskQueue<WorkItem> queue_;
 };
 
 ParallelAsciifier::Impl::Impl(const GlyphMatcherContext* c)
-	:context_(c)
+    :context_(c)
 {
 }
 
@@ -64,7 +64,7 @@ void ParallelAsciifier::Impl::setupThreads(unsigned thr_cnt)
         thr_cnt = boost::thread::hardware_concurrency() + 1;
     }
     for (unsigned i = 0; i < thr_cnt; ++i) {
-		group_.create_thread(boost::bind(&ParallelAsciifier::Impl::threadFunc, this));
+        group_.create_thread(boost::bind(&ParallelAsciifier::Impl::threadFunc, this));
     }
 }
 
@@ -106,14 +106,14 @@ void ParallelAsciifier::Impl::threadFunc()
     
 ParallelAsciifier::ParallelAsciifier(const GlyphMatcherContext* c, unsigned thr_cnt)
     :Asciifier()
-	,impl_(boost::make_shared<Impl>(c))
+    ,impl_(boost::make_shared<Impl>(c))
 {
-	impl_->setupThreads(thr_cnt);
+    impl_->setupThreads(thr_cnt);
 }
 
 ParallelAsciifier::~ParallelAsciifier()
 {
-	impl_->endThreads();
+    impl_->endThreads();
 }
 
 const GlyphMatcherContext* ParallelAsciifier::context() const

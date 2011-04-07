@@ -22,23 +22,23 @@
 #include <boost/thread/xtime.hpp>
 
 VideoPlayer::VideoPlayer()
-	:loaded_(false)
-	,playing_(false)
-	,canDropFrames_(true)
-	,canWaitForFrame_(true)
-	,frameWidth_(0)
-	,frameHeight_(0)
-	,frameCount_(0)
-	,startFrameNo_(0)
-	,startFrameTime_(0)
-	,currentFrameNo_(0)
-	,currentFrameTime_(0)
-	,seekedFrameNo_(-1)
-	,seekedFrameTime_(-1)
-	,timerOffset_(0)
-	,lastDroppedFrames_(0)
-	,allReadFrames_(0)
-	,readFrames_(0)
+    :loaded_(false)
+    ,playing_(false)
+    ,canDropFrames_(true)
+    ,canWaitForFrame_(true)
+    ,frameWidth_(0)
+    ,frameHeight_(0)
+    ,frameCount_(0)
+    ,startFrameNo_(0)
+    ,startFrameTime_(0)
+    ,currentFrameNo_(0)
+    ,currentFrameTime_(0)
+    ,seekedFrameNo_(-1)
+    ,seekedFrameTime_(-1)
+    ,timerOffset_(0)
+    ,lastDroppedFrames_(0)
+    ,allReadFrames_(0)
+    ,readFrames_(0)
 {
 }
 
@@ -48,84 +48,84 @@ VideoPlayer::~VideoPlayer()
 
 bool VideoPlayer::load(const std::string& filename)
 {
-	if (!video_.open(filename))
-		return false;
+    if (!video_.open(filename))
+        return false;
 
-	loaded_ = false;
+    loaded_ = false;
 
-	if (!video_.grab())
-		throw std::runtime_error("problem reading video");
+    if (!video_.grab())
+        throw std::runtime_error("problem reading video");
 
-	frameCount_ = static_cast<unsigned>(video_.get(CV_CAP_PROP_FRAME_COUNT));
-	frameWidth_ = static_cast<unsigned>(video_.get(CV_CAP_PROP_FRAME_WIDTH));
-	frameHeight_ = static_cast<unsigned>(video_.get(CV_CAP_PROP_FRAME_HEIGHT));
+    frameCount_ = static_cast<unsigned>(video_.get(CV_CAP_PROP_FRAME_COUNT));
+    frameWidth_ = static_cast<unsigned>(video_.get(CV_CAP_PROP_FRAME_WIDTH));
+    frameHeight_ = static_cast<unsigned>(video_.get(CV_CAP_PROP_FRAME_HEIGHT));
 
-	currentFrameNo_ = static_cast<unsigned>(video_.get(CV_CAP_PROP_POS_FRAMES));
-	startFrameNo_ = currentFrameNo_;
-	currentFrameTime_ = video_.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
-	startFrameTime_ = currentFrameTime_;
-	timerOffset_ = currentFrameTime_;
+    currentFrameNo_ = static_cast<unsigned>(video_.get(CV_CAP_PROP_POS_FRAMES));
+    startFrameNo_ = currentFrameNo_;
+    currentFrameTime_ = video_.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
+    startFrameTime_ = currentFrameTime_;
+    timerOffset_ = currentFrameTime_;
 
-	allReadFrames_ = 1;
-	readFrames_ = 1;
+    allReadFrames_ = 1;
+    readFrames_ = 1;
 
-	loaded_ = true;
+    loaded_ = true;
 
-	onLoaded();
+    onLoaded();
 
-	return true;
+    return true;
 }
 
 bool VideoPlayer::isLoaded() const
 {
-	return loaded_;
+    return loaded_;
 }
 
 bool VideoPlayer::isPlaying() const
 {
-	return playing_;
+    return playing_;
 }
 
 bool VideoPlayer::play()
 {
-	if (!loaded_)
-		throw std::logic_error("no video loaded");
-	if (playing_)
-		throw std::logic_error("video already playing");
+    if (!loaded_)
+        throw std::logic_error("no video loaded");
+    if (playing_)
+        throw std::logic_error("video already playing");
 
-	playing_ = true;
-	onPlaybackStart();
+    playing_ = true;
+    onPlaybackStart();
 
-	bool stream_ended = false;
+    bool stream_ended = false;
 
-	positionVideo();
+    positionVideo();
 
-	timer_.restart();
+    timer_.restart();
 
-	double time_left;
-	while (playing_) {
-		currentTime_ = timer_.elapsed() + timerOffset_;
-		time_left = std::max(currentFrameTime_ - currentTime_, 0.0);
+    double time_left;
+    while (playing_) {
+        currentTime_ = timer_.elapsed() + timerOffset_;
+        time_left = std::max(currentFrameTime_ - currentTime_, 0.0);
 
-		if (!onBeforeReadFrame(time_left)) {
-			stop();
-			break;
-		}
+        if (!onBeforeReadFrame(time_left)) {
+            stop();
+            break;
+        }
 
-		cv::Mat frame;
-		video_.retrieve(frame);
+        cv::Mat frame;
+        video_.retrieve(frame);
 
-		currentTime_ = timer_.elapsed() + timerOffset_;
-		time_left = std::max(currentFrameTime_ - currentTime_, 0.0);
+        currentTime_ = timer_.elapsed() + timerOffset_;
+        time_left = std::max(currentFrameTime_ - currentTime_, 0.0);
 
-		onFrameRead(frame, time_left);
-		if (!playing_)
-			break;
+        onFrameRead(frame, time_left);
+        if (!playing_)
+            break;
 
-		currentTime_ = timer_.elapsed() + timerOffset_;
-		time_left = std::max(currentFrameTime_ - currentTime_, 0.0);
+        currentTime_ = timer_.elapsed() + timerOffset_;
+        time_left = std::max(currentFrameTime_ - currentTime_, 0.0);
 
-		while (time_left > 0 && canWaitForFrame_) {
+        while (time_left > 0 && canWaitForFrame_) {
             double dtime_sec = 0.0;
             double dtime_frac = modf(time_left, &dtime_sec);
             boost::xtime xt;
@@ -134,149 +134,149 @@ bool VideoPlayer::play()
             xt.nsec += static_cast<int>(dtime_frac * 1000000000);
             boost::thread::sleep(xt);
 
-    		currentTime_ = timer_.elapsed() + timerOffset_;
-    		time_left = std::max(currentFrameTime_ - currentTime_, 0.0);
-		}
+            currentTime_ = timer_.elapsed() + timerOffset_;
+            time_left = std::max(currentFrameTime_ - currentTime_, 0.0);
+        }
 
-		onFrameDisplay(frame);
-		if (!playing_)
-			break;
+        onFrameDisplay(frame);
+        if (!playing_)
+            break;
 
-		currentTime_ = timer_.elapsed() + timerOffset_;
+        currentTime_ = timer_.elapsed() + timerOffset_;
 
-		bool seeked = positionVideo();
+        bool seeked = positionVideo();
 
-		if (currentFrameNo_ + 1 == frameCount_) {
-			stream_ended = true;
-			stop();
-			break;
-		}
+        if (currentFrameNo_ + 1 == frameCount_) {
+            stream_ended = true;
+            stop();
+            break;
+        }
 
-		if (!seeked) {
-			unsigned grab_cnt = 0;
-			do {
-				if (!video_.grab())
-					throw std::runtime_error("problem reading video");
-				allReadFrames_++;
-				grab_cnt++;
-				currentFrameNo_ = static_cast<unsigned>(video_.get(CV_CAP_PROP_POS_FRAMES));
-				currentFrameTime_ = video_.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
-			} while (currentFrameTime_ < currentTime_ && canDropFrames_);
+        if (!seeked) {
+            unsigned grab_cnt = 0;
+            do {
+                if (!video_.grab())
+                    throw std::runtime_error("problem reading video");
+                allReadFrames_++;
+                grab_cnt++;
+                currentFrameNo_ = static_cast<unsigned>(video_.get(CV_CAP_PROP_POS_FRAMES));
+                currentFrameTime_ = video_.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
+            } while (currentFrameTime_ < currentTime_ && canDropFrames_);
 
-			lastDroppedFrames_ = grab_cnt - 1;
-			readFrames_++;
-		}
-	}
+            lastDroppedFrames_ = grab_cnt - 1;
+            readFrames_++;
+        }
+    }
 
-	onPlaybackEnd();
+    onPlaybackEnd();
 
-	return stream_ended;
+    return stream_ended;
 }
 
 void VideoPlayer::stop()
 {
-	if (!loaded_)
-		throw std::logic_error("no video loaded");
-	if (!playing_)
-		throw std::logic_error("video not playing");
+    if (!loaded_)
+        throw std::logic_error("no video loaded");
+    if (!playing_)
+        throw std::logic_error("video not playing");
 
-	playing_ = false;
+    playing_ = false;
 }
 
 void VideoPlayer::seekToFrame(unsigned frm_no)
 {
-	if (!loaded_)
-		throw std::logic_error("no video loaded");
+    if (!loaded_)
+        throw std::logic_error("no video loaded");
 
-	seekedFrameNo_ = frm_no;
+    seekedFrameNo_ = frm_no;
 }
 
 void VideoPlayer::seekToTime(double frm_tm)
 {
-	if (!loaded_)
-		throw std::logic_error("no video loaded");
+    if (!loaded_)
+        throw std::logic_error("no video loaded");
 
-	seekedFrameNo_ = frm_tm;
+    seekedFrameNo_ = frm_tm;
 }
 
 bool VideoPlayer::canDropFrames() const
 {
-	return canDropFrames_;
+    return canDropFrames_;
 }
 
 bool VideoPlayer::canWaitForFrame() const
 {
-	return canWaitForFrame_;
+    return canWaitForFrame_;
 }
 
 void VideoPlayer::setCanDropFrames(bool val)
 {
-	canDropFrames_ = val;
+    canDropFrames_ = val;
 }
 
 void VideoPlayer::setCanWaitForFrame(bool val)
 {
-	canWaitForFrame_ = val;
+    canWaitForFrame_ = val;
 }
 
 unsigned VideoPlayer::frameWidth() const
 {
-	return frameWidth_;
+    return frameWidth_;
 }
 
 unsigned VideoPlayer::frameHeight() const
 {
-	return frameHeight_;
+    return frameHeight_;
 }
 
 unsigned VideoPlayer::frameCount() const
 {
-	return frameCount_;
+    return frameCount_;
 }
 
 unsigned VideoPlayer::startFrameNo() const
 {
-	return startFrameNo_;
+    return startFrameNo_;
 }
 
 double VideoPlayer::startFrameTime() const
 {
-	return startFrameTime_;
+    return startFrameTime_;
 }
 
 unsigned VideoPlayer::currentFrameNo() const
 {
-	return currentFrameNo_;
+    return currentFrameNo_;
 }
 
 double VideoPlayer::currentFrameTime() const
 {
-	return currentFrameTime_;
+    return currentFrameTime_;
 }
 
 double VideoPlayer::startTime() const
 {
-	return timerOffset_;
+    return timerOffset_;
 }
 
 double VideoPlayer::currentTime() const
 {
-	return currentTime_;
+    return currentTime_;
 }
 
 unsigned VideoPlayer::lastDroppedFrames() const
 {
-	return lastDroppedFrames_;
+    return lastDroppedFrames_;
 }
 
 unsigned VideoPlayer::allReadFrames() const
 {
-	return allReadFrames_;
+    return allReadFrames_;
 }
 
 unsigned VideoPlayer::readFrames() const
 {
-	return readFrames_;
+    return readFrames_;
 }
 
 void VideoPlayer::onLoaded()
@@ -293,7 +293,7 @@ void VideoPlayer::onPlaybackEnd()
 
 bool VideoPlayer::onBeforeReadFrame(double tm_left)
 {
-	return true;
+    return true;
 }
 
 void VideoPlayer::onFrameRead(cv::Mat frm, double tm_left)
@@ -306,29 +306,29 @@ void VideoPlayer::onFrameDisplay(cv::Mat frm)
 
 bool VideoPlayer::positionVideo()
 {
-	if (!loaded_)
-		throw std::logic_error("no video loaded");
+    if (!loaded_)
+        throw std::logic_error("no video loaded");
 
-	if (seekedFrameNo_ >= 0) {
-		if (!video_.set(CV_CAP_PROP_POS_FRAMES, seekedFrameNo_))
-			throw std::runtime_error("problem seeking in video");
-		seekedFrameNo_ = -1;
-	} else if (seekedFrameTime_ >= 0) {
-		if (!video_.set(CV_CAP_PROP_POS_MSEC, seekedFrameTime_ * 1000.0))
-			throw std::runtime_error("problem seeking in video");
-		seekedFrameTime_ = -1;
-	} else {
-		return false;
-	}
-	if (!video_.grab())
-		throw std::runtime_error("problem reading video");
-	allReadFrames_++;
-	readFrames_++;
+    if (seekedFrameNo_ >= 0) {
+        if (!video_.set(CV_CAP_PROP_POS_FRAMES, seekedFrameNo_))
+            throw std::runtime_error("problem seeking in video");
+        seekedFrameNo_ = -1;
+    } else if (seekedFrameTime_ >= 0) {
+        if (!video_.set(CV_CAP_PROP_POS_MSEC, seekedFrameTime_ * 1000.0))
+            throw std::runtime_error("problem seeking in video");
+        seekedFrameTime_ = -1;
+    } else {
+        return false;
+    }
+    if (!video_.grab())
+        throw std::runtime_error("problem reading video");
+    allReadFrames_++;
+    readFrames_++;
 
-	currentFrameNo_ = static_cast<unsigned>(video_.get(CV_CAP_PROP_POS_FRAMES));
-	startFrameNo_ = currentFrameNo_;
-	currentFrameTime_ = video_.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
-	startFrameTime_ = currentFrameTime_;
-	timerOffset_ = currentFrameTime_;
-	return true;
+    currentFrameNo_ = static_cast<unsigned>(video_.get(CV_CAP_PROP_POS_FRAMES));
+    startFrameNo_ = currentFrameNo_;
+    currentFrameTime_ = video_.get(CV_CAP_PROP_POS_MSEC) / 1000.0;
+    startFrameTime_ = currentFrameTime_;
+    timerOffset_ = currentFrameTime_;
+    return true;
 }

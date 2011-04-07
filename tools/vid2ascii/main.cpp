@@ -38,7 +38,7 @@ using std::cerr;
 
 class VideoToAscii: public CmdlineTool
 {
-	friend class MyVideoPlayer;
+    friend class MyVideoPlayer;
 public:
     VideoToAscii();
 
@@ -119,17 +119,17 @@ bool VideoToAscii::processArgs()
 class MyVideoPlayer: public VideoPlayer
 {
 public:
-	explicit MyVideoPlayer(const VideoToAscii* ctx, KG::Ascii::Asciifier* asc, Console* con)
-		:context_(ctx)
-		,asciifier_(asc)
-		,console_(con)
-	{
-	}
+    explicit MyVideoPlayer(const VideoToAscii* ctx, KG::Ascii::Asciifier* asc, Console* con)
+        :context_(ctx)
+        ,asciifier_(asc)
+        ,console_(con)
+    {
+    }
 
 protected:
     virtual void onLoaded()
     {
-    	cout << "initializing...\n";
+        cout << "initializing...\n";
 
         unsigned char_width = asciifier_->context()->cellWidth();
         unsigned char_height = asciifier_->context()->cellHeight();
@@ -140,8 +140,8 @@ protected:
             outWidth_ = hint_width;
             outHeight_ = outWidth_ * frameHeight() / frameWidth();
         } else {
-        	outHeight_ = hint_height;
-        	outWidth_ = outHeight_ * frameWidth() / frameHeight();
+            outHeight_ = hint_height;
+            outWidth_ = outHeight_ * frameWidth() / frameHeight();
         }
 
         cols_ = (outWidth_ + char_width - 1) / char_width;
@@ -157,59 +157,59 @@ protected:
         cout << "worker threads " << asciifier_->threadCount() << "\n";
 
         if (context_->startFrame_) {
-        	cout << "positioning...\n";
-        	seekToFrame(context_->startFrame_.get());
+            cout << "positioning...\n";
+            seekToFrame(context_->startFrame_.get());
         } else if (context_->startTime_) {
-        	cout << "positioning...\n";
-        	seekToTime(context_->startTime_.get());
+            cout << "positioning...\n";
+            seekToTime(context_->startTime_.get());
         }
     }
 
     virtual void onPlaybackStart()
     {
-    	cout << "playback start\n";
-    	if (context_->renderAll_) {
-    		setCanDropFrames(false);
-			setCanWaitForFrame(false);
-    	}
-    	if (context_->showVideo_) {
-    		cv::namedWindow("test", 1);
-    	}
+        cout << "playback start\n";
+        if (context_->renderAll_) {
+            setCanDropFrames(false);
+            setCanWaitForFrame(false);
+        }
+        if (context_->showVideo_) {
+            cv::namedWindow("test", 1);
+        }
         text_.resize(rows_, cols_);
         console_->setup(rows_, cols_);
     }
 
     virtual void onPlaybackEnd()
     {
-    	cout << "playback end\n";
-    	if (context_->showVideo_) {
-        	cv::destroyWindow("test");
-    	}
+        cout << "playback end\n";
+        if (context_->showVideo_) {
+            cv::destroyWindow("test");
+        }
     }
 
     virtual bool onBeforeReadFrame(double tm_left)
     {
         if (context_->maxFrames_) {
-        	unsigned frm_cnt = currentFrameNo() - startFrameNo();
-        	if (frm_cnt >= context_->maxFrames_.get())
-        		return false;
+            unsigned frm_cnt = currentFrameNo() - startFrameNo();
+            if (frm_cnt >= context_->maxFrames_.get())
+                return false;
         }
         if (context_->endFrame_) {
-        	if (currentFrameNo() >= context_->endFrame_.get())
-        		return false;
+            if (currentFrameNo() >= context_->endFrame_.get())
+                return false;
         }
         if (context_->maxTime_) {
-        	double tm_span = currentFrameTime() - startFrameTime();
-        	if (tm_span >= context_->maxTime_.get())
-        		return false;
+            double tm_span = currentFrameTime() - startFrameTime();
+            if (tm_span >= context_->maxTime_.get())
+                return false;
         }
         if (context_->endTime_) {
-        	if (currentFrameTime() >= context_->endTime_.get())
-        		return false;
+            if (currentFrameTime() >= context_->endTime_.get())
+                return false;
         }
         if (tm_left > 0 && context_->showVideo_) {
             if (cv::waitKey(1) >= 0)
-            	return false;
+                return false;
         }
         return true;
     }
@@ -234,7 +234,7 @@ protected:
         assert(grayFrame_.type() == CV_8UC1);
 
         KG::Ascii::Surface8c gray_surface(outWidth_, outHeight_,
-        		grayFrame_.data, grayFrame_.step[0]);
+                grayFrame_.data, grayFrame_.step[0]);
 
         text_.clear();
         asciifier_->generate(gray_surface, text_);
@@ -262,48 +262,48 @@ private:
 
 int VideoToAscii::doExecute()
 {
-	try {
-		cout << "loading font\n";
-	    KG::Ascii::FontImage font;
-	    if (!font.load(fontFile_)) {
-	    	cerr << "problem loading font\n";
-	        return 1;
-	    }
-		cout << "creating glyph matcher\n";
-	    KG::Ascii::GlyphMatcherContextFactory matcher_ctx_factory;
-	    KG::Ascii::GlyphMatcherContext* matcher_ctx = matcher_ctx_factory.create(&font, algorithm_);
-	    assert(matcher_ctx);
-	    KG::Ascii::DynamicAsciifier asciifier(matcher_ctx);
-	    assert(asciifier.context() == matcher_ctx);
-	    if (threads_ == 1) {
-	        asciifier.setSequential();
-	    } else {
-	        asciifier.setParallel(threads_);
-	    }
+    try {
+        cout << "loading font\n";
+        KG::Ascii::FontImage font;
+        if (!font.load(fontFile_)) {
+            cerr << "problem loading font\n";
+            return 1;
+        }
+        cout << "creating glyph matcher\n";
+        KG::Ascii::GlyphMatcherContextFactory matcher_ctx_factory;
+        KG::Ascii::GlyphMatcherContext* matcher_ctx = matcher_ctx_factory.create(&font, algorithm_);
+        assert(matcher_ctx);
+        KG::Ascii::DynamicAsciifier asciifier(matcher_ctx);
+        assert(asciifier.context() == matcher_ctx);
+        if (threads_ == 1) {
+            asciifier.setSequential();
+        } else {
+            asciifier.setParallel(threads_);
+        }
 
-	    Console con;
+        Console con;
 
-		cout << "loading video\n";
+        cout << "loading video\n";
 
-		MyVideoPlayer vplayer(this, &asciifier, &con);
-		if (!vplayer.load(inputFile_))
-			return -1;
+        MyVideoPlayer vplayer(this, &asciifier, &con);
+        if (!vplayer.load(inputFile_))
+            return -1;
 
-		vplayer.play();
+        vplayer.play();
 
-		double frm_tm_spn = vplayer.currentFrameTime() - vplayer.startFrameTime();
-		double plr_tm_spn = vplayer.currentTime() - vplayer.startTime();
+        double frm_tm_spn = vplayer.currentFrameTime() - vplayer.startFrameTime();
+        double plr_tm_spn = vplayer.currentTime() - vplayer.startTime();
 
-		cout << "total frames " << vplayer.allReadFrames() << "\n";
-		cout << "displayed frames " << vplayer.readFrames() << "\n";
-		cout << "skipped frames " << (vplayer.allReadFrames() - vplayer.readFrames()) << "\n";
-		cout << "total video time " << frm_tm_spn << "\n";
-		cout << "processing time " << plr_tm_spn << "\n";
-		cout << "processing time / frame " << plr_tm_spn / vplayer.readFrames() << "\n";
-	} catch (std::exception& e) {
-		cerr << "error: " << e.what() << "\n";
-		return 1;
-	}
+        cout << "total frames " << vplayer.allReadFrames() << "\n";
+        cout << "displayed frames " << vplayer.readFrames() << "\n";
+        cout << "skipped frames " << (vplayer.allReadFrames() - vplayer.readFrames()) << "\n";
+        cout << "total video time " << frm_tm_spn << "\n";
+        cout << "processing time " << plr_tm_spn << "\n";
+        cout << "processing time / frame " << plr_tm_spn / vplayer.readFrames() << "\n";
+    } catch (std::exception& e) {
+        cerr << "error: " << e.what() << "\n";
+        return 1;
+    }
 
     return 0;
 }

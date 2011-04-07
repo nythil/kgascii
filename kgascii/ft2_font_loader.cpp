@@ -258,7 +258,7 @@ int FT2FontLoader::makeRenderFlags() const
     case RenderGrayscale: return FT_RENDER_MODE_NORMAL;
     case RenderMonochrome: return FT_RENDER_MODE_MONO;
     }
-	return 0;
+    return 0;
 }
 
 } } // namespace KG::Ascii

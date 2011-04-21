@@ -1,5 +1,10 @@
 build/
-CMakeCache.txt
+bin/
+lib/
 CMakeFiles/
 kgascii/kgascii_config.hpp
-
+.cproject
+.project
+Makefile
+CMakeCache.txt
+cmake_install.cmake

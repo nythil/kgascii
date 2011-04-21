@@ -1,1 +1,5 @@
 build/
+CMakeCache.txt
+CMakeFiles/
+kgascii/kgascii_config.hpp
+

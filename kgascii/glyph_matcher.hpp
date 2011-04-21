@@ -29,7 +29,9 @@ class GlyphMatcherContext;
 class KGASCII_API GlyphMatcher: boost::noncopyable
 {
 public:
-    virtual ~GlyphMatcher();
+    virtual ~GlyphMatcher()
+    {
+    }
 
 public:
     virtual const GlyphMatcherContext* context() const = 0;
@@ -37,7 +39,9 @@ public:
     virtual unsigned match(const Surface8c& imgv) = 0;
 
 protected:
-    GlyphMatcher();
+    GlyphMatcher()
+    {
+    }
 };
 
 } } // namespace KG::Ascii

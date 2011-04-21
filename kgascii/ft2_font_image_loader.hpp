@@ -21,32 +21,81 @@
 #include <kgascii/kgascii_api.hpp>
 #include <kgascii/font_image_loader.hpp>
 #include <kgascii/surface_container.hpp>
+#include <kgascii/surface_algorithm.hpp>
+#include <kgascii/ft2_font_loader.hpp>
 
 namespace KG { namespace Ascii {
-
-class FT2FontLoader;
 
 class KGASCII_API FT2FontImageLoader: public FontImageLoader
 {
 public:
-    explicit FT2FontImageLoader(FT2FontLoader& ldr);
+    explicit FT2FontImageLoader(FT2FontLoader& ldr)
+        :loader_(ldr)
+    {
+    }
 
 public:
-    std::string familyName() const;
+    std::string familyName() const
+    {
+        return loader_.familyName();
+    }
 
-    std::string styleName() const;
+    std::string styleName() const
+    {
+        return loader_.styleName();
+    }
 
-    unsigned pixelSize() const;
+    unsigned pixelSize() const
+    {
+        return loader_.pixelSize();
+    }
 
-    unsigned glyphWidth() const;
+    unsigned glyphWidth() const
+    {
+        return loader_.maxAdvance();
+    }
 
-    unsigned glyphHeight() const;
+    unsigned glyphHeight() const
+    {
+        return loader_.ascender() + loader_.descender();
+    }
 
-    std::vector<unsigned> charcodes() const;
+    std::vector<unsigned> charcodes() const
+    {
+        return loader_.charcodes();
+    }
 
-    bool loadGlyph(unsigned charcode);
+    bool loadGlyph(unsigned charcode)
+    {
+        if (!loader_.loadGlyph(charcode))
+            return false;
 
-    Surface8c glyph() const;
+        unsigned bmp_off_x = std::max<int>(-loader_.glyphLeft(), 0);
+        unsigned bmp_off_y = std::max<int>(loader_.glyphTop() - loader_.ascender(), 0);
+        unsigned bmp_width = std::min<unsigned>(loader_.glyphWidth(), glyphWidth() - bmp_off_x);
+        unsigned bmp_height = std::min<unsigned>(loader_.glyphHeight(), glyphHeight() - bmp_off_y);
+
+        unsigned img_off_x = std::max<int>(loader_.glyphLeft(), 0);
+        unsigned img_off_y = std::max<int>(loader_.ascender() - loader_.glyphTop(), 0);
+        unsigned common_width = std::min<unsigned>(bmp_width, glyphWidth() - img_off_x);
+        unsigned common_height = std::min<unsigned>(bmp_height, glyphHeight() - img_off_y);
+
+        assert(img_off_x + common_width <= glyphWidth());
+        assert(img_off_y + common_height <= glyphHeight());
+
+        glyphData_.resize(glyphWidth(), glyphHeight());
+        const Surface8& glyph_surf = glyphData_.surface();
+        fillPixels(glyph_surf, 0);
+        copyPixels(loader_.glyph().window(bmp_off_x, bmp_off_y, common_width, common_height),
+                glyph_surf.window(img_off_x, img_off_y, common_width, common_height));
+
+        return true;
+    }
+
+    Surface8c glyph() const
+    {
+        return glyphData_.surface();
+    }
 
 private:
     FT2FontLoader& loader_;

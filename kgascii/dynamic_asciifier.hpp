@@ -22,27 +22,51 @@
 #include <boost/scoped_ptr.hpp>
 #include <kgascii/asciifier.hpp>
 #include <kgascii/kgascii_api.hpp>
+#include <kgascii/sequential_asciifier.hpp>
+#include <kgascii/parallel_asciifier.hpp>
 
 namespace KG { namespace Ascii {
 
 class KGASCII_API DynamicAsciifier: public Asciifier
 {
 public:
-    DynamicAsciifier(const GlyphMatcherContext* c);
+    DynamicAsciifier(const GlyphMatcherContext* c)
+        :Asciifier()
+        ,context_(c)
+    {
+        setSequential();
+    }
 
-    ~DynamicAsciifier();
+    ~DynamicAsciifier()
+    {
+    }
     
 public:
-    const GlyphMatcherContext* context() const;
+    const GlyphMatcherContext* context() const
+    {
+        return context_;
+    }
 
-    unsigned threadCount() const;
+    unsigned threadCount() const
+    {
+        return strategy_->threadCount();
+    }
 
 public:
-    void generate(const Surface8c& imgv, TextSurface& text);
+    void generate(const Surface8c& imgv, TextSurface& text)
+    {
+        strategy_->generate(imgv, text);
+    }
 
-    void setSequential();
+    void setSequential()
+    {
+        strategy_.reset(new SequentialAsciifier(context_));
+    }
 
-    void setParallel(unsigned cnt);
+    void setParallel(unsigned cnt)
+    {
+        strategy_.reset(new ParallelAsciifier(context_, cnt));
+    }
 
 private:
     const GlyphMatcherContext* context_;

@@ -26,26 +26,64 @@ namespace KG { namespace Ascii {
 class KGASCII_API TextSurface
 {
 public:
-    TextSurface();
+    TextSurface()
+        :rows_(0)
+        ,cols_(0)
+    {
+    }
 
-    TextSurface(unsigned rr, unsigned cc);
+    TextSurface(unsigned rr, unsigned cc)
+        :rows_(rr)
+        ,cols_(cc)
+        ,data_(rr * cc)
+    {
+    }
 
 public:
-    unsigned rows() const;
+    unsigned rows() const
+    {
+        return rows_;
+    }
 
-    unsigned cols() const;
+    unsigned cols() const
+    {
+        return cols_;
+    }
 
-    void resize(unsigned rr, unsigned cc);
+    void resize(unsigned rr, unsigned cc)
+    {
+        if (rows_ != rr || cols_ != cc) {
+            std::vector<char> new_data(rr * cc);
+            std::swap(rows_, rr);
+            std::swap(cols_, cc);
+            std::swap(data_, new_data);
+        }
+    }
 
-    void clear();
+    void clear()
+    {
+        std::fill(data_.begin(), data_.end(), ' ');
+    }
 
-    char operator()(unsigned r, unsigned c) const;
+    char operator()(unsigned r, unsigned c) const
+    {
+        return data_.at(r * cols_ + c);
+    }
 
-    char& operator()(unsigned r, unsigned c);
+    char& operator()(unsigned r, unsigned c)
+    {
+        return data_.at(r * cols_ + c);
+    }
 
-    const char* row(unsigned r) const;
+    const char* row(unsigned r) const
+    {
+        return &data_.at(r * cols_);
+    }
 
-    char* row(unsigned r);
+    char* row(unsigned r)
+    {
+        return &data_.at(r * cols_);
+    }
 
 private:
     unsigned rows_;

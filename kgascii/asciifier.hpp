@@ -30,7 +30,9 @@ class TextSurface;
 class KGASCII_API Asciifier: boost::noncopyable
 {
 public:
-    virtual ~Asciifier();
+    virtual ~Asciifier()
+    {
+    }
 
 public:
     virtual const GlyphMatcherContext* context() const = 0;
@@ -42,7 +44,9 @@ public:
             TextSurface& text) = 0;
 
 protected:
-    Asciifier();
+    Asciifier()
+    {
+    }
 };
 
 } } // namespace KG::Ascii

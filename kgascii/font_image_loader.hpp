@@ -29,9 +29,13 @@ namespace KG { namespace Ascii {
 class KGASCII_API FontImageLoader: boost::noncopyable
 {
 public:
-    FontImageLoader();
+    FontImageLoader()
+    {
+    }
 
-    virtual ~FontImageLoader();
+    virtual ~FontImageLoader()
+    {
+    }
 
 public:
     virtual std::string familyName() const = 0;

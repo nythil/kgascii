@@ -7,33 +7,24 @@ SET(kgascii_SRCS
     ft2pp/util.hpp 
     font_image.cpp
     font_image.hpp
-    font_image_loader.cpp
     font_image_loader.hpp
-    ft2_font_image_loader.cpp
     ft2_font_image_loader.hpp
     ft2_font_loader.cpp
     ft2_font_loader.hpp
     hexstring.cpp
     hexstring.hpp
-    asciifier.cpp
     asciifier.hpp
-    sequential_asciifier.cpp
     sequential_asciifier.hpp
-    parallel_asciifier.cpp
     parallel_asciifier.hpp
-    dynamic_asciifier.cpp
     dynamic_asciifier.hpp
     task_queue.hpp
-    glyph_matcher.cpp
     glyph_matcher.hpp
-    glyph_matcher_context.cpp
     glyph_matcher_context.hpp
     glyph_matcher_context_factory.cpp
     glyph_matcher_context_factory.hpp
     policy_based_glyph_matcher.hpp
     squared_euclidean_distance.hpp
     means_distance.hpp
-    text_surface.cpp
     text_surface.hpp
     pca_glyph_matcher.cpp
     pca_glyph_matcher.hpp

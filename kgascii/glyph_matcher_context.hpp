@@ -21,30 +21,48 @@
 #include <boost/noncopyable.hpp>
 #include <kgascii/kgascii_api.hpp>
 #include <kgascii/surface_fwd.hpp>
+#include <kgascii/glyph_matcher.hpp>
+#include <kgascii/font_image.hpp>
+#include <boost/scoped_ptr.hpp>
 
 namespace KG { namespace Ascii {
-
-class GlyphMatcher;
-class FontImage;
 
 class KGASCII_API GlyphMatcherContext: boost::noncopyable
 {
 public:
-    virtual ~GlyphMatcherContext();
+    virtual ~GlyphMatcherContext()
+    {
+    }
 
 public:
-    const FontImage* font() const;
+    const FontImage* font() const
+    {
+        return font_;
+    }
 
-    virtual unsigned cellWidth() const;
+    virtual unsigned cellWidth() const
+    {
+        return font_->glyphWidth();
+    }
 
-    virtual unsigned cellHeight() const;
+    virtual unsigned cellHeight() const
+    {
+        return font_->glyphHeight();
+    }
 
-    virtual unsigned match(const Surface8c& imgv) const;
+    virtual unsigned match(const Surface8c& imgv) const
+    {
+        boost::scoped_ptr<GlyphMatcher> matcher(createMatcher());
+        return matcher->match(imgv);
+    }
 
     virtual GlyphMatcher* createMatcher() const = 0;
 
 protected:
-    GlyphMatcherContext(const FontImage* f);
+    GlyphMatcherContext(const FontImage* f)
+        :font_(f)
+    {
+    }
 
 private:
     const FontImage* font_;
@@ -53,4 +71,3 @@ private:
 } } // namespace KG::Ascii
 
 #endif // KGASCII_GLYPHMATCHERCONTEXT_HPP
-

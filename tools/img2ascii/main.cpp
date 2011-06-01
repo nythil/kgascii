@@ -94,12 +94,14 @@ bool ImageToAscii::processArgs()
 
 int ImageToAscii::doExecute()
 {
+    std::cerr << "loading font...\n";
     KG::Ascii::FontImage font;
     if (!font.load(fontFile_))
         return -1;
     unsigned char_width = font.glyphWidth();
     unsigned char_height = font.glyphHeight();
 
+    std::cerr << "loading image...\n";
     cv::Mat capture_frame = cv::imread(inputFile_);
     if (capture_frame.empty())
         return -1;
@@ -121,6 +123,7 @@ int ImageToAscii::doExecute()
     unsigned col_count = (out_width + char_width - 1) / char_width;
     unsigned row_count = (out_height + char_height - 1) / char_height;
 
+    std::cerr << "creating glyph matcher...\n";
     KG::Ascii::TextSurface text(row_count, col_count);
     KG::Ascii::GlyphMatcherContextFactory matcher_ctx_factory;
     KG::Ascii::GlyphMatcherContext* matcher_ctx = matcher_ctx_factory.create(&font, algorithm_);
@@ -159,6 +162,7 @@ int ImageToAscii::doExecute()
     KG::Ascii::Surface8c gray_surface(out_width, out_height, 
             gray_frame.data, gray_frame.step[0]);
 
+    std::cerr << "converting...\n";
     text.clear();
     asciifier.generate(gray_surface, text);
 

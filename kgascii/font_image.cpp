@@ -25,6 +25,7 @@
 namespace KG { namespace Ascii {
 
 FontImage::FontImage()
+    :charCount_(0)
 {
 }
 
@@ -60,7 +61,7 @@ unsigned FontImage::glyphSize() const
 
 size_t FontImage::glyphCount() const
 {
-    return charcodes_.size();
+    return charCount_;
 }
 
 std::vector<unsigned> FontImage::charcodes() const
@@ -75,6 +76,7 @@ std::vector<Surface8c> FontImage::glyphs() const
 
 Surface8c FontImage::glyphByIndex(size_t i) const
 {
+    assert(i < charCount_);
     return glyphs_[i];
 }
 
@@ -82,7 +84,8 @@ Surface8c FontImage::glyphByCharcode(unsigned c) const
 {
     std::vector<unsigned>::const_iterator it = std::find(charcodes_.begin(), 
             charcodes_.end(), c);
-    return glyphByIndex(*it);
+    assert(it != charcodes_.end());
+    return glyphByIndex(std::distance(charcodes_.begin(), it));
 }
 
 bool FontImage::save(const std::string& file_path) const
@@ -94,7 +97,7 @@ bool FontImage::save(const std::string& file_path) const
     pt.put("font.glyph_width", glyphWidth_);
     pt.put("font.glyph_height", glyphHeight_);
 
-    for (size_t ci = 0; ci < charcodes_.size(); ++ci) {
+    for (size_t ci = 0; ci < charCount_; ++ci) {
         const Surface8& glyph_surf = glyphs_[ci];
         boost::property_tree::ptree pt_glyph;
         pt_glyph.put("charcode", charcodes_[ci]);
@@ -126,6 +129,8 @@ bool FontImage::load(const std::string& file_path)
 
     prepareStorage(ci_count, glyphWidth_, glyphHeight_);
 
+    charCount_ = 0;
+
     boost::property_tree::ptree::const_iterator it_end = pt_glyphs.end();
     boost::property_tree::ptree::const_iterator it;
     for (it = pt_glyphs.begin(); it != it_end; ++it, ++ci) {
@@ -133,6 +138,8 @@ bool FontImage::load(const std::string& file_path)
 
         std::string data = it->second.get<std::string>("data");
         unhexlify(data, glyphs_[ci].data());
+
+        charCount_++;
     }
 
     return true;
@@ -151,12 +158,16 @@ bool FontImage::load(FontImageLoader& loader, unsigned ci_min, unsigned ci_max)
 
     prepareStorage(ci_count, glyphWidth_, glyphHeight_);
 
+    charCount_ = 0;
+
     for (unsigned ci = 0; ci < ci_count; ++ci) {
         if (!loader.loadGlyph(ci + ci_min))
             continue;
 
         charcodes_[ci] = ci + ci_min;
         copyPixels(loader.glyph(), glyphs_[ci]);
+
+        charCount_++;
     }
 
     return true;

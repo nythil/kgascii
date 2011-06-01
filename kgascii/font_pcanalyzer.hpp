@@ -31,7 +31,13 @@ class FontPCAnalyzer
 public:
     explicit FontPCAnalyzer(const FontImage* f);
 
+    void analyze();
+
     FontPCA extract(size_t cnt) const;
+
+    bool saveToCache(const std::string& filename) const;
+
+    bool loadFromCache(const std::string& filename);
 
 public:
     const FontImage* font() const;

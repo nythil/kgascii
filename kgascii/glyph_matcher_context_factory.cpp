@@ -67,6 +67,14 @@ GlyphMatcherContext* GlyphMatcherContextFactory::create(const FontImage* font,
             nfeatures = boost::lexical_cast<size_t>(options_map["nf"]);
         } catch (boost::bad_lexical_cast&) { }
         FontPCAnalyzer* pcanalyzer = new FontPCAnalyzer(font);
+        if (options_map.count("cache") && !options_map["cache"].empty()) {
+            pcanalyzer->loadFromCache(options_map["cache"]);
+        } else {
+            pcanalyzer->analyze();
+        }
+        if (options_map.count("makecache") && !options_map["makecache"].empty()) {
+            pcanalyzer->saveToCache(options_map["makecache"]);
+        }
         FontPCA* pca = new FontPCA(pcanalyzer, nfeatures);
         return new PcaGlyphMatcherContext(pca);
     } else if (algo_name == "sed") {

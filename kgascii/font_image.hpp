@@ -74,6 +74,7 @@ private:
     std::vector<unsigned> charcodes_;
     std::vector<Surface8> glyphs_;
     std::vector<Surface8::value_type> glyphStorage_;
+    size_t charCount_;
 };
 
 } } // namespace KG::Ascii

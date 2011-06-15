@@ -54,14 +54,14 @@ unsigned PcaReconstructionFontImageLoader::glyphHeight() const
     return pca_->font()->glyphHeight();
 }
 
-std::vector<unsigned> PcaReconstructionFontImageLoader::charcodes() const
+std::vector<Symbol> PcaReconstructionFontImageLoader::charcodes() const
 {
     return charcodes_;
 }
 
-bool PcaReconstructionFontImageLoader::loadGlyph(unsigned charcode)
+bool PcaReconstructionFontImageLoader::loadGlyph(Symbol charcode)
 {
-    std::vector<unsigned>::iterator it = std::find(charcodes_.begin(), charcodes_.end(), charcode);
+    std::vector<Symbol>::iterator it = std::find(charcodes_.begin(), charcodes_.end(), charcode);
     if (it == charcodes_.end())
         return false;
     size_t it_idx = std::distance(charcodes_.begin(), it);

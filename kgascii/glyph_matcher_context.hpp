@@ -50,7 +50,7 @@ public:
         return font_->glyphHeight();
     }
 
-    virtual unsigned match(const Surface8c& imgv) const
+    virtual Symbol match(const Surface8c& imgv) const
     {
         boost::scoped_ptr<GlyphMatcher> matcher(createMatcher());
         return matcher->match(imgv);

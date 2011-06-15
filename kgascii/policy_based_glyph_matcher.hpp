@@ -53,7 +53,7 @@ public:
         return context_;
     }
 
-    unsigned match(const Surface8c& imgv);
+    Symbol match(const Surface8c& imgv);
 
 private:
     const Context* context_;
@@ -86,13 +86,13 @@ public:
     }
 
 private:
-    std::vector<unsigned> charcodes_;
+    std::vector<Symbol> charcodes_;
     std::vector<Surface8c> glyphs_;
     DistancePolicy distance_;
 };
 
 template<typename DistancePolicy>
-unsigned PolicyBasedGlyphMatcher<DistancePolicy>::match(const Surface8c& imgv)
+Symbol PolicyBasedGlyphMatcher<DistancePolicy>::match(const Surface8c& imgv)
 {
     assert(imgv.width() <= surface_.width());
     assert(imgv.height() <= surface_.height());
@@ -101,7 +101,7 @@ unsigned PolicyBasedGlyphMatcher<DistancePolicy>::match(const Surface8c& imgv)
     copyPixels(imgv, surface_.window(0, 0, imgv.width(), imgv.height()));
 
     int d2_min = std::numeric_limits<int>::max();
-    unsigned cc_min = ' ';
+    Symbol cc_min;
     for (size_t ci = 0; ci < context_->charcodes_.size(); ++ci) {
         int d2 = context_->distance_(surface_, context_->glyphs_[ci]);
         if (d2 < d2_min) {

@@ -108,14 +108,14 @@ public:
         return glyphHeight_;
     }
 
-    std::vector<unsigned> charcodes() const
+    std::vector<KG::Ascii::Symbol> charcodes() const
     {
         return charcodes_;
     }
 
-    bool loadGlyph(unsigned charcode)
+    bool loadGlyph(KG::Ascii::Symbol charcode)
     {
-        std::vector<unsigned>::iterator it = std::find(
+        std::vector<KG::Ascii::Symbol>::iterator it = std::find(
                 charcodes_.begin(), charcodes_.end(), charcode);
         if (it == charcodes_.end())
             return false;
@@ -171,7 +171,7 @@ public:
             KG::Ascii::copyPixels(glyph_image_surface, glyph_container.surface());
 
             glyphs_.push_back(glyph_container);
-            charcodes_.push_back(32 + img_cnt);
+            charcodes_.push_back(KG::Ascii::Symbol(32 + img_cnt));
 
             img_cnt++;
         }
@@ -188,7 +188,7 @@ private:
     unsigned glyphWidth_;
     unsigned glyphHeight_;
     std::vector<KG::Ascii::SurfaceContainer8> glyphs_;
-    std::vector<unsigned> charcodes_;
+    std::vector<KG::Ascii::Symbol> charcodes_;
     size_t loadedIndex_;
 };
 
@@ -212,7 +212,7 @@ int GenerateFont::doExecute()
     }
 
     FontImage image;
-    if (!image.load(loader, 32, 127)) {
+    if (!image.load(loader, Symbol(32), Symbol(127))) {
         std::cout << "loading error\n";
         return -1;
     }

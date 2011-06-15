@@ -20,6 +20,7 @@
 
 #include <vector>
 #include <kgascii/kgascii_api.hpp>
+#include <kgascii/symbol.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -53,7 +54,7 @@ public:
     void resize(unsigned rr, unsigned cc)
     {
         if (rows_ != rr || cols_ != cc) {
-            std::vector<char> new_data(rr * cc);
+            std::vector<Symbol> new_data(rr * cc);
             std::swap(rows_, rr);
             std::swap(cols_, cc);
             std::swap(data_, new_data);
@@ -62,25 +63,25 @@ public:
 
     void clear()
     {
-        std::fill(data_.begin(), data_.end(), ' ');
+        std::fill(data_.begin(), data_.end(), Symbol());
     }
 
-    char operator()(unsigned r, unsigned c) const
+    Symbol operator()(unsigned r, unsigned c) const
     {
         return data_.at(r * cols_ + c);
     }
 
-    char& operator()(unsigned r, unsigned c)
+    Symbol& operator()(unsigned r, unsigned c)
     {
         return data_.at(r * cols_ + c);
     }
 
-    const char* row(unsigned r) const
+    const Symbol* row(unsigned r) const
     {
         return &data_.at(r * cols_);
     }
 
-    char* row(unsigned r)
+    Symbol* row(unsigned r)
     {
         return &data_.at(r * cols_);
     }
@@ -88,7 +89,7 @@ public:
 private:
     unsigned rows_;
     unsigned cols_;
-    std::vector<char> data_;
+    std::vector<Symbol> data_;
 };
 
 } } // namespace KG::Ascii

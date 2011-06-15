@@ -132,7 +132,7 @@ int ExtractFont::doExecute()
     FT2FontImageLoader image_loader(loader);
 
     FontImage image;
-    if (!image.load(image_loader, minChar_, maxChar_)) {
+    if (!image.load(image_loader, Symbol(minChar_), Symbol(maxChar_))) {
         std::cout << "loading error\n";
         return -1;
     }

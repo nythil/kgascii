@@ -64,7 +64,7 @@ size_t FontImage::glyphCount() const
     return charCount_;
 }
 
-std::vector<unsigned> FontImage::charcodes() const
+std::vector<Symbol> FontImage::charcodes() const
 {
     return charcodes_;
 }
@@ -80,9 +80,9 @@ Surface8c FontImage::glyphByIndex(size_t i) const
     return glyphs_[i];
 }
 
-Surface8c FontImage::glyphByCharcode(unsigned c) const
+Surface8c FontImage::glyphByCharcode(Symbol c) const
 {
-    std::vector<unsigned>::const_iterator it = std::find(charcodes_.begin(), 
+    std::vector<Symbol>::const_iterator it = std::find(charcodes_.begin(),
             charcodes_.end(), c);
     assert(it != charcodes_.end());
     return glyphByIndex(std::distance(charcodes_.begin(), it));
@@ -100,7 +100,7 @@ bool FontImage::save(const std::string& file_path) const
     for (size_t ci = 0; ci < charCount_; ++ci) {
         const Surface8& glyph_surf = glyphs_[ci];
         boost::property_tree::ptree pt_glyph;
-        pt_glyph.put("charcode", charcodes_[ci]);
+        pt_glyph.put("charcode", charcodes_[ci].value());
         pt_glyph.put("data", hexlify(glyph_surf.data(), glyph_surf.dataEnd()));
         pt.add_child("font.glyphs.glyph", pt_glyph);
     }
@@ -134,7 +134,7 @@ bool FontImage::load(const std::string& file_path)
     boost::property_tree::ptree::const_iterator it_end = pt_glyphs.end();
     boost::property_tree::ptree::const_iterator it;
     for (it = pt_glyphs.begin(); it != it_end; ++it, ++ci) {
-        charcodes_[ci] = it->second.get<unsigned>("charcode");
+        charcodes_[ci] = Symbol(it->second.get<int>("charcode"));
 
         std::string data = it->second.get<std::string>("data");
         unhexlify(data, glyphs_[ci].data());
@@ -145,7 +145,7 @@ bool FontImage::load(const std::string& file_path)
     return true;
 }
 
-bool FontImage::load(FontImageLoader& loader, unsigned ci_min, unsigned ci_max)
+bool FontImage::load(FontImageLoader& loader, Symbol ci_min, Symbol ci_max)
 {
     familyName_ = loader.familyName();
     styleName_ = loader.styleName();
@@ -154,17 +154,18 @@ bool FontImage::load(FontImageLoader& loader, unsigned ci_min, unsigned ci_max)
     glyphWidth_ = loader.glyphWidth();
     glyphHeight_ = loader.glyphHeight();
 
-    unsigned ci_count = ci_max - ci_min + 1;
+    int ci_count = ci_max.value() - ci_min.value() + 1;
 
     prepareStorage(ci_count, glyphWidth_, glyphHeight_);
 
     charCount_ = 0;
 
-    for (unsigned ci = 0; ci < ci_count; ++ci) {
-        if (!loader.loadGlyph(ci + ci_min))
+    for (int ci = 0; ci < ci_count; ++ci) {
+        Symbol ci_sym(ci + ci_min.value());
+        if (!loader.loadGlyph(ci_sym))
             continue;
 
-        charcodes_[ci] = ci + ci_min;
+        charcodes_[ci] = ci_sym;
         copyPixels(loader.glyph(), glyphs_[ci]);
 
         charCount_++;

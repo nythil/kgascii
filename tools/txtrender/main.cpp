@@ -116,7 +116,7 @@ int RenderText::doExecute()
     for (size_t rr = 0; rr < input_lines.size(); ++rr) {
         std::string line = input_lines[rr];
         for (size_t cc = 0; cc < line_length; ++cc) {
-            Surface8c glyph_surface = image.glyphByCharcode(line[cc]);
+            Surface8c glyph_surface = image.glyphByCharcode(Symbol(line[cc]));
             unsigned colX = cc * image.glyphWidth();
             unsigned rowY = rr * image.glyphHeight();
             copyPixels(glyph_surface, output_surface.window(colX, rowY,

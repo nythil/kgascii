@@ -60,14 +60,17 @@ public:
         return loader_.ascender() + loader_.descender();
     }
 
-    std::vector<unsigned> charcodes() const
+    std::vector<Symbol> charcodes() const
     {
-        return loader_.charcodes();
+        std::vector<Symbol> result(loader_.charcodes().size());
+        for (size_t i = 0; i < loader_.charcodes().size(); ++i)
+            result[i] = Symbol(loader_.charcodes()[i]);
+        return result;
     }
 
-    bool loadGlyph(unsigned charcode)
+    bool loadGlyph(Symbol charcode)
     {
-        if (!loader_.loadGlyph(charcode))
+        if (!loader_.loadGlyph(charcode.value()))
             return false;
 
         unsigned bmp_off_x = std::max<int>(-loader_.glyphLeft(), 0);

@@ -47,7 +47,7 @@ const GlyphMatcherContext* PcaGlyphMatcher::context() const
     return context_;
 }
 
-unsigned PcaGlyphMatcher::match(const Surface8c& imgv)
+Symbol PcaGlyphMatcher::match(const Surface8c& imgv)
 {
     assert(imgv.width() <= context_->cellWidth());
     assert(imgv.height() <= context_->cellHeight());

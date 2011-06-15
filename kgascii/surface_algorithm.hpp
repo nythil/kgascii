@@ -107,7 +107,7 @@ void copyPixels(const SurfaceBase<T>& src, const SurfaceBase<U>& dst)
 template<typename T>
 void copyPixels(const Eigen::VectorXf& src, const SurfaceBase<T>& dst)
 {
-    assert(src.size() == dst.size());
+    assert(static_cast<size_t>(src.size()) == dst.size());
     typedef Eigen::Matrix<T, Eigen::Dynamic, 1> VectorXuc;
     if (dst.isContinuous()) {
         VectorXuc::Map(dst.data(), dst.size()) = src.cast<T>();

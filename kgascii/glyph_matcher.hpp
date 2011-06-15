@@ -21,6 +21,7 @@
 #include <boost/noncopyable.hpp>
 #include <kgascii/kgascii_api.hpp>
 #include <kgascii/surface_fwd.hpp>
+#include <kgascii/symbol.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -36,7 +37,7 @@ public:
 public:
     virtual const GlyphMatcherContext* context() const = 0;
 
-    virtual unsigned match(const Surface8c& imgv) = 0;
+    virtual Symbol match(const Surface8c& imgv) = 0;
 
 protected:
     GlyphMatcher()

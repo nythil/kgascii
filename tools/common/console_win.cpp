@@ -90,12 +90,15 @@ void ConsoleImpl::setup(int rows, int cols)
 
 void ConsoleImpl::display(const KG::Ascii::TextSurface& text)
 {
+    std::vector<char> line(text.cols());
     for (unsigned r = 0; r < text.rows(); ++r) {
-        for (unsigned c = 0; c < text.cols(); ++c)
-            assert(32 <= text(r, c) && text(r, c) <= 127);
+        for (unsigned c = 0; c < text.cols(); ++c) {
+            assert(KG::Ascii::Symbol(32) <= text(r, c) && text(r, c) <= KG::Ascii::Symbol(127));
+            line[c] = text(r, c).charValue();
+        }
         COORD xy = { 0, r };
         DWORD written;
-        WriteConsoleOutputCharacterA(hndOutput_, text.row(r), text.cols(), xy, &written);
+        WriteConsoleOutputCharacterA(hndOutput_, &line[0], text.cols(), xy, &written);
     }
 }
 

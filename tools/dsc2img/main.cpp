@@ -84,7 +84,7 @@ int ExtractFont::doExecute()
     unsigned max_chars_per_row = maxWidth_ / image.glyphWidth();
     assert(max_chars_per_row > 1);
 
-    std::vector<unsigned> charcodes = image.charcodes();
+    std::vector<Symbol> charcodes = image.charcodes();
     size_t row_count = (charcodes.size() + max_chars_per_row - 1) / max_chars_per_row;
 
     size_t image_width = std::min<size_t>(max_chars_per_row, charcodes.size()) * image.glyphWidth();

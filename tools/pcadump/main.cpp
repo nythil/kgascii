@@ -146,8 +146,6 @@ void PcaDump::dumpDsc(const KG::Ascii::FontPCA& pca)
 
     KG::Ascii::PcaReconstructionFontImageLoader pca_loader(&pca);
     FontImage restored_font;
-    restored_font.load(pca_loader, 32, 126);
+    restored_font.load(pca_loader, Symbol(32), Symbol(126));
     restored_font.save(outputDsc_);
 }
-
-

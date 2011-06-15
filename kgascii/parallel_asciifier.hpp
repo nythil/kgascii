@@ -100,7 +100,7 @@ private:
         group_.join_all();
     }
 
-    void enqueue(const Surface8c& surf, char* outp)
+    void enqueue(const Surface8c& surf, Symbol* outp)
     {
         WorkItem wi = { surf, outp };
         queue_.push(wi);
@@ -113,7 +113,7 @@ private:
         //single character size
         size_t char_w = context_->cellWidth();
 
-        WorkItem wi;
+        WorkItem wi = WorkItem();
         while (queue_.wait_pop(wi)) {
             //processed image region size
             size_t roi_w = wi.imgv.width();
@@ -136,7 +136,7 @@ private:
     struct WorkItem
     {
         Surface8c imgv;
-        char* outp;
+        Symbol* outp;
     };
     TaskQueue<WorkItem> queue_;
 };

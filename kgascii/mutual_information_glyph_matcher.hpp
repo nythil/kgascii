@@ -41,7 +41,7 @@ public:
 public:
     const GlyphMatcherContext* context() const;
 
-    unsigned match(const Surface8c& imgv);
+    Symbol match(const Surface8c& imgv);
 
 private:
     const MutualInformationGlyphMatcherContext* context_;
@@ -131,7 +131,7 @@ public:
     }
 
 private:
-    std::vector<unsigned> charcodes_;
+    std::vector<Symbol> charcodes_;
     std::vector<Surface8c> glyphs_;
     std::vector<Eigen::VectorXi> histograms_;
     size_t colorBins_;
@@ -152,7 +152,7 @@ const GlyphMatcherContext* MutualInformationGlyphMatcher::context() const
     return context_;
 }
 
-unsigned MutualInformationGlyphMatcher::match(const Surface8c& imgv)
+Symbol MutualInformationGlyphMatcher::match(const Surface8c& imgv)
 {
     //copy imgv to tmp_surf padding with black pixels
     Surface8 tmp_surf = surfaceData_.surface();
@@ -163,7 +163,7 @@ unsigned MutualInformationGlyphMatcher::match(const Surface8c& imgv)
     double imgv_ent = context_->entropy(histogram_);
 
     double nmi_max = std::numeric_limits<double>::min();
-    unsigned cc_max = ' ';
+    Symbol cc_max;
     for (size_t ci = 0; ci < context_->charcodes_.size(); ++ci) {
         const Eigen::VectorXi& glyph_histogram = context_->histograms_[ci];
         double glyph_ent = context_->entropy(glyph_histogram);

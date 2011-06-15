@@ -5,37 +5,43 @@ SET(kgascii_SRCS
     ft2pp/face.hpp 
     ft2pp/library.hpp 
     ft2pp/util.hpp 
+    asciifier.hpp
+    dynamic_asciifier.hpp
     font_image.cpp
     font_image.hpp
     font_image_loader.hpp
+    font_pca.cpp
+    font_pca.hpp
+    font_pcanalyzer.cpp
+    font_pcanalyzer.hpp
     ft2_font_image_loader.hpp
     ft2_font_loader.cpp
     ft2_font_loader.hpp
-    hexstring.cpp
-    hexstring.hpp
-    asciifier.hpp
-    sequential_asciifier.hpp
-    parallel_asciifier.hpp
-    dynamic_asciifier.hpp
-    task_queue.hpp
     glyph_matcher.hpp
     glyph_matcher_context.hpp
     glyph_matcher_context_factory.cpp
     glyph_matcher_context_factory.hpp
-    policy_based_glyph_matcher.hpp
-    squared_euclidean_distance.hpp
+    hexstring.cpp
+    hexstring.hpp
+    kgascii_api.hpp
+    kgascii_config.hpp
     means_distance.hpp
-    text_surface.hpp
+    mutual_information_glyph_matcher.hpp
+    parallel_asciifier.hpp
     pca_glyph_matcher.cpp
     pca_glyph_matcher.hpp
-    kgascii_config.hpp
-    kgascii_api.hpp
-    font_pcanalyzer.cpp
-    font_pcanalyzer.hpp
-    font_pca.cpp
-    font_pca.hpp
     pca_reconstruction_font_image_loader.cpp
     pca_reconstruction_font_image_loader.hpp
+    policy_based_glyph_matcher.hpp
+    sequential_asciifier.hpp
+    squared_euclidean_distance.hpp
+    surface.hpp
+    surface_algorithm.hpp
+    surface_container.hpp
+    surface_fwd.hpp
+    symbol.hpp
+    task_queue.hpp
+    text_surface.hpp
 )
 SET(Boost_USE_STATIC_LIBS        ON)
 SET(Boost_USE_MULTITHREADED      ON)

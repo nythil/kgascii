@@ -42,7 +42,7 @@ public:
 
 private:
     const FontPCA* pca_;
-    std::vector<unsigned> charcodes_;
+    std::vector<Symbol> charcodes_;
 };
 
 class KGASCII_API PcaGlyphMatcher: public GlyphMatcher
@@ -53,7 +53,7 @@ public:
 public:
     const GlyphMatcherContext* context() const;
 
-    unsigned match(const Surface8c& imgv);
+    Symbol match(const Surface8c& imgv);
 
 private:
     const PcaGlyphMatcherContext* context_;

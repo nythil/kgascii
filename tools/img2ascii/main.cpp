@@ -168,7 +168,8 @@ int ImageToAscii::doExecute()
 
     std::ofstream fout(outputFile_.c_str());
     for (size_t r = 0; r < text.rows(); ++r) {
-        fout.write(text.row(r), text.cols());
+        for (size_t c = 0; c < text.cols(); ++c)
+            fout.put(text(r, c).charValue());
         fout.put('\n');
     }
     fout.close();

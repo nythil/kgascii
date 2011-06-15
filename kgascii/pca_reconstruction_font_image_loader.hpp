@@ -42,15 +42,15 @@ public:
 
     unsigned glyphHeight() const;
 
-    std::vector<unsigned> charcodes() const;
+    std::vector<Symbol> charcodes() const;
 
-    bool loadGlyph(unsigned charcode);
+    bool loadGlyph(Symbol charcode);
 
     Surface8c glyph() const;
 
 private:
     const FontPCA* pca_;
-    std::vector<unsigned> charcodes_;
+    std::vector<Symbol> charcodes_;
     SurfaceContainer8 glyphData_;
 };
 

@@ -23,6 +23,7 @@
 #include <boost/noncopyable.hpp>
 #include <kgascii/kgascii_api.hpp>
 #include <kgascii/surface.hpp>
+#include <kgascii/symbol.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -48,9 +49,9 @@ public:
 
     virtual unsigned glyphHeight() const = 0;
 
-    virtual std::vector<unsigned> charcodes() const = 0;
+    virtual std::vector<Symbol> charcodes() const = 0;
 
-    virtual bool loadGlyph(unsigned charcode) = 0;
+    virtual bool loadGlyph(Symbol charcode) = 0;
 
     virtual Surface8c glyph() const = 0;
 };

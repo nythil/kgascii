@@ -23,6 +23,7 @@
 #include <boost/noncopyable.hpp>
 #include <kgascii/kgascii_api.hpp>
 #include <kgascii/surface.hpp>
+#include <kgascii/symbol.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -48,19 +49,19 @@ public:
 
     size_t glyphCount() const;
 
-    std::vector<unsigned> charcodes() const;
+    std::vector<Symbol> charcodes() const;
 
     std::vector<Surface8c> glyphs() const;
 
     Surface8c glyphByIndex(size_t i) const;
 
-    Surface8c glyphByCharcode(unsigned c) const;
+    Surface8c glyphByCharcode(Symbol c) const;
 
     bool save(const std::string& file_path) const;
 
     bool load(const std::string& file_path);
 
-    bool load(FontImageLoader& loader, unsigned ci_min, unsigned ci_max);
+    bool load(FontImageLoader& loader, Symbol ci_min, Symbol ci_max);
 
 private:
     void prepareStorage(size_t count, unsigned w, unsigned h);
@@ -71,7 +72,7 @@ private:
     unsigned pixelSize_;
     unsigned glyphWidth_;
     unsigned glyphHeight_;
-    std::vector<unsigned> charcodes_;
+    std::vector<Symbol> charcodes_;
     std::vector<Surface8> glyphs_;
     std::vector<Surface8::value_type> glyphStorage_;
     size_t charCount_;

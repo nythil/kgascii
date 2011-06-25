@@ -17,15 +17,17 @@
 
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_image_loader.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <kgascii/hexstring.hpp>
+#include <boost/iterator/transform_iterator.hpp>
+#include <boost/bind.hpp>
+#include <fstream>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <kgascii/surface_algorithm.hpp>
 
 namespace KG { namespace Ascii {
 
 FontImage::FontImage()
-    :charCount_(0)
 {
 }
 
@@ -61,86 +63,76 @@ unsigned FontImage::glyphSize() const
 
 size_t FontImage::glyphCount() const
 {
-    return charCount_;
+    return glyphs_.size();
 }
 
 std::vector<Symbol> FontImage::charcodes() const
 {
-    return charcodes_;
+    const GlyphContainer::nth_index<0>::type& glyph_index = glyphs_.get<0>();
+    std::vector<Symbol> result(
+            boost::make_transform_iterator(glyph_index.begin(), boost::bind(&GlyphData::sym, _1)),
+            boost::make_transform_iterator(glyph_index.end(), boost::bind(&GlyphData::sym, _1))
+            );
+    return result;
 }
 
 std::vector<Surface8c> FontImage::glyphs() const
 {
-    return std::vector<Surface8c>(glyphs_.begin(), glyphs_.end());
+    const GlyphContainer::nth_index<0>::type& glyph_index = glyphs_.get<0>();
+    std::vector<Surface8c> result(
+            boost::make_transform_iterator(glyph_index.begin(), boost::bind(static_cast<Surface8c (SurfaceContainer8::*)() const>(&SurfaceContainer8::surface), boost::bind(&GlyphData::data, _1))),
+            boost::make_transform_iterator(glyph_index.end(), boost::bind(static_cast<Surface8c (SurfaceContainer8::*)() const>(&SurfaceContainer8::surface), boost::bind(&GlyphData::data, _1)))
+            );
+    return result;
 }
 
 Surface8c FontImage::glyphByIndex(size_t i) const
 {
-    assert(i < charCount_);
-    return glyphs_[i];
+    return glyphs_.get<0>().at(i).data.surface();
 }
 
 Surface8c FontImage::glyphByCharcode(Symbol c) const
 {
-    std::vector<Symbol>::const_iterator it = std::find(charcodes_.begin(),
-            charcodes_.end(), c);
-    assert(it != charcodes_.end());
-    return glyphByIndex(std::distance(charcodes_.begin(), it));
+    typedef GlyphContainer::nth_index<1>::type SymbolIndex;
+    const SymbolIndex& sym_index = glyphs_.get<1>();
+    SymbolIndex::const_iterator it = sym_index.find(c);
+    if (it == sym_index.end())
+        BOOST_THROW_EXCEPTION(std::out_of_range("Invalid symbol"));
+    return it->data.surface();
 }
 
 bool FontImage::save(const std::string& file_path) const
 {
-    boost::property_tree::ptree pt;
-    pt.put("font.family_name", familyName_);
-    pt.put("font.style_name", styleName_);
-    pt.put("font.pixel_size", pixelSize_);
-    pt.put("font.glyph_width", glyphWidth_);
-    pt.put("font.glyph_height", glyphHeight_);
+    std::ofstream ofs(file_path.c_str(), std::ios_base::out | std::ios_base::trunc);
+    if (!ofs.good())
+        BOOST_THROW_EXCEPTION(std::runtime_error("ofstream"));
 
-    for (size_t ci = 0; ci < charCount_; ++ci) {
-        const Surface8& glyph_surf = glyphs_[ci];
-        boost::property_tree::ptree pt_glyph;
-        pt_glyph.put("charcode", charcodes_[ci].value());
-        pt_glyph.put("data", hexlify(glyph_surf.data(), glyph_surf.dataEnd()));
-        pt.add_child("font.glyphs.glyph", pt_glyph);
-    }
+    boost::archive::text_oarchive oa(ofs);
 
-    std::ofstream fstr(file_path.c_str(), std::ios_base::out | std::ios_base::trunc);
-    boost::property_tree::xml_parser::write_xml(fstr, pt, 
-        boost::property_tree::xml_writer_make_settings(' ', 2));
+    oa << boost::serialization::make_nvp("family-name", familyName_);
+    oa << boost::serialization::make_nvp("style-name", styleName_);
+    oa << boost::serialization::make_nvp("pixel-size", pixelSize_);
+    oa << boost::serialization::make_nvp("glyph-width", glyphWidth_);
+    oa << boost::serialization::make_nvp("glyph-height", glyphHeight_);
+    oa << boost::serialization::make_nvp("glyphs", glyphs_);
 
     return true;
 }
 
 bool FontImage::load(const std::string& file_path)
 {
-    boost::property_tree::ptree pt;
-    boost::property_tree::xml_parser::read_xml(file_path, pt);
-    
-    familyName_ = pt.get<std::string>("font.family_name");
-    styleName_ = pt.get<std::string>("font.style_name");
-    pixelSize_ = pt.get<unsigned>("font.pixel_size");
-    glyphWidth_ = pt.get<unsigned>("font.glyph_width");
-    glyphHeight_ = pt.get<unsigned>("font.glyph_height");
+    std::ifstream ifs(file_path.c_str(), std::ios_base::in);
+    if (!ifs.good())
+        BOOST_THROW_EXCEPTION(std::runtime_error("ifstream"));
 
-    const boost::property_tree::ptree& pt_glyphs = pt.get_child("font.glyphs");
-    size_t ci_count = pt_glyphs.count("glyph");
-    size_t ci = 0;
+    boost::archive::text_iarchive ia(ifs);
 
-    prepareStorage(ci_count, glyphWidth_, glyphHeight_);
-
-    charCount_ = 0;
-
-    boost::property_tree::ptree::const_iterator it_end = pt_glyphs.end();
-    boost::property_tree::ptree::const_iterator it;
-    for (it = pt_glyphs.begin(); it != it_end; ++it, ++ci) {
-        charcodes_[ci] = Symbol(it->second.get<int>("charcode"));
-
-        std::string data = it->second.get<std::string>("data");
-        unhexlify(data, glyphs_[ci].data());
-
-        charCount_++;
-    }
+    ia >> boost::serialization::make_nvp("family-name", familyName_);
+    ia >> boost::serialization::make_nvp("style-name", styleName_);
+    ia >> boost::serialization::make_nvp("pixel-size", pixelSize_);
+    ia >> boost::serialization::make_nvp("glyph-width", glyphWidth_);
+    ia >> boost::serialization::make_nvp("glyph-height", glyphHeight_);
+    ia >> boost::serialization::make_nvp("glyphs", glyphs_);
 
     return true;
 }
@@ -154,37 +146,18 @@ bool FontImage::load(FontImageLoader& loader, Symbol ci_min, Symbol ci_max)
     glyphWidth_ = loader.glyphWidth();
     glyphHeight_ = loader.glyphHeight();
 
-    int ci_count = ci_max.value() - ci_min.value() + 1;
-
-    prepareStorage(ci_count, glyphWidth_, glyphHeight_);
-
-    charCount_ = 0;
-
-    for (int ci = 0; ci < ci_count; ++ci) {
-        Symbol ci_sym(ci + ci_min.value());
-        if (!loader.loadGlyph(ci_sym))
+    glyphs_.clear();
+    for (Symbol sym = ci_min; sym <= ci_max; ++sym) {
+        if (!loader.loadGlyph(sym))
             continue;
-
-        charcodes_[ci] = ci_sym;
-        copyPixels(loader.glyph(), glyphs_[ci]);
-
-        charCount_++;
+        GlyphData gd = GlyphData();
+        gd.sym = sym;
+        gd.data.resize(glyphWidth_, glyphHeight_);
+        copyPixels(loader.glyph(), gd.data.surface());
+        glyphs_.push_back(gd);
     }
 
     return true;
-}
-
-void FontImage::prepareStorage(size_t count, unsigned w, unsigned h)
-{
-    unsigned glyphSize = w * h;
-    glyphStorage_.resize(count * glyphSize);
-    charcodes_.resize(count);
-    glyphs_.resize(count);
-
-    for (size_t ci = 0; ci < count; ++ci) {
-        unsigned char* glyph_data = &glyphStorage_[ci * glyphSize];
-        glyphs_[ci].assign(w, h, glyph_data, w);
-    }
 }
 
 } } // namespace KG::Ascii

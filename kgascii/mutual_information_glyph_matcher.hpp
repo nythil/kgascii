@@ -84,7 +84,7 @@ public:
         hist.setZero(colorBins_);
 
         for (size_t y = 0; y < cellHeight(); ++y) {
-            Surface8c::const_pointer ptr = surf.row(y);
+            Surface8c::pointer ptr = surf.row(y);
             for (size_t x = 0; x < cellWidth(); ++x) {
                 hist[ptr[x] / colorBinSize_]++;
             }
@@ -103,8 +103,8 @@ public:
         hist.setZero(colorBins_, colorBins_);
 
         for (size_t y = 0; y < cellHeight(); ++y) {
-            Surface8c::const_pointer ptr1 = surf1.row(y);
-            Surface8c::const_pointer ptr2 = surf2.row(y);
+            Surface8c::pointer ptr1 = surf1.row(y);
+            Surface8c::pointer ptr2 = surf2.row(y);
             for (size_t x = 0; x < cellWidth(); ++x) {
                 hist(ptr1[x] / colorBinSize_, ptr2[x] / colorBinSize_)++;
             }

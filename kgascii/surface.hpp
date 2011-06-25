@@ -24,15 +24,14 @@
 
 namespace KG { namespace Ascii {
 
-template<typename T>
+template<typename PixelTraits, typename AccessTag>
 class SurfaceBase
 {
+    typedef PixelAccessTraits<PixelTraits, AccessTag> AccessTraits;
 public:
-    typedef T value_type;
-    typedef T& reference;
-    typedef const T& const_reference;
-    typedef T* pointer;
-    typedef const T* const_pointer;
+    typedef typename AccessTraits::value_type value_type;
+    typedef typename AccessTraits::reference reference;
+    typedef typename AccessTraits::pointer pointer;
 
 public:
     SurfaceBase()
@@ -40,12 +39,12 @@ public:
         assign(0, 0, 0, 0);
     }
 
-    SurfaceBase(size_t w, size_t h, T* d)
+    SurfaceBase(size_t w, size_t h, pointer d)
     {
         assign(w, h, d, w);
     }
 
-    SurfaceBase(size_t w, size_t h, T* d, ptrdiff_t p)
+    SurfaceBase(size_t w, size_t h, pointer d, ptrdiff_t p)
     {
         assign(w, h, d, p);
     }
@@ -55,8 +54,8 @@ public:
         assign(s.width(), s.height(), s.data(), s.pitch());
     }
 
-    template<typename U>
-    SurfaceBase(const SurfaceBase<U>& s)
+    template<typename OtherAT>
+    SurfaceBase(const SurfaceBase<PixelTraits, OtherAT>& s)
     {
         assign(s.width(), s.height(), s.data(), s.pitch());
     }
@@ -67,19 +66,19 @@ public:
         return *this;
     }
 
-    template<typename U>
-    SurfaceBase& operator =(const SurfaceBase<U>& s)
+    template<typename OtherAT>
+    SurfaceBase& operator =(const SurfaceBase<PixelTraits, OtherAT>& s)
     {
         assign(s.width(), s.height(), s.data(), s.pitch());
         return *this;
     }
 
-    void assign(size_t w, size_t h, T* d)
+    void assign(size_t w, size_t h, pointer d)
     {
         assign(w, h, d, w);
     }
 
-    void assign(size_t w, size_t h, T* d, ptrdiff_t p)
+    void assign(size_t w, size_t h, pointer d, ptrdiff_t p)
     {
         assert(static_cast<ptrdiff_t>(w) <= p);
         width_ = w;
@@ -89,27 +88,27 @@ public:
     }
 
 public:
-    T* data() const
+    pointer data() const
     {
         return data_;
     }
     
-    T* dataEnd() const
+    pointer dataEnd() const
     {
         return data_ + pitch_ * height_;
     }
 
-    T* row(size_t r) const
+    pointer row(size_t r) const
     {
         return data_ + r * pitch_;
     }
     
-    T* rowEnd(size_t r) const
+    pointer rowEnd(size_t r) const
     {
         return row(r) + width_;
     }
 
-    T& operator()(size_t x, size_t y) const
+    reference operator()(size_t x, size_t y) const
     {
         return *(data_ + y * pitch_ + x);
     }
@@ -152,7 +151,7 @@ public:
     }
 
 private:
-    T* data_;
+    pointer data_;
     size_t width_;
     size_t height_;
     ptrdiff_t pitch_;

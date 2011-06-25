@@ -19,6 +19,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <boost/format.hpp>
+#include <boost/exception/all.hpp>
 
 int CmdlineTool::execute(int argc, const char* const argv[])
 {
@@ -32,12 +33,23 @@ int CmdlineTool::execute(int argc, const char* const argv[])
     } catch (const std::logic_error& e) {
         std::cerr << "syntax error: " << e.what() << "\n";
         return -1;
+    } catch (const boost::exception& e) {
+        std::cerr << boost::diagnostic_information(e) << "\n";
+        return -1;
     } catch (const std::exception& e) {
         std::cerr << e.what() << "\n";
         return -1;
     }
 
-    return doExecute();
+    try {
+        return doExecute();
+    } catch (const boost::exception& e) {
+        std::cerr << boost::diagnostic_information(e) << "\n";
+        return -1;
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << "\n";
+        return -1;
+    }
 }
 
 CmdlineTool::CmdlineTool(const std::string& caption)

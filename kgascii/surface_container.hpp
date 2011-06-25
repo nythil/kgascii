@@ -20,21 +20,25 @@
 
 #include <cassert>
 #include <vector>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/array.hpp>
+#include <boost/serialization/split_member.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <kgascii/surface.hpp>
 
 namespace KG { namespace Ascii {
 
-template<typename T>
+template<typename PixelTraits>
 class SurfaceContainerBase
 {
 public:
-    typedef SurfaceBase<T> Surface;
-    typedef SurfaceBase<const T> ConstSurface;
-    typedef typename Surface::value_type value_type;
-    typedef typename Surface::reference reference;
-    typedef typename Surface::const_reference const_reference;
-    typedef typename Surface::pointer pointer;
-    typedef typename Surface::const_pointer const_pointer;
+    typedef SurfaceBase<PixelTraits, MutableAccessTag> Surface;
+    typedef SurfaceBase<PixelTraits, ConstAccessTag> ConstSurface;
+    typedef typename PixelTraits::value_type value_type;
+    typedef typename PixelTraits::reference reference;
+    typedef typename PixelTraits::const_reference const_reference;
+    typedef typename PixelTraits::pointer pointer;
+    typedef typename PixelTraits::const_pointer const_pointer;
 
 public:
     SurfaceContainerBase()
@@ -112,13 +116,38 @@ public:
     }
 
 private:
-    std::vector<T> data_;
+    friend class boost::serialization::access;
+
+    template<typename Archive>
+    void save(Archive& ar, const unsigned int version) const
+    {
+        using namespace boost::serialization;
+        ar << make_nvp("width", width_);
+        ar << make_nvp("height", height_);
+        ar << make_nvp("data", make_array(&data_[0], width_ * height_));
+    }
+
+    template<typename Archive>
+    void load(Archive& ar, const unsigned int version)
+    {
+        using namespace boost::serialization;
+        size_t w, h;
+        ar >> make_nvp("width", w);
+        ar >> make_nvp("height", h);
+        resize(w, h);
+        ar >> make_nvp("data", make_array(&data_[0], width_ * height_));
+    }
+
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
+
+private:
+    std::vector<value_type> data_;
     size_t width_;
     size_t height_;
 };
 
-typedef SurfaceContainerBase<unsigned char> SurfaceContainer8;
-typedef SurfaceContainerBase<float> SurfaceContainer32f;
+//typedef SurfaceContainerBase<unsigned char> SurfaceContainer8;
+//typedef SurfaceContainerBase<float> SurfaceContainer32f;
 
 } } // namespace KG::Ascii
 

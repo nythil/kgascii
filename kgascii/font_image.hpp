@@ -23,7 +23,14 @@
 #include <boost/noncopyable.hpp>
 #include <kgascii/kgascii_api.hpp>
 #include <kgascii/surface.hpp>
+#include <kgascii/surface_container.hpp>
 #include <kgascii/symbol.hpp>
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/random_access_index.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/serialization/nvp.hpp>
+
 
 namespace KG { namespace Ascii {
 
@@ -72,10 +79,27 @@ private:
     unsigned pixelSize_;
     unsigned glyphWidth_;
     unsigned glyphHeight_;
-    std::vector<Symbol> charcodes_;
-    std::vector<Surface8> glyphs_;
-    std::vector<Surface8::value_type> glyphStorage_;
-    size_t charCount_;
+    struct GlyphData
+    {
+        Symbol sym;
+        SurfaceContainer8 data;
+        template<typename Archive>
+        void serialize(Archive& ar, const unsigned int version)
+        {
+            ar & BOOST_SERIALIZATION_NVP(sym);
+            ar & BOOST_SERIALIZATION_NVP(data);
+        }
+    };
+    typedef boost::multi_index_container<
+            GlyphData,
+            boost::multi_index::indexed_by<
+                    boost::multi_index::random_access<>,
+                    boost::multi_index::ordered_unique<
+                            boost::multi_index::member<GlyphData, Symbol, &GlyphData::sym>
+                            >
+                    >
+            > GlyphContainer;
+    GlyphContainer glyphs_;
 };
 
 } } // namespace KG::Ascii

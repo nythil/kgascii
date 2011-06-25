@@ -19,11 +19,15 @@
 #define KGASCII_SYMBOL_HPP
 
 #include <boost/operators.hpp>
+#include <boost/serialization/access.hpp>
+#include <boost/serialization/nvp.hpp>
 #include <kgascii/kgascii_api.hpp>
 
 namespace KG { namespace Ascii {
 
-class KGASCII_API Symbol: public boost::totally_ordered<Symbol>
+class KGASCII_API Symbol:
+        public boost::totally_ordered<Symbol>,
+        public boost::unit_steppable<Symbol>
 {
 public:
     Symbol()
@@ -45,6 +49,27 @@ public:
     char charValue() const
     {
         return static_cast<char>(value_);
+    }
+
+public:
+    Symbol& operator ++()
+    {
+        ++value_;
+        return *this;
+    }
+
+    Symbol& operator --()
+    {
+        --value_;
+        return *this;
+    }
+
+private:
+    friend class boost::serialization::access;
+    template<typename Archive>
+    void serialize(Archive& ar, const unsigned int version)
+    {
+        ar & boost::serialization::make_nvp("value", value_);
     }
 
 private:

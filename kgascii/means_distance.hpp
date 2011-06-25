@@ -31,8 +31,8 @@ public:
         assert(img1.dimensions() == img2.dimensions());
         int sum1 = 0, sum2 = 0;
         for (size_t y = 0; y < img1.height(); ++y) {
-            Surface8c::const_pointer img1_it = img1.row(y);
-            Surface8c::const_pointer img2_it = img2.row(y);
+            Surface8c::pointer img1_it = img1.row(y);
+            Surface8c::pointer img2_it = img2.row(y);
             for (size_t x = 0; x < img1.width(); ++x, ++img1_it, ++img2_it) {
                 sum1 += *img1_it;
                 sum2 += *img2_it;

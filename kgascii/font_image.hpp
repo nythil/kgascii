@@ -22,56 +22,169 @@
 #include <vector>
 #include <boost/noncopyable.hpp>
 #include <kgascii/kgascii_api.hpp>
+#include <kgascii/symbol.hpp>
 #include <kgascii/surface.hpp>
 #include <kgascii/surface_container.hpp>
-#include <kgascii/symbol.hpp>
+#include <kgascii/surface_algorithm.hpp>
+#include <kgascii/font_image_loader.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/member.hpp>
+#include <boost/serialization/access.hpp>
 #include <boost/serialization/nvp.hpp>
-
+#include <boost/iterator/transform_iterator.hpp>
+#include <boost/bind.hpp>
+#include <fstream>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/archive/text_oarchive.hpp>
 
 namespace KG { namespace Ascii {
-
-class FontImageLoader;
 
 class KGASCII_API FontImage: boost::noncopyable
 {
 public:
-    FontImage();
+    FontImage()
+    {
+    }
 
 public:
-    const std::string& familyName() const;
+    const std::string& familyName() const
+    {
+        return familyName_;
+    }
 
-    const std::string& styleName() const;
+    const std::string& styleName() const
+    {
+        return styleName_;
+    }
 
-    unsigned pixelSize() const;
+    unsigned pixelSize() const
+    {
+        return pixelSize_;
+    }
 
-    unsigned glyphWidth() const;
+    unsigned glyphWidth() const
+    {
+        return glyphWidth_;
+    }
 
-    unsigned glyphHeight() const;
+    unsigned glyphHeight() const
+    {
+        return glyphHeight_;
+    }
 
-    unsigned glyphSize() const;
+    unsigned glyphSize() const
+    {
+        return glyphWidth_ * glyphHeight_;
+    }
 
-    size_t glyphCount() const;
+    size_t glyphCount() const
+    {
+        return glyphs_.size();
+    }
 
-    std::vector<Symbol> charcodes() const;
+    std::vector<Symbol> charcodes() const
+    {
+        using namespace boost;
+        const GlyphContainer::nth_index<0>::type& glyph_index = glyphs_.get<0>();
+        Symbol GlyphData::*get_sym = &GlyphData::sym;
+        std::vector<Symbol> result(
+                make_transform_iterator(glyph_index.begin(), bind(get_sym, _1)),
+                make_transform_iterator(glyph_index.end(), bind(get_sym, _1))
+                );
+        return result;
+    }
 
-    std::vector<Surface8c> glyphs() const;
+    std::vector<Surface8c> glyphs() const
+    {
+        using namespace boost;
+        const GlyphContainer::nth_index<0>::type& glyph_index = glyphs_.get<0>();
+        SurfaceContainer8 GlyphData::*get_data = &GlyphData::data;
+        Surface8c (SurfaceContainer8::*get_surface)() const = &SurfaceContainer8::surface;
+        std::vector<Surface8c> result(
+                make_transform_iterator(glyph_index.begin(), bind(get_surface, bind(get_data, _1))),
+                make_transform_iterator(glyph_index.end(), bind(get_surface, bind(get_data, _1)))
+                );
+        return result;
+    }
 
-    Surface8c glyphByIndex(size_t i) const;
+    Surface8c glyphByIndex(size_t i) const
+    {
+        return glyphs_.get<0>().at(i).data.surface();
+    }
 
-    Surface8c glyphByCharcode(Symbol c) const;
+    Surface8c glyphByCharcode(Symbol c) const
+    {
+        typedef GlyphContainer::nth_index<1>::type SymbolIndex;
+        const SymbolIndex& sym_index = glyphs_.get<1>();
+        SymbolIndex::const_iterator it = sym_index.find(c);
+        if (it == sym_index.end())
+            BOOST_THROW_EXCEPTION(std::out_of_range("Invalid symbol"));
+        return it->data.surface();
+    }
 
-    bool save(const std::string& file_path) const;
+    bool save(const std::string& file_path) const
+    {
+        std::ofstream ofs(file_path.c_str(), std::ios_base::out | std::ios_base::trunc);
+        if (!ofs.good())
+            BOOST_THROW_EXCEPTION(std::runtime_error("ofstream"));
 
-    bool load(const std::string& file_path);
+        boost::archive::text_oarchive oa(ofs);
+        oa << boost::serialization::make_nvp("font-image", *this);
 
-    bool load(FontImageLoader& loader, Symbol ci_min, Symbol ci_max);
+        return true;
+    }
+
+    bool load(const std::string& file_path)
+    {
+        std::ifstream ifs(file_path.c_str(), std::ios_base::in);
+        if (!ifs.good())
+            BOOST_THROW_EXCEPTION(std::runtime_error("ifstream"));
+
+        boost::archive::text_iarchive ia(ifs);
+        ia >> boost::serialization::make_nvp("font-image", *this);
+
+        return true;
+    }
+
+    bool load(FontImageLoader& loader, Symbol ci_min, Symbol ci_max)
+    {
+        familyName_ = loader.familyName();
+        styleName_ = loader.styleName();
+        pixelSize_ = loader.pixelSize();
+
+        glyphWidth_ = loader.glyphWidth();
+        glyphHeight_ = loader.glyphHeight();
+
+        glyphs_.clear();
+        for (Symbol sym = ci_min; sym <= ci_max; ++sym) {
+            if (!loader.loadGlyph(sym))
+                continue;
+            GlyphData gd = GlyphData();
+            gd.sym = sym;
+            gd.data.resize(glyphWidth_, glyphHeight_);
+            copyPixels(loader.glyph(), gd.data.surface());
+            glyphs_.push_back(gd);
+        }
+
+        return true;
+    }
 
 private:
-    void prepareStorage(size_t count, unsigned w, unsigned h);
+    friend class boost::serialization::access;
+
+    template<typename Archive>
+    void serialize(Archive& ar, const unsigned int version)
+    {
+        using namespace boost::serialization;
+        ar & make_nvp("family-name", familyName_);
+        ar & make_nvp("style-name", styleName_);
+        ar & make_nvp("pixel-size", pixelSize_);
+        ar & make_nvp("glyph-width", glyphWidth_);
+        ar & make_nvp("glyph-height", glyphHeight_);
+        ar & make_nvp("glyphs", glyphs_);
+    }
 
 private:
     std::string familyName_;
@@ -83,12 +196,6 @@ private:
     {
         Symbol sym;
         SurfaceContainer8 data;
-        template<typename Archive>
-        void serialize(Archive& ar, const unsigned int version)
-        {
-            ar & BOOST_SERIALIZATION_NVP(sym);
-            ar & BOOST_SERIALIZATION_NVP(data);
-        }
     };
     typedef boost::multi_index_container<
             GlyphData,
@@ -101,6 +208,14 @@ private:
             > GlyphContainer;
     GlyphContainer glyphs_;
 };
+
+template<typename Archive>
+inline void serialize(Archive& ar, FontImage::GlyphData& gd, const unsigned int version)
+{
+    using namespace boost::serialization;
+    ar & make_nvp("sym", gd.sym);
+    ar & make_nvp("data", gd.data);
+}
 
 } } // namespace KG::Ascii
 

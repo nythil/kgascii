@@ -21,6 +21,22 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 #include <kgascii/kgascii_api.hpp>
+#include <kgascii/glyph_matcher_context.hpp>
+#include <kgascii/glyph_matcher.hpp>
+#include <kgascii/font_image.hpp>
+#include <kgascii/policy_based_glyph_matcher.hpp>
+#include <kgascii/mutual_information_glyph_matcher.hpp>
+#include <kgascii/squared_euclidean_distance.hpp>
+#include <kgascii/means_distance.hpp>
+#include <kgascii/pca_glyph_matcher.hpp>
+#include <kgascii/font_pcanalyzer.hpp>
+#include <kgascii/font_pca.hpp>
+#include <map>
+#include <deque>
+#include <vector>
+#include <boost/scoped_ptr.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -30,13 +46,63 @@ class FontImage;
 class KGASCII_API GlyphMatcherContextFactory: boost::noncopyable
 {
 public:
-    GlyphMatcherContextFactory();
+    GlyphMatcherContextFactory()
+    {
+    }
 
-    virtual ~GlyphMatcherContextFactory();
+    virtual ~GlyphMatcherContextFactory()
+    {
+    }
 
 public:
     virtual GlyphMatcherContext* create(const FontImage* font, 
-            const std::string& options) const;
+            const std::string& options) const
+    {
+        using namespace boost::algorithm;
+        std::vector<std::string> options_tokens;
+        split(options_tokens, options, is_any_of(":"), token_compress_on);
+        std::string algo_name = "pca";
+        if (!options_tokens.empty()) {
+            algo_name = options_tokens.front();
+        }
+        std::map<std::string, std::string> options_map;
+        for (size_t i = 1; i < options_tokens.size(); ++i) {
+            std::vector<std::string> opt_tokens;
+            split(opt_tokens, options_tokens[i], is_any_of("="), token_compress_on);
+            std::string opt_name = opt_tokens[0];
+            std::string opt_value = opt_tokens.size() > 1 ? opt_tokens[1] : "";
+            options_map[opt_name] = opt_value;
+        }
+        if (algo_name == "pca") {
+            size_t nfeatures = 10;
+            try {
+                nfeatures = boost::lexical_cast<size_t>(options_map["nf"]);
+            } catch (boost::bad_lexical_cast&) { }
+            FontPCAnalyzer* pcanalyzer = new FontPCAnalyzer(font);
+            if (options_map.count("cache") && !options_map["cache"].empty()) {
+                pcanalyzer->loadFromCache(options_map["cache"]);
+            } else {
+                pcanalyzer->analyze();
+            }
+            if (options_map.count("makecache") && !options_map["makecache"].empty()) {
+                pcanalyzer->saveToCache(options_map["makecache"]);
+            }
+            FontPCA* pca = new FontPCA(pcanalyzer, nfeatures);
+            return new PcaGlyphMatcherContext(pca);
+        } else if (algo_name == "sed") {
+            return new PolicyBasedGlyphMatcherContext<SquaredEuclideanDistance>(font);
+        } else if (algo_name == "md") {
+            return new PolicyBasedGlyphMatcherContext<MeansDistance>(font);
+        } else if (algo_name == "mi") {
+            size_t bins = 16;
+            try {
+                bins = boost::lexical_cast<size_t>(options_map["bins"]);
+            } catch (boost::bad_lexical_cast&) { }
+            return new MutualInformationGlyphMatcherContext(font, bins);
+        } else {
+            throw std::runtime_error("unknown algo name");
+        }
+    }
 };
 
 } } // namespace KG::Ascii

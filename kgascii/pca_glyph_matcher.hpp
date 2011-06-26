@@ -24,18 +24,22 @@
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/glyph_matcher_context.hpp>
 #include <kgascii/kgascii_api.hpp>
+#include <kgascii/font_image.hpp>
+#include <kgascii/font_pca.hpp>
 
 namespace KG { namespace Ascii {
-
-class FontImage;
-class FontPCA;
 
 class PcaGlyphMatcherContext: public GlyphMatcherContext
 {
     friend class PcaGlyphMatcher;
 
 public:
-    explicit PcaGlyphMatcherContext(const FontPCA* pca);
+    explicit PcaGlyphMatcherContext(const FontPCA* pca)
+        :GlyphMatcherContext(pca->font())
+        ,pca_(pca)
+        ,charcodes_(font()->charcodes())
+    {
+    }
 
 public:
     GlyphMatcher* createMatcher() const;
@@ -51,7 +55,10 @@ public:
     explicit PcaGlyphMatcher(const PcaGlyphMatcherContext* c);
 
 public:
-    const GlyphMatcherContext* context() const;
+    const GlyphMatcherContext* context() const
+    {
+        return context_;
+    }
 
     Symbol match(const Surface8c& imgv);
 
@@ -63,5 +70,41 @@ private:
 
 } } // namespace KG::Ascii
 
-#endif // KGASCII_PCAGLYPHMATCHER_HPP
+namespace KG { namespace Ascii {
 
+inline GlyphMatcher* PcaGlyphMatcherContext::createMatcher() const
+{
+    return new PcaGlyphMatcher(this);
+}
+
+inline PcaGlyphMatcher::PcaGlyphMatcher(const PcaGlyphMatcherContext* c)
+    :GlyphMatcher()
+    ,context_(c)
+    ,imgvec_(context_->font()->glyphSize())
+    ,components_(context_->pca_->featureCount())
+{
+}
+
+inline Symbol PcaGlyphMatcher::match(const Surface8c& imgv)
+{
+    assert(imgv.width() <= context_->cellWidth());
+    assert(imgv.height() <= context_->cellHeight());
+
+    typedef Eigen::Matrix<Surface8::value_type, Eigen::Dynamic, 1> VectorXuc;
+    if (imgv.isContinuous() && imgv.size() == static_cast<size_t>(imgvec_.size())) {
+        imgvec_ = VectorXuc::Map(imgv.data(), imgv.size()).cast<float>();
+    } else {
+        imgvec_.setZero();
+        size_t img_w = imgv.width();
+        for (size_t y = 0; y < imgv.height(); ++y) {
+            imgvec_.segment(y * img_w, img_w) = VectorXuc::Map(imgv.row(y), img_w).cast<float>();
+        }
+    }
+
+    context_->pca_->project(imgvec_, components_);
+    return context_->charcodes_.at(context_->pca_->findClosestGlyph(components_));
+}
+
+} } // namespace KG::Ascii
+
+#endif // KGASCII_PCAGLYPHMATCHER_HPP

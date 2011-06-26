@@ -21,32 +21,71 @@
 #include <kgascii/kgascii_api.hpp>
 #include <kgascii/font_image_loader.hpp>
 #include <kgascii/surface_container.hpp>
+#include <kgascii/font_pca.hpp>
+#include <kgascii/font_image.hpp>
+#include <kgascii/surface_algorithm.hpp>
 
 namespace KG { namespace Ascii {
-
-class FontPCA;
 
 class KGASCII_API PcaReconstructionFontImageLoader: public FontImageLoader
 {
 public:
-    PcaReconstructionFontImageLoader(const FontPCA* pca);
+    explicit PcaReconstructionFontImageLoader(const FontPCA* pca)
+        :pca_(pca)
+        ,charcodes_(pca_->font()->charcodes())
+    {
+        glyphData_.resize(pca_->font()->glyphWidth(), pca_->font()->glyphHeight());
+    }
 
 public:
-    std::string familyName() const;
+    std::string familyName() const
+    {
+        return pca_->font()->familyName();
+    }
 
-    std::string styleName() const;
+    std::string styleName() const
+    {
+        return pca_->font()->styleName();
+    }
 
-    unsigned pixelSize() const;
+    unsigned pixelSize() const
+    {
+        return pca_->font()->pixelSize();
+    }
 
-    unsigned glyphWidth() const;
+    unsigned glyphWidth() const
+    {
+        return pca_->font()->glyphWidth();
+    }
 
-    unsigned glyphHeight() const;
+    unsigned glyphHeight() const
+    {
+        return pca_->font()->glyphHeight();
+    }
 
-    std::vector<Symbol> charcodes() const;
+    std::vector<Symbol> charcodes() const
+    {
+        return charcodes_;
+    }
 
-    bool loadGlyph(Symbol charcode);
+    bool loadGlyph(Symbol charcode)
+    {
+        std::vector<Symbol>::iterator it = std::find(charcodes_.begin(), charcodes_.end(), charcode);
+        if (it == charcodes_.end())
+            return false;
+        size_t it_idx = std::distance(charcodes_.begin(), it);
+        Eigen::VectorXf proj_glyph_vec = pca_->glyphs().col(it_idx);
+        Eigen::VectorXf glyph_vec = pca_->combine(proj_glyph_vec);
+        glyph_vec = glyph_vec.cwiseMax(Eigen::VectorXf::Zero(glyph_vec.size()));
+        glyph_vec = glyph_vec.cwiseMin(255 * Eigen::VectorXf::Ones(glyph_vec.size()));
+        copyPixels(glyph_vec, glyphData_.surface());
+        return true;
+    }
 
-    Surface8c glyph() const;
+    Surface8c glyph() const
+    {
+        return glyphData_.surface();
+    }
 
 private:
     const FontPCA* pca_;

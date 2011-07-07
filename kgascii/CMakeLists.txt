@@ -15,7 +15,6 @@ SET(kgascii_SRCS
     ft2_font_image_loader.hpp
     ft2_font_loader.hpp
     glyph_matcher.hpp
-    glyph_matcher_context.hpp
     glyph_matcher_context_factory.hpp
     kgascii_api.hpp
     kgascii_config.hpp

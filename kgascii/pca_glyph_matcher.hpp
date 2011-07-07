@@ -22,7 +22,6 @@
 #include <boost/noncopyable.hpp>
 #include <Eigen/Dense>
 #include <kgascii/glyph_matcher.hpp>
-#include <kgascii/glyph_matcher_context.hpp>
 #include <kgascii/kgascii_api.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_pca.hpp>

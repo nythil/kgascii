@@ -20,7 +20,6 @@
 
 #include <vector>
 #include <limits>
-#include <kgascii/glyph_matcher_context.hpp>
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/surface_container.hpp>

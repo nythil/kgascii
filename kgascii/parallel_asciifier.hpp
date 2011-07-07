@@ -22,7 +22,6 @@
 #include <boost/shared_ptr.hpp>
 #include <kgascii/asciifier.hpp>
 #include <kgascii/kgascii_api.hpp>
-#include <kgascii/glyph_matcher_context.hpp>
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/text_surface.hpp>
 #include <kgascii/surface.hpp>

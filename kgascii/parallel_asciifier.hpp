@@ -34,10 +34,30 @@
 
 namespace KG { namespace Ascii {
 
-class KGASCII_API ParallelAsciifier: public Asciifier
+class ParallelAsciifier;
+
+namespace Internal {
+
+template<>
+struct Traits<ParallelAsciifier>
+{
+    typedef GlyphMatcherContext GlyphMatcherContextT;
+    typedef GlyphMatcher GlyphMatcherT;
+    typedef Surface8c ConstSurfaceT;
+};
+
+} // namespace Internal
+
+class ParallelAsciifier: public Asciifier<ParallelAsciifier>
 {
 public:
-    ParallelAsciifier(const GlyphMatcherContext* c, unsigned thr_cnt)
+    typedef Asciifier<ParallelAsciifier> BaseT;
+    typedef typename BaseT::GlyphMatcherContextT GlyphMatcherContextT;
+    typedef typename BaseT::GlyphMatcherT GlyphMatcherT;
+    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+
+public:
+    ParallelAsciifier(const GlyphMatcherContextT* c, unsigned thr_cnt)
         :context_(c)
     {
         setupThreads(thr_cnt);
@@ -49,7 +69,7 @@ public:
     }
     
 public:
-    const GlyphMatcherContext* context() const
+    const GlyphMatcherContextT* context() const
     {
         return context_;
     }
@@ -60,7 +80,7 @@ public:
     }
 
 public:
-    void generate(const Surface8c& imgv, TextSurface& text)
+    void generate(const ConstSurfaceT& imgv, TextSurface& text)
     {
         //single character size
         size_t char_w = context_->cellWidth();
@@ -100,7 +120,7 @@ private:
         group_.join_all();
     }
 
-    void enqueue(const Surface8c& surf, Symbol* outp)
+    void enqueue(const ConstSurfaceT& surf, Symbol* outp)
     {
         WorkItem wi = { surf, outp };
         queue_.push(wi);
@@ -109,7 +129,7 @@ private:
 private:
     void threadFunc()
     {
-        boost::scoped_ptr<GlyphMatcher> matcher(context_->createMatcher());
+        boost::scoped_ptr<GlyphMatcherT> matcher(context_->createMatcher());
         //single character size
         size_t char_w = context_->cellWidth();
 
@@ -131,11 +151,11 @@ private:
     }
 
 private:
-    const GlyphMatcherContext* context_;
+    const GlyphMatcherContextT* context_;
     boost::thread_group group_;
     struct WorkItem
     {
-        Surface8c imgv;
+        ConstSurfaceT imgv;
         Symbol* outp;
     };
     TaskQueue<WorkItem> queue_;

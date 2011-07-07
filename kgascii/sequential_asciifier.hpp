@@ -21,7 +21,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <kgascii/asciifier.hpp>
-#include <kgascii/kgascii_api.hpp>
 #include <kgascii/glyph_matcher_context.hpp>
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/text_surface.hpp>
@@ -29,18 +28,37 @@
 
 namespace KG { namespace Ascii {
 
-class KGASCII_API SequentialAsciifier: public Asciifier
+class SequentialAsciifier;
+
+namespace Internal {
+
+template<>
+struct Traits<SequentialAsciifier>
+{
+    typedef GlyphMatcherContext GlyphMatcherContextT;
+    typedef GlyphMatcher GlyphMatcherT;
+    typedef Surface8c ConstSurfaceT;
+};
+
+} // namespace Internal
+
+class SequentialAsciifier: public Asciifier<SequentialAsciifier>
 {
 public:
-    SequentialAsciifier(const GlyphMatcherContext* c)
-        :Asciifier()
-        ,context_(c)
+    typedef Asciifier<SequentialAsciifier> BaseT;
+    typedef typename BaseT::GlyphMatcherContextT GlyphMatcherContextT;
+    typedef typename BaseT::GlyphMatcherT GlyphMatcherT;
+    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+
+public:
+    SequentialAsciifier(const GlyphMatcherContextT* c)
+        :context_(c)
         ,matcher_(context_->createMatcher())
     {
     }
 
 public:
-    const GlyphMatcherContext* context() const
+    const GlyphMatcherContextT* context() const
     {
         return context_;
     }
@@ -51,7 +69,7 @@ public:
     }
 
 public:
-    void generate(const Surface8c& imgv, TextSurface& text)
+    void generate(const ConstSurfaceT& imgv, TextSurface& text)
     {
         //single character size
         size_t char_w = context_->cellWidth();
@@ -88,8 +106,8 @@ public:
     }
 
 private:
-    const GlyphMatcherContext* context_;
-    boost::scoped_ptr<GlyphMatcher> matcher_;
+    const GlyphMatcherContextT* context_;
+    boost::scoped_ptr<GlyphMatcherT> matcher_;
 };
 
 } } // namespace KG::Ascii

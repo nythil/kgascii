@@ -27,22 +27,37 @@
 
 namespace KG { namespace Ascii {
 
-class KGASCII_API DynamicAsciifier: public Asciifier
+class DynamicAsciifier;
+
+namespace Internal {
+
+template<>
+struct Traits<DynamicAsciifier>
+{
+    typedef GlyphMatcherContext GlyphMatcherContextT;
+    typedef GlyphMatcher GlyphMatcherT;
+    typedef Surface8c ConstSurfaceT;
+};
+
+} // namespace Internal
+
+class DynamicAsciifier: public Asciifier<DynamicAsciifier>
 {
 public:
-    DynamicAsciifier(const GlyphMatcherContext* c)
-        :Asciifier()
-        ,context_(c)
+    typedef Asciifier<DynamicAsciifier> BaseT;
+    typedef typename BaseT::GlyphMatcherContextT GlyphMatcherContextT;
+    typedef typename BaseT::GlyphMatcherT GlyphMatcherT;
+    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+
+public:
+    DynamicAsciifier(const GlyphMatcherContextT* c)
+        :context_(c)
     {
         setSequential();
     }
 
-    ~DynamicAsciifier()
-    {
-    }
-    
 public:
-    const GlyphMatcherContext* context() const
+    const GlyphMatcherContextT* context() const
     {
         return context_;
     }
@@ -53,24 +68,71 @@ public:
     }
 
 public:
-    void generate(const Surface8c& imgv, TextSurface& text)
+    void generate(const ConstSurfaceT& imgv, TextSurface& text)
     {
         strategy_->generate(imgv, text);
     }
 
     void setSequential()
     {
-        strategy_.reset(new SequentialAsciifier(context_));
+        setStrategy(new SequentialAsciifier(context_));
     }
 
     void setParallel(unsigned cnt)
     {
-        strategy_.reset(new ParallelAsciifier(context_, cnt));
+        setStrategy(new ParallelAsciifier(context_, cnt));
     }
 
 private:
-    const GlyphMatcherContext* context_;
-    boost::scoped_ptr<Asciifier> strategy_;
+    template<typename TAsciifier>
+    void setStrategy(Asciifier<TAsciifier>* impl)
+    {
+        strategy_.reset(new Strategy<TAsciifier>(&impl->derived()));
+    }
+
+private:
+    class StrategyBase
+    {
+    public:
+        StrategyBase()
+        {
+        }
+
+        virtual ~StrategyBase()
+        {
+        }
+
+        virtual unsigned threadCount() const = 0;
+
+        virtual void generate(const ConstSurfaceT& imgv, TextSurface& text) = 0;
+    };
+
+    template<typename TAsciifier>
+    class Strategy: public StrategyBase
+    {
+    public:
+        explicit Strategy(TAsciifier* impl)
+            :impl_(impl)
+        {
+        }
+
+        virtual unsigned threadCount() const
+        {
+            return impl_->threadCount();
+        }
+
+        virtual void generate(const ConstSurfaceT& imgv, TextSurface& text)
+        {
+            impl_->generate(imgv, text);
+        }
+
+    private:
+        boost::scoped_ptr<TAsciifier> impl_;
+    };
+
+private:
+    const GlyphMatcherContextT* context_;
+    boost::scoped_ptr<StrategyBase> strategy_;
 };
 
 } } // namespace KG::Ascii

@@ -119,7 +119,7 @@ bool VideoToAscii::processArgs()
 class MyVideoPlayer: public VideoPlayer
 {
 public:
-    explicit MyVideoPlayer(const VideoToAscii* ctx, KG::Ascii::Asciifier* asc, Console* con)
+    explicit MyVideoPlayer(const VideoToAscii* ctx, KG::Ascii::DynamicAsciifier* asc, Console* con)
         :context_(ctx)
         ,asciifier_(asc)
         ,console_(con)
@@ -250,7 +250,7 @@ protected:
 
 private:
     const VideoToAscii* context_;
-    KG::Ascii::Asciifier* asciifier_;
+    KG::Ascii::DynamicAsciifier* asciifier_;
     Console* console_;
     KG::Ascii::TextSurface text_;
     unsigned outWidth_;

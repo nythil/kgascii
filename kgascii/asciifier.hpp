@@ -19,29 +19,44 @@
 #define KGASCII_ASCIIFIER_HPP
 
 #include <boost/noncopyable.hpp>
-#include <kgascii/kgascii_api.hpp>
-#include <kgascii/surface_fwd.hpp>
+#include <kgascii/internal/traits.hpp>
+#include <kgascii/text_surface.hpp>
 
 namespace KG { namespace Ascii {
 
-class GlyphMatcherContext;
-class TextSurface;
-
-class KGASCII_API Asciifier: boost::noncopyable
+template<typename TDerived>
+class Asciifier: boost::noncopyable
 {
 public:
-    virtual ~Asciifier()
+    typedef typename Internal::Traits<TDerived>::GlyphMatcherContextT GlyphMatcherContextT;
+    typedef typename Internal::Traits<TDerived>::GlyphMatcherT GlyphMatcherT;
+    typedef typename Internal::Traits<TDerived>::ConstSurfaceT ConstSurfaceT;
+
+public:
+    TDerived& derived()
     {
+        return static_cast<TDerived&>(*this);
     }
 
-public:
-    virtual const GlyphMatcherContext* context() const = 0;
-    
-    virtual unsigned threadCount() const = 0;
+    const TDerived& derived() const
+    {
+        return static_cast<const TDerived&>(*this);
+    }
 
-public:
-    virtual void generate(const Surface8c& imgv, 
-            TextSurface& text) = 0;
+    const GlyphMatcherContextT* context() const
+    {
+        return derived().context();
+    }
+    
+    unsigned threadCount() const
+    {
+        return derived().threadCount();
+    }
+
+    void generate(const ConstSurfaceT& imgv, TextSurface& text)
+    {
+        derived().generate(imgv, text);
+    }
 
 protected:
     Asciifier()
@@ -52,4 +67,3 @@ protected:
 } } // namespace KG::Ascii
 
 #endif // KGASCII_ASCIIFIER_HPP
-

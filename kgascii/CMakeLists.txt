@@ -5,6 +5,7 @@ SET(kgascii_SRCS
     ft2pp/face.hpp 
     ft2pp/library.hpp 
     ft2pp/util.hpp 
+    internal/traits.hpp 
     asciifier.hpp
     dynamic_asciifier.hpp
     font_image.hpp

@@ -18,71 +18,44 @@
 #ifndef KGASCII_SURFACE_FWD_HPP
 #define KGASCII_SURFACE_FWD_HPP
 
-#include <limits>
-
 namespace KG { namespace Ascii {
 
-template<typename PixelTraits, typename AccessTag>
-class SurfaceBase;
+namespace Internal {
 
-template<typename PixelTraits>
-class SurfaceContainerBase;
+template<typename TValue>
+struct MinMax;
 
-template<typename T>
-struct PixelTraitsBase
-{
-    typedef T value_type;
-    typedef T& reference;
-    typedef const T& const_reference;
-    typedef T* pointer;
-    typedef const T* const_pointer;
-};
+} // namespace Internal
 
-template<typename T>
-struct IntegerPixelTraits: public PixelTraitsBase<T>
-{
-    static T minValue() { return std::numeric_limits<T>::min(); }
-    static T maxValue() { return std::numeric_limits<T>::max(); }
-};
+template<typename TValue, template<typename> class TMinMax=Internal::MinMax>
+struct PixelType;
 
-typedef IntegerPixelTraits<unsigned char> PixelTraits8;
-typedef IntegerPixelTraits<unsigned short> PixelTraits16;
+template<typename TPixel>
+class Surface;
 
-struct PixelTraits32f: public PixelTraitsBase<float>
-{
-    static float minValue() { return 0.0f; }
-    static float maxValue() { return 1.0f; }
-};
+template<typename TPixel>
+class SurfaceContainer;
 
-struct MutableAccessTag {};
-struct ConstAccessTag {};
+typedef PixelType<unsigned char> PixelType8;
+typedef PixelType<unsigned short> PixelType16;
+typedef PixelType<unsigned long> PixelType32;
+typedef PixelType<float> PixelType32f;
 
-template<typename PixelTraits, typename AccessTag>
-struct PixelAccessTraits
-{
-    typedef typename PixelTraits::value_type value_type;
-    typedef typename PixelTraits::reference reference;
-    typedef typename PixelTraits::pointer pointer;
-};
+typedef Surface<PixelType8> Surface8;
+typedef Surface<const PixelType8> Surface8c;
+typedef SurfaceContainer<PixelType8> SurfaceContainer8;
 
-template<typename PixelTraits>
-struct PixelAccessTraits<PixelTraits, ConstAccessTag>
-{
-    typedef const typename PixelTraits::value_type value_type;
-    typedef typename PixelTraits::const_reference reference;
-    typedef typename PixelTraits::const_pointer pointer;
-};
+typedef Surface<PixelType16> Surface16;
+typedef Surface<const PixelType16> Surface16c;
+typedef SurfaceContainer<PixelType16> SurfaceContainer16;
 
-typedef SurfaceBase<PixelTraits8, MutableAccessTag> Surface8;
-typedef SurfaceBase<PixelTraits8, ConstAccessTag> Surface8c;
-typedef SurfaceBase<PixelTraits16, MutableAccessTag> Surface16;
-typedef SurfaceBase<PixelTraits16, ConstAccessTag> Surface16c;
-typedef SurfaceBase<PixelTraits32f, MutableAccessTag> Surface32f;
-typedef SurfaceBase<PixelTraits32f, ConstAccessTag> Surface32fc;
+typedef Surface<PixelType32> Surface32;
+typedef Surface<const PixelType32> Surface32c;
+typedef SurfaceContainer<PixelType32> SurfaceContainer32;
 
-typedef SurfaceContainerBase<PixelTraits8> SurfaceContainer8;
-typedef SurfaceContainerBase<PixelTraits16> SurfaceContainer16;
-typedef SurfaceContainerBase<PixelTraits32f> SurfaceContainer32f;
+typedef Surface<PixelType32f> Surface32f;
+typedef Surface<const PixelType32f> Surface32fc;
+typedef SurfaceContainer<PixelType32f> SurfaceContainer32f;
 
 } } // namespace KG::Ascii
 

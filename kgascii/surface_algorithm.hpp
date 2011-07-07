@@ -72,13 +72,13 @@ static void copy(U* dst, const T* src, size_t cnt)
 
 } // namespace Detail
 
-template<typename PT, typename AT>
-void fillPixels(const SurfaceBase<PT, AT>& surf, typename PT::value_type val)
+template<typename TPixel>
+void fillPixels(const Surface<TPixel>& surf, typename Internal::PixelTraits<TPixel>::value_type val)
 {
     if (surf.isContinuous()) {
         Detail::fill(surf.data(), val, surf.size());
     } else {
-        typename SurfaceBase<PT, AT>::pointer rowp = surf.data();
+        typename Surface<TPixel>::pointer rowp = surf.data();
         for (size_t y = 0; y < surf.height(); ++y) {
             Detail::fill(rowp, val, surf.width());
             rowp += surf.pitch();
@@ -86,17 +86,19 @@ void fillPixels(const SurfaceBase<PT, AT>& surf, typename PT::value_type val)
     }
 }
 
-template<typename PT, typename AT1, typename AT2>
-void copyPixels(const SurfaceBase<PT, AT1>& src, const SurfaceBase<PT, AT2>& dst)
+template<typename TPixel1, typename TPixel2>
+void copyPixels(const Surface<TPixel1>& src, const Surface<TPixel2>& dst)
 {
     if (src.dimensions() != dst.dimensions())
         BOOST_THROW_EXCEPTION(std::logic_error("src.dimensions() != dst.dimensions()"));
     if (src.isContinuous() && dst.isContinuous()) {
         assert(src.size() == dst.size());
-        Detail::copy(dst.data(), src.data(), src.size());
+        typename Surface<TPixel1>::const_pointer src_datap = src.data();
+        typename Surface<TPixel2>::pointer dst_datap = dst.data();
+        Detail::copy(dst_datap, src_datap, src.size());
     } else {
-        typename SurfaceBase<PT, AT1>::pointer src_rowp = src.data();
-        typename SurfaceBase<PT, AT2>::pointer dst_rowp = dst.data();
+        typename Surface<TPixel1>::const_pointer src_rowp = src.data();
+        typename Surface<TPixel2>::pointer dst_rowp = dst.data();
         for (size_t y = 0; y < src.height(); ++y) {
             Detail::copy(dst_rowp, src_rowp, src.width());
             src_rowp += src.pitch();
@@ -105,12 +107,12 @@ void copyPixels(const SurfaceBase<PT, AT1>& src, const SurfaceBase<PT, AT2>& dst
     }
 }
 
-template<typename PT, typename AT>
-void copyPixels(const Eigen::VectorXf& src, const SurfaceBase<PT, AT>& dst)
+template<typename TPixel>
+void copyPixels(const Eigen::VectorXf& src, const Surface<TPixel>& dst)
 {
     if (static_cast<size_t>(src.size()) != dst.size())
         BOOST_THROW_EXCEPTION(std::logic_error("src.size() != dst.size()"));
-    typedef typename SurfaceBase<PT, AT>::value_type value_type;
+    typedef typename Internal::PixelTraits<TPixel>::value_type value_type;
     typedef Eigen::Matrix<value_type, Eigen::Dynamic, 1> VectorXuc;
     if (dst.isContinuous()) {
         VectorXuc::Map(dst.data(), dst.size()) = src.cast<value_type>();
@@ -122,19 +124,21 @@ void copyPixels(const Eigen::VectorXf& src, const SurfaceBase<PT, AT>& dst)
     }
 }
 
-template<typename PT, typename AT>
-void copyPixels(const SurfaceBase<PT, AT>& src, Eigen::VectorXf& dst)
+template<typename TPixel>
+void copyPixels(const Surface<TPixel>& src, Eigen::VectorXf& dst)
 {
     if (src.size() != static_cast<size_t>(dst.size()))
         BOOST_THROW_EXCEPTION(std::logic_error("src.size() != dst.size()"));
-    typedef typename SurfaceBase<PT, AT>::value_type value_type;
+    typedef typename Internal::PixelTraits<TPixel>::value_type value_type;
     typedef Eigen::Matrix<value_type, Eigen::Dynamic, 1> VectorXuc;
     if (src.isContinuous()) {
-        dst = (VectorXuc::Map(src.data(), src.size()));
+        typename Surface<TPixel>::const_pointer src_datap = src.data();
+        dst = (VectorXuc::Map(src_datap, src.size()));
     } else {
         size_t img_w = src.width();
         for (size_t y = 0; y < src.height(); ++y) {
-            dst.segment(y * img_w, img_w) = VectorXuc::Map(src.row(y), img_w);
+            typename Surface<TPixel>::const_pointer src_rowp = src.row(y);
+            dst.segment(y * img_w, img_w) = VectorXuc::Map(src_rowp, img_w);
         }
     }
 }

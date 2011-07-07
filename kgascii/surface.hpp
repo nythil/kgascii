@@ -21,53 +21,55 @@
 #include <cassert>
 #include <utility>
 #include <kgascii/surface_fwd.hpp>
+#include <kgascii/surface_pixel.hpp>
 
 namespace KG { namespace Ascii {
 
-template<typename PixelTraits, typename AccessTag>
-class SurfaceBase
+template<typename TPixel>
+class Surface
 {
-    typedef PixelAccessTraits<PixelTraits, AccessTag> AccessTraits;
 public:
-    typedef typename AccessTraits::value_type value_type;
-    typedef typename AccessTraits::reference reference;
-    typedef typename AccessTraits::pointer pointer;
+    typedef typename Internal::PixelTraits<TPixel>::value_type value_type;
+    typedef typename Internal::PixelTraits<TPixel>::reference reference;
+    typedef typename Internal::PixelTraits<TPixel>::const_reference const_reference;
+    typedef typename Internal::PixelTraits<TPixel>::pointer pointer;
+    typedef typename Internal::PixelTraits<TPixel>::const_pointer const_pointer;
 
 public:
-    SurfaceBase()
+    Surface()
     {
         assign(0, 0, 0, 0);
     }
 
-    SurfaceBase(size_t w, size_t h, pointer d)
+    Surface(size_t w, size_t h, pointer d)
     {
         assign(w, h, d, w);
     }
 
-    SurfaceBase(size_t w, size_t h, pointer d, ptrdiff_t p)
+    Surface(size_t w, size_t h, pointer d, ptrdiff_t p)
     {
         assign(w, h, d, p);
     }
 
-    SurfaceBase(const SurfaceBase& s)
+    Surface(const Surface& s)
     {
         assign(s.width(), s.height(), s.data(), s.pitch());
     }
 
-    template<typename OtherAT>
-    SurfaceBase(const SurfaceBase<PixelTraits, OtherAT>& s)
+    template<typename TOther>
+    Surface(const Surface<TOther>& s)
     {
         assign(s.width(), s.height(), s.data(), s.pitch());
     }
 
-    SurfaceBase& operator =(const SurfaceBase& s)
+    Surface& operator =(const Surface& s)
     {
         assign(s.width(), s.height(), s.data(), s.pitch());
         return *this;
     }
 
-    template<typename OtherAT>
-    SurfaceBase& operator =(const SurfaceBase<PixelTraits, OtherAT>& s)
+    template<typename TOther>
+    Surface& operator =(const Surface<TOther>& s)
     {
         assign(s.width(), s.height(), s.data(), s.pitch());
         return *this;
@@ -143,11 +145,11 @@ public:
         return static_cast<ptrdiff_t>(width_) == pitch_;
     }
 
-    SurfaceBase window(size_t x, size_t y, size_t w, size_t h) const
+    Surface window(size_t x, size_t y, size_t w, size_t h) const
     {
         assert(x + w <= width_);
         assert(y + h <= height_);
-        return SurfaceBase(w, h, row(y) + x, pitch_);
+        return Surface(w, h, row(y) + x, pitch_);
     }
 
 private:

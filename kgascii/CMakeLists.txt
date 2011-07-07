@@ -30,6 +30,7 @@ SET(kgascii_SRCS
     surface_algorithm.hpp
     surface_container.hpp
     surface_fwd.hpp
+    surface_pixel.hpp
     symbol.hpp
     task_queue.hpp
     text_surface.hpp

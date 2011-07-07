@@ -25,58 +25,59 @@
 #include <boost/serialization/split_member.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <kgascii/surface.hpp>
+#include <kgascii/surface_pixel.hpp>
 
 namespace KG { namespace Ascii {
 
-template<typename PixelTraits>
-class SurfaceContainerBase
+template<typename TPixel>
+class SurfaceContainer
 {
 public:
-    typedef SurfaceBase<PixelTraits, MutableAccessTag> Surface;
-    typedef SurfaceBase<PixelTraits, ConstAccessTag> ConstSurface;
-    typedef typename PixelTraits::value_type value_type;
-    typedef typename PixelTraits::reference reference;
-    typedef typename PixelTraits::const_reference const_reference;
-    typedef typename PixelTraits::pointer pointer;
-    typedef typename PixelTraits::const_pointer const_pointer;
+    typedef typename Internal::PixelTraits<TPixel>::value_type value_type;
+    typedef typename Internal::PixelTraits<TPixel>::reference reference;
+    typedef typename Internal::PixelTraits<TPixel>::const_reference const_reference;
+    typedef typename Internal::PixelTraits<TPixel>::pointer pointer;
+    typedef typename Internal::PixelTraits<TPixel>::const_pointer const_pointer;
+    typedef Surface<TPixel> SurfaceT;
+    typedef Surface<const TPixel> ConstSurfaceT;
 
 public:
-    SurfaceContainerBase()
+    SurfaceContainer()
     {
         resize(0, 0);
     }
 
-    SurfaceContainerBase(size_t w, size_t h)
+    SurfaceContainer(size_t w, size_t h)
     {
         resize(w, h);
     }
 
-    SurfaceContainerBase(const SurfaceContainerBase& s)
+    SurfaceContainer(const SurfaceContainer& s)
     {
         assign(s);
     }
 
-    template<typename U>
-    SurfaceContainerBase(const SurfaceContainerBase<U>& s)
+    template<typename TOther>
+    SurfaceContainer(const SurfaceContainer<TOther>& s)
     {
         assign(s);
     }
 
-    SurfaceContainerBase& operator =(const SurfaceContainerBase& s)
-    {
-        assign(s);
-        return *this;
-    }
-
-    template<typename U>
-    SurfaceContainerBase& operator =(const SurfaceContainerBase<U>& s)
+    SurfaceContainer& operator =(const SurfaceContainer& s)
     {
         assign(s);
         return *this;
     }
 
-    template<typename U>
-    void assign(const SurfaceContainerBase<U>& s)
+    template<typename TOther>
+    SurfaceContainer& operator =(const SurfaceContainer<TOther>& s)
+    {
+        assign(s);
+        return *this;
+    }
+
+    template<typename TOther>
+    void assign(const SurfaceContainer<TOther>& s)
     {
         resize(s.width(), s.height());
         copyPixels(s.surface(), surface());
@@ -105,14 +106,14 @@ public:
         return std::make_pair(width_, height_);
     }
 
-    Surface surface()
+    SurfaceT surface()
     {
-        return Surface(width_, height_, &data_[0]);
+        return SurfaceT(width_, height_, &data_[0]);
     }
 
-    ConstSurface surface() const
+    ConstSurfaceT surface() const
     {
-        return ConstSurface(width_, height_, &data_[0]);
+        return ConstSurfaceT(width_, height_, &data_[0]);
     }
 
 private:
@@ -145,9 +146,6 @@ private:
     size_t width_;
     size_t height_;
 };
-
-//typedef SurfaceContainerBase<unsigned char> SurfaceContainer8;
-//typedef SurfaceContainerBase<float> SurfaceContainer32f;
 
 } } // namespace KG::Ascii
 

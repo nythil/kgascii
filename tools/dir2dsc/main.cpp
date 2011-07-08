@@ -21,8 +21,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <kgascii/font_image.hpp>
-#include <kgascii/ft2_font_loader.hpp>
-#include <kgascii/ft2_font_image_loader.hpp>
 #include <common/cmdline_tool.hpp>
 
 

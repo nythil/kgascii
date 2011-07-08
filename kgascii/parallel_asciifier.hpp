@@ -33,24 +33,26 @@
 
 namespace KG { namespace Ascii {
 
+template<typename TGlyphMatcherContext>
 class ParallelAsciifier;
 
 namespace Internal {
 
-template<>
-struct Traits<ParallelAsciifier>
+template<typename TGlyphMatcherContext>
+struct Traits< ParallelAsciifier<TGlyphMatcherContext> >
 {
-    typedef GlyphMatcherContext GlyphMatcherContextT;
-    typedef GlyphMatcher GlyphMatcherT;
-    typedef Surface8c ConstSurfaceT;
+    typedef TGlyphMatcherContext GlyphMatcherContextT;
+    typedef typename TGlyphMatcherContext::GlyphMatcherT GlyphMatcherT;
+    typedef typename TGlyphMatcherContext::ConstSurfaceT ConstSurfaceT;
 };
 
 } // namespace Internal
 
-class ParallelAsciifier: public Asciifier<ParallelAsciifier>
+template<typename TGlyphMatcherContext>
+class ParallelAsciifier: public Asciifier< ParallelAsciifier<TGlyphMatcherContext> >
 {
 public:
-    typedef Asciifier<ParallelAsciifier> BaseT;
+    typedef Asciifier< ParallelAsciifier<TGlyphMatcherContext> > BaseT;
     typedef typename BaseT::GlyphMatcherContextT GlyphMatcherContextT;
     typedef typename BaseT::GlyphMatcherT GlyphMatcherT;
     typedef typename BaseT::ConstSurfaceT ConstSurfaceT;

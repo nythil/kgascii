@@ -118,7 +118,7 @@ bool VideoToAscii::processArgs()
 class MyVideoPlayer: public VideoPlayer
 {
 public:
-    explicit MyVideoPlayer(const VideoToAscii* ctx, KG::Ascii::DynamicAsciifier* asc, Console* con)
+    explicit MyVideoPlayer(const VideoToAscii* ctx, KG::Ascii::DynamicAsciifier<KG::Ascii::DynamicGlyphMatcherContext>* asc, Console* con)
         :context_(ctx)
         ,asciifier_(asc)
         ,console_(con)
@@ -249,7 +249,7 @@ protected:
 
 private:
     const VideoToAscii* context_;
-    KG::Ascii::DynamicAsciifier* asciifier_;
+    KG::Ascii::DynamicAsciifier<KG::Ascii::DynamicGlyphMatcherContext>* asciifier_;
     Console* console_;
     KG::Ascii::TextSurface text_;
     unsigned outWidth_;
@@ -270,9 +270,9 @@ int VideoToAscii::doExecute()
         }
         cout << "creating glyph matcher\n";
         KG::Ascii::GlyphMatcherContextFactory matcher_ctx_factory;
-        KG::Ascii::GlyphMatcherContext* matcher_ctx = matcher_ctx_factory.create(&font, algorithm_);
+        KG::Ascii::DynamicGlyphMatcherContext* matcher_ctx = matcher_ctx_factory.create(&font, algorithm_);
         assert(matcher_ctx);
-        KG::Ascii::DynamicAsciifier asciifier(matcher_ctx);
+        KG::Ascii::DynamicAsciifier<KG::Ascii::DynamicGlyphMatcherContext> asciifier(matcher_ctx);
         assert(asciifier.context() == matcher_ctx);
         if (threads_ == 1) {
             asciifier.setSequential();

@@ -28,38 +28,71 @@
 
 namespace KG { namespace Ascii {
 
-class PcaGlyphMatcherContext: public GlyphMatcherContext
+class PcaGlyphMatcherContext;
+class PcaGlyphMatcher;
+
+namespace Internal {
+
+template<>
+struct Traits<PcaGlyphMatcherContext>
+{
+    typedef PcaGlyphMatcherContext GlyphMatcherContextT;
+    typedef PcaGlyphMatcher GlyphMatcherT;
+    typedef FontImage FontImageT;
+    typedef Surface8 SurfaceT;
+    typedef Surface8c ConstSurfaceT;
+};
+
+template<>
+struct Traits<PcaGlyphMatcher>: public Traits<PcaGlyphMatcherContext>
+{
+};
+
+} // namespace Internal
+
+class PcaGlyphMatcherContext: public GlyphMatcherContext<PcaGlyphMatcherContext>
 {
     friend class PcaGlyphMatcher;
 
 public:
+    typedef GlyphMatcherContext<PcaGlyphMatcherContext> BaseT;
+    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+
+    using BaseT::font;
+
+public:
     explicit PcaGlyphMatcherContext(const FontPCA* pca)
-        :GlyphMatcherContext(pca->font())
+        :BaseT(pca->font())
         ,pca_(pca)
         ,charcodes_(font()->charcodes())
     {
     }
 
 public:
-    GlyphMatcher* createMatcher() const;
+    PcaGlyphMatcher* createMatcher() const;
 
 private:
     const FontPCA* pca_;
     std::vector<Symbol> charcodes_;
 };
 
-class KGASCII_API PcaGlyphMatcher: public GlyphMatcher
+
+class PcaGlyphMatcher: public GlyphMatcher<PcaGlyphMatcher>
 {
+public:
+    typedef GlyphMatcher<PcaGlyphMatcher> BaseT;
+    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+
 public:
     explicit PcaGlyphMatcher(const PcaGlyphMatcherContext* c);
 
 public:
-    const GlyphMatcherContext* context() const
+    const PcaGlyphMatcherContext* context() const
     {
         return context_;
     }
 
-    Symbol match(const Surface8c& imgv);
+    Symbol match(const ConstSurfaceT& imgv);
 
 private:
     const PcaGlyphMatcherContext* context_;
@@ -71,25 +104,24 @@ private:
 
 namespace KG { namespace Ascii {
 
-inline GlyphMatcher* PcaGlyphMatcherContext::createMatcher() const
+inline PcaGlyphMatcher* PcaGlyphMatcherContext::createMatcher() const
 {
     return new PcaGlyphMatcher(this);
 }
 
 inline PcaGlyphMatcher::PcaGlyphMatcher(const PcaGlyphMatcherContext* c)
-    :GlyphMatcher()
-    ,context_(c)
+    :context_(c)
     ,imgvec_(context_->font()->glyphSize())
     ,components_(context_->pca_->featureCount())
 {
 }
 
-inline Symbol PcaGlyphMatcher::match(const Surface8c& imgv)
+inline Symbol PcaGlyphMatcher::match(const ConstSurfaceT& imgv)
 {
     assert(imgv.width() <= context_->cellWidth());
     assert(imgv.height() <= context_->cellHeight());
 
-    typedef Eigen::Matrix<Surface8::value_type, Eigen::Dynamic, 1> VectorXuc;
+    typedef Eigen::Matrix<typename ConstSurfaceT::value_type, Eigen::Dynamic, 1> VectorXuc;
     if (imgv.isContinuous() && imgv.size() == static_cast<size_t>(imgvec_.size())) {
         imgvec_ = VectorXuc::Map(imgv.data(), imgv.size()).cast<float>();
     } else {

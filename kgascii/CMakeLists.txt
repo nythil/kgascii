@@ -8,6 +8,7 @@ SET(kgascii_SRCS
     internal/traits.hpp 
     asciifier.hpp
     dynamic_asciifier.hpp
+    dynamic_glyph_matcher.hpp
     font_image.hpp
     font_image_loader.hpp
     font_pca.hpp

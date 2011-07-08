@@ -27,24 +27,26 @@
 
 namespace KG { namespace Ascii {
 
+template<typename TGlyphMatcherContext>
 class SequentialAsciifier;
 
 namespace Internal {
 
-template<>
-struct Traits<SequentialAsciifier>
+template<typename TGlyphMatcherContext>
+struct Traits< SequentialAsciifier<TGlyphMatcherContext> >
 {
-    typedef GlyphMatcherContext GlyphMatcherContextT;
-    typedef GlyphMatcher GlyphMatcherT;
-    typedef Surface8c ConstSurfaceT;
+    typedef TGlyphMatcherContext GlyphMatcherContextT;
+    typedef typename TGlyphMatcherContext::GlyphMatcherT GlyphMatcherT;
+    typedef typename TGlyphMatcherContext::ConstSurfaceT ConstSurfaceT;
 };
 
 } // namespace Internal
 
-class SequentialAsciifier: public Asciifier<SequentialAsciifier>
+template<typename TGlyphMatcherContext>
+class SequentialAsciifier: public Asciifier< SequentialAsciifier<TGlyphMatcherContext> >
 {
 public:
-    typedef Asciifier<SequentialAsciifier> BaseT;
+    typedef Asciifier< SequentialAsciifier<TGlyphMatcherContext> > BaseT;
     typedef typename BaseT::GlyphMatcherContextT GlyphMatcherContextT;
     typedef typename BaseT::GlyphMatcherT GlyphMatcherT;
     typedef typename BaseT::ConstSurfaceT ConstSurfaceT;

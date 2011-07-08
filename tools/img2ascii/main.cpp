@@ -126,8 +126,8 @@ int ImageToAscii::doExecute()
     std::cerr << "creating glyph matcher...\n";
     KG::Ascii::TextSurface text(row_count, col_count);
     KG::Ascii::GlyphMatcherContextFactory matcher_ctx_factory;
-    KG::Ascii::GlyphMatcherContext* matcher_ctx = matcher_ctx_factory.create(&font, algorithm_);
-    KG::Ascii::DynamicAsciifier asciifier(matcher_ctx);
+    KG::Ascii::DynamicGlyphMatcherContext* matcher_ctx = matcher_ctx_factory.create(&font, algorithm_);
+    KG::Ascii::DynamicAsciifier<KG::Ascii::DynamicGlyphMatcherContext> asciifier(matcher_ctx);
     if (threadCount_ == 1) {
         asciifier.setSequential();
     } else {

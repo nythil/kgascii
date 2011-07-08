@@ -29,34 +29,72 @@
 
 namespace KG { namespace Ascii {
 
+class MutualInformationGlyphMatcher;
 class MutualInformationGlyphMatcherContext;
 
+namespace Internal {
 
-class MutualInformationGlyphMatcher: public GlyphMatcher
+template<>
+struct Traits<MutualInformationGlyphMatcherContext>
 {
+    typedef MutualInformationGlyphMatcherContext GlyphMatcherContextT;
+    typedef MutualInformationGlyphMatcher GlyphMatcherT;
+    typedef FontImage FontImageT;
+    typedef Surface8 SurfaceT;
+    typedef Surface8c ConstSurfaceT;
+    typedef SurfaceContainer8 SurfaceContainerT;
+};
+
+template<>
+struct Traits<MutualInformationGlyphMatcher>: public Traits<MutualInformationGlyphMatcherContext>
+{
+};
+
+} // namespace Internal
+
+class MutualInformationGlyphMatcher: public GlyphMatcher<MutualInformationGlyphMatcher>
+{
+public:
+    typedef GlyphMatcher<MutualInformationGlyphMatcher> BaseT;
+    typedef typename BaseT::SurfaceT SurfaceT;
+    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+    typedef typename Internal::Traits<MutualInformationGlyphMatcher>::SurfaceContainerT SurfaceContainerT;
+
 public:
     explicit MutualInformationGlyphMatcher(const MutualInformationGlyphMatcherContext* c);
 
 public:
-    const GlyphMatcherContext* context() const;
+    const MutualInformationGlyphMatcherContext* context() const
+    {
+        return context_;
+    }
 
-    Symbol match(const Surface8c& imgv);
+    Symbol match(const ConstSurfaceT& imgv);
 
 private:
     const MutualInformationGlyphMatcherContext* context_;
     Eigen::VectorXi histogram_;
     Eigen::MatrixXi jointHistogram_;
-    SurfaceContainer8 surfaceData_;
+    SurfaceContainerT surfaceData_;
 };
 
 
-class MutualInformationGlyphMatcherContext: public GlyphMatcherContext
+class MutualInformationGlyphMatcherContext: public GlyphMatcherContext<MutualInformationGlyphMatcherContext>
 {
     friend class MutualInformationGlyphMatcher;
 
 public:
-    explicit MutualInformationGlyphMatcherContext(const FontImage* f, size_t bins)
-        :GlyphMatcherContext(f)
+    typedef GlyphMatcherContext<MutualInformationGlyphMatcherContext> BaseT;
+    typedef typename BaseT::FontImageT FontImageT;
+    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+
+    using BaseT::font;
+    using BaseT::cellWidth;
+    using BaseT::cellHeight;
+
+public:
+    explicit MutualInformationGlyphMatcherContext(const FontImageT* f, size_t bins)
+        :BaseT(f)
         ,charcodes_(font()->charcodes())
         ,glyphs_(font()->glyphs())
         ,histograms_(glyphs_.size())
@@ -75,7 +113,7 @@ public:
         return new MutualInformationGlyphMatcher(this);
     }
 
-    void makeHistogram(const Surface8c& surf, Eigen::VectorXi& hist) const
+    void makeHistogram(const ConstSurfaceT& surf, Eigen::VectorXi& hist) const
     {
         assert(surf.width() == cellWidth());
         assert(surf.height() == cellHeight());
@@ -92,7 +130,7 @@ public:
         assert(static_cast<size_t>(hist.sum()) == cellWidth() * cellHeight());
     }
 
-    void makeJointHistogram(const Surface8c& surf1, const Surface8c& surf2, Eigen::MatrixXi& hist) const
+    void makeJointHistogram(const ConstSurfaceT& surf1, const ConstSurfaceT& surf2, Eigen::MatrixXi& hist) const
     {
         assert(surf1.width() == cellWidth());
         assert(surf2.width() == cellWidth());
@@ -131,30 +169,24 @@ public:
 
 private:
     std::vector<Symbol> charcodes_;
-    std::vector<Surface8c> glyphs_;
+    std::vector<ConstSurfaceT> glyphs_;
     std::vector<Eigen::VectorXi> histograms_;
     size_t colorBins_;
     size_t colorBinSize_;
 };
 
 MutualInformationGlyphMatcher::MutualInformationGlyphMatcher(const MutualInformationGlyphMatcherContext* c)
-    :GlyphMatcher()
-    ,context_(c)
+    :context_(c)
     ,histogram_(context_->colorBins_)
     ,jointHistogram_(context_->colorBins_, context_->colorBins_)
     ,surfaceData_(context_->cellWidth(), context_->cellHeight())
 {
 }
 
-const GlyphMatcherContext* MutualInformationGlyphMatcher::context() const
-{
-    return context_;
-}
-
-Symbol MutualInformationGlyphMatcher::match(const Surface8c& imgv)
+Symbol MutualInformationGlyphMatcher::match(const ConstSurfaceT& imgv)
 {
     //copy imgv to tmp_surf padding with black pixels
-    Surface8 tmp_surf = surfaceData_.surface();
+    SurfaceT tmp_surf = surfaceData_.surface();
     fillPixels(tmp_surf, 0);
     copyPixels(imgv, tmp_surf.window(0, 0, imgv.width(), imgv.height()));
 

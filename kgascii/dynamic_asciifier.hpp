@@ -27,24 +27,26 @@
 
 namespace KG { namespace Ascii {
 
+template<typename TGlyphMatcherContext>
 class DynamicAsciifier;
 
 namespace Internal {
 
-template<>
-struct Traits<DynamicAsciifier>
+template<typename TGlyphMatcherContext>
+struct Traits< DynamicAsciifier<TGlyphMatcherContext> >
 {
-    typedef GlyphMatcherContext GlyphMatcherContextT;
-    typedef GlyphMatcher GlyphMatcherT;
-    typedef Surface8c ConstSurfaceT;
+    typedef TGlyphMatcherContext GlyphMatcherContextT;
+    typedef typename TGlyphMatcherContext::GlyphMatcherT GlyphMatcherT;
+    typedef typename TGlyphMatcherContext::ConstSurfaceT ConstSurfaceT;
 };
 
 } // namespace Internal
 
-class DynamicAsciifier: public Asciifier<DynamicAsciifier>
+template<typename TGlyphMatcherContext>
+class DynamicAsciifier: public Asciifier< DynamicAsciifier<TGlyphMatcherContext> >
 {
 public:
-    typedef Asciifier<DynamicAsciifier> BaseT;
+    typedef Asciifier< DynamicAsciifier<TGlyphMatcherContext> > BaseT;
     typedef typename BaseT::GlyphMatcherContextT GlyphMatcherContextT;
     typedef typename BaseT::GlyphMatcherT GlyphMatcherT;
     typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
@@ -75,12 +77,12 @@ public:
 
     void setSequential()
     {
-        setStrategy(new SequentialAsciifier(context_));
+        setStrategy(new SequentialAsciifier<TGlyphMatcherContext>(context_));
     }
 
     void setParallel(unsigned cnt)
     {
-        setStrategy(new ParallelAsciifier(context_, cnt));
+        setStrategy(new ParallelAsciifier<TGlyphMatcherContext>(context_, cnt));
     }
 
 private:

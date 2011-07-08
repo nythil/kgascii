@@ -27,71 +27,100 @@
 
 namespace KG { namespace Ascii {
 
-template<typename DistancePolicy>
+template<typename TDistance>
 class PolicyBasedGlyphMatcherContext;
+template<typename TDistance>
+class PolicyBasedGlyphMatcher;
 
+namespace Internal {
 
-template<typename DistancePolicy>
-class PolicyBasedGlyphMatcher: public GlyphMatcher
+template<typename TDistance>
+struct Traits< PolicyBasedGlyphMatcherContext<TDistance> >
+{
+    typedef PolicyBasedGlyphMatcherContext<TDistance> GlyphMatcherContextT;
+    typedef PolicyBasedGlyphMatcher<TDistance> GlyphMatcherT;
+    typedef FontImage FontImageT;
+    typedef Surface8 SurfaceT;
+    typedef Surface8c ConstSurfaceT;
+    typedef SurfaceContainer8 SurfaceContainerT;
+};
+
+template<typename TDistance>
+struct Traits< PolicyBasedGlyphMatcher<TDistance> >: public Traits< PolicyBasedGlyphMatcherContext<TDistance> >
+{
+};
+
+} // namespace Internal
+
+template<typename TDistance>
+class PolicyBasedGlyphMatcher: public GlyphMatcher< PolicyBasedGlyphMatcher<TDistance> >
 {
 public:
-    typedef PolicyBasedGlyphMatcherContext<DistancePolicy> Context;
+    typedef GlyphMatcher<PolicyBasedGlyphMatcher> BaseT;
+    typedef typename BaseT::GlyphMatcherContextT GlyphMatcherContextT;
+    typedef typename BaseT::SurfaceT SurfaceT;
+    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+    typedef typename Internal::Traits< PolicyBasedGlyphMatcher<TDistance> >::SurfaceContainerT SurfaceContainerT;
 
 public:
-    explicit PolicyBasedGlyphMatcher(const Context* c)
-        :GlyphMatcher()
-        ,context_(c)
+    explicit PolicyBasedGlyphMatcher(const GlyphMatcherContextT* c)
+        :context_(c)
         ,container_(context_->cellWidth(), context_->cellHeight())
         ,surface_(container_.surface())
     {
     }
 
 public:
-    const Context* context() const
+    const GlyphMatcherContextT* context() const
     {
         return context_;
     }
 
-    Symbol match(const Surface8c& imgv);
+    Symbol match(const ConstSurfaceT& imgv);
 
 private:
-    const Context* context_;
-    SurfaceContainer8 container_;
-    Surface8 surface_;
+    const GlyphMatcherContextT* context_;
+    SurfaceContainerT container_;
+    SurfaceT surface_;
 };
 
 
-template<typename DistancePolicy>
-class PolicyBasedGlyphMatcherContext: public GlyphMatcherContext
+template<typename TDistance>
+class PolicyBasedGlyphMatcherContext: public GlyphMatcherContext< PolicyBasedGlyphMatcherContext<TDistance> >
 {
-    friend class PolicyBasedGlyphMatcher<DistancePolicy>;
+    friend class PolicyBasedGlyphMatcher<TDistance>;
+public:
+    typedef GlyphMatcherContext<PolicyBasedGlyphMatcherContext> BaseT;
+    typedef typename BaseT::GlyphMatcherT GlyphMatcherT;
+    typedef typename BaseT::FontImageT FontImageT;
+    typedef typename BaseT::SurfaceT SurfaceT;
+    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+
+    using BaseT::font;
 
 public:
-    typedef PolicyBasedGlyphMatcher<DistancePolicy> Matcher;
-
-public:
-    explicit PolicyBasedGlyphMatcherContext(const FontImage* f, 
-            const DistancePolicy& dist=DistancePolicy())
-        :GlyphMatcherContext(f)
+    explicit PolicyBasedGlyphMatcherContext(const FontImageT* f,
+            const TDistance& dist=TDistance())
+        :BaseT(f)
         ,charcodes_(font()->charcodes())
         ,glyphs_(font()->glyphs())
     {
     }
 
 public:
-    Matcher* createMatcher() const
+    GlyphMatcherT* createMatcher() const
     {
-        return new Matcher(this);
+        return new GlyphMatcherT(this);
     }
 
 private:
     std::vector<Symbol> charcodes_;
-    std::vector<Surface8c> glyphs_;
-    DistancePolicy distance_;
+    std::vector<ConstSurfaceT> glyphs_;
+    TDistance distance_;
 };
 
-template<typename DistancePolicy>
-Symbol PolicyBasedGlyphMatcher<DistancePolicy>::match(const Surface8c& imgv)
+template<typename TDistance>
+Symbol PolicyBasedGlyphMatcher<TDistance>::match(const ConstSurfaceT& imgv)
 {
     assert(imgv.width() <= surface_.width());
     assert(imgv.height() <= surface_.height());

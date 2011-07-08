@@ -23,6 +23,7 @@
 #include <kgascii/kgascii_api.hpp>
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/font_image.hpp>
+#include <kgascii/dynamic_glyph_matcher.hpp>
 #include <kgascii/policy_based_glyph_matcher.hpp>
 #include <kgascii/mutual_information_glyph_matcher.hpp>
 #include <kgascii/squared_euclidean_distance.hpp>
@@ -39,7 +40,7 @@
 
 namespace KG { namespace Ascii {
 
-class GlyphMatcherContext;
+class DynamicGlyphMatcherContext;
 class FontImage;
 
 class KGASCII_API GlyphMatcherContextFactory: boost::noncopyable
@@ -54,7 +55,7 @@ public:
     }
 
 public:
-    virtual GlyphMatcherContext* create(const FontImage* font, 
+    virtual DynamicGlyphMatcherContext* create(const FontImage* font,
             const std::string& options) const
     {
         using namespace boost::algorithm;
@@ -87,17 +88,17 @@ public:
                 pcanalyzer->saveToCache(options_map["makecache"]);
             }
             FontPCA* pca = new FontPCA(pcanalyzer, nfeatures);
-            return new PcaGlyphMatcherContext(pca);
+            return new DynamicGlyphMatcherContext(new PcaGlyphMatcherContext(pca));
         } else if (algo_name == "sed") {
-            return new PolicyBasedGlyphMatcherContext<SquaredEuclideanDistance>(font);
+            return new DynamicGlyphMatcherContext(new PolicyBasedGlyphMatcherContext<SquaredEuclideanDistance>(font));
         } else if (algo_name == "md") {
-            return new PolicyBasedGlyphMatcherContext<MeansDistance>(font);
+            return new DynamicGlyphMatcherContext(new PolicyBasedGlyphMatcherContext<MeansDistance>(font));
         } else if (algo_name == "mi") {
             size_t bins = 16;
             try {
                 bins = boost::lexical_cast<size_t>(options_map["bins"]);
             } catch (boost::bad_lexical_cast&) { }
-            return new MutualInformationGlyphMatcherContext(font, bins);
+            return new DynamicGlyphMatcherContext(new MutualInformationGlyphMatcherContext(font, bins));
         } else {
             throw std::runtime_error("unknown algo name");
         }

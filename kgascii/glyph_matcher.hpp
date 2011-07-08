@@ -20,26 +20,43 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <kgascii/kgascii_api.hpp>
+#include <kgascii/internal/traits.hpp>
 #include <kgascii/surface_fwd.hpp>
 #include <kgascii/symbol.hpp>
-#include <kgascii/font_image.hpp>
 
 namespace KG { namespace Ascii {
 
+template<typename TDerived>
 class GlyphMatcherContext;
 
-class KGASCII_API GlyphMatcher: boost::noncopyable
+template<typename TDerived>
+class GlyphMatcher: boost::noncopyable
 {
 public:
-    virtual ~GlyphMatcher()
-    {
-    }
+    typedef typename Internal::Traits<TDerived>::GlyphMatcherContextT GlyphMatcherContextT;
+    typedef typename Internal::Traits<TDerived>::SurfaceT SurfaceT;
+    typedef typename Internal::Traits<TDerived>::ConstSurfaceT ConstSurfaceT;
 
 public:
-    virtual const GlyphMatcherContext* context() const = 0;
+    TDerived& derived()
+    {
+        return static_cast<TDerived&>(*this);
+    }
 
-    virtual Symbol match(const Surface8c& imgv) = 0;
+    const TDerived& derived() const
+    {
+        return static_cast<const TDerived&>(*this);
+    }
+
+    const GlyphMatcherContextT* context() const
+    {
+        return derived().context();
+    }
+
+    Symbol match(const ConstSurfaceT& imgv)
+    {
+        return derived().match(imgv);
+    }
 
 protected:
     GlyphMatcher()
@@ -47,45 +64,60 @@ protected:
     }
 };
 
-class KGASCII_API GlyphMatcherContext: boost::noncopyable
+template<typename TDerived>
+class GlyphMatcherContext: boost::noncopyable
 {
 public:
-    virtual ~GlyphMatcherContext()
-    {
-    }
+    typedef typename Internal::Traits<TDerived>::GlyphMatcherT GlyphMatcherT;
+    typedef typename Internal::Traits<TDerived>::FontImageT FontImageT;
+    typedef typename Internal::Traits<TDerived>::SurfaceT SurfaceT;
+    typedef typename Internal::Traits<TDerived>::ConstSurfaceT ConstSurfaceT;
 
 public:
-    const FontImage* font() const
+    TDerived& derived()
+    {
+        return static_cast<TDerived&>(*this);
+    }
+
+    const TDerived& derived() const
+    {
+        return static_cast<const TDerived&>(*this);
+    }
+
+    const FontImageT* font() const
     {
         return font_;
     }
 
-    virtual unsigned cellWidth() const
+    unsigned cellWidth() const
     {
         return font_->glyphWidth();
     }
 
-    virtual unsigned cellHeight() const
+    unsigned cellHeight() const
     {
         return font_->glyphHeight();
     }
 
-    virtual Symbol match(const Surface8c& imgv) const
+    Symbol match(const ConstSurfaceT& imgv) const
     {
-        boost::scoped_ptr<GlyphMatcher> matcher(createMatcher());
+        boost::scoped_ptr<GlyphMatcherT> matcher(createMatcher());
         return matcher->match(imgv);
     }
 
-    virtual GlyphMatcher* createMatcher() const = 0;
+    GlyphMatcherT* createMatcher() const
+    {
+        return derived().createMatcher();
+    }
 
 protected:
-    GlyphMatcherContext(const FontImage* f)
+    GlyphMatcherContext(const FontImageT* f)
         :font_(f)
     {
     }
 
 private:
-    const FontImage* font_;
+    const FontImageT* font_;
 };
 
 } } // namespace KG::Ascii

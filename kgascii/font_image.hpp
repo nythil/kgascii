@@ -177,7 +177,8 @@ private:
     template<typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        using namespace boost::serialization;
+    	(void)version;
+    	using namespace boost::serialization;
         ar & make_nvp("family-name", familyName_);
         ar & make_nvp("style-name", styleName_);
         ar & make_nvp("pixel-size", pixelSize_);
@@ -212,6 +213,7 @@ private:
 template<typename Archive>
 inline void serialize(Archive& ar, FontImage::GlyphData& gd, const unsigned int version)
 {
+	(void)version;
     using namespace boost::serialization;
     ar & make_nvp("sym", gd.sym);
     ar & make_nvp("data", gd.data);

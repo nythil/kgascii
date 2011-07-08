@@ -122,6 +122,7 @@ private:
     template<typename Archive>
     void save(Archive& ar, const unsigned int version) const
     {
+    	(void)version;
         using namespace boost::serialization;
         ar << make_nvp("width", width_);
         ar << make_nvp("height", height_);
@@ -131,6 +132,7 @@ private:
     template<typename Archive>
     void load(Archive& ar, const unsigned int version)
     {
+    	(void)version;
         using namespace boost::serialization;
         size_t w, h;
         ar >> make_nvp("width", w);

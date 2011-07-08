@@ -293,15 +293,19 @@ void VideoPlayer::onPlaybackEnd()
 
 bool VideoPlayer::onBeforeReadFrame(double tm_left)
 {
+	(void)tm_left;
     return true;
 }
 
 void VideoPlayer::onFrameRead(cv::Mat frm, double tm_left)
 {
+	(void)frm;
+	(void)tm_left;
 }
 
 void VideoPlayer::onFrameDisplay(cv::Mat frm)
 {
+	(void)frm;
 }
 
 bool VideoPlayer::positionVideo()

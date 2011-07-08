@@ -215,6 +215,7 @@ protected:
 
     virtual void onFrameRead(cv::Mat frm, double tm_left)
     {
+    	(void)tm_left;
         cv::Mat scaled_frame;
         if (frameWidth() == outWidth_ && frameHeight() == outHeight_) {
             scaled_frame = frm;
@@ -241,6 +242,7 @@ protected:
 
     virtual void onFrameDisplay(cv::Mat frm)
     {
+    	(void)frm;
         if (context_->showVideo_) {
             cv::imshow("test", grayFrame_);
         }

@@ -54,7 +54,7 @@ public:
         return handle_;
     }
 
-    const FT_Face operator->() const
+    FT_Face operator->() const
     {
         return handle_;
     }

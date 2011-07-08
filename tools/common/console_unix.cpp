@@ -34,10 +34,13 @@ Console::~Console()
 
 void Console::setup(int rows, int cols)
 {
+	(void)rows;
+	(void)cols;
 }
 
 void Console::display(const KG::Ascii::TextSurface& text)
 {
+	(void)text;
 }
 
 

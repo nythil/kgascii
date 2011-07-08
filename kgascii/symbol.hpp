@@ -69,6 +69,7 @@ private:
     template<typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
+    	(void)version;
         ar & boost::serialization::make_nvp("value", value_);
     }
 

@@ -104,6 +104,7 @@ public:
         :BaseT(f)
         ,charcodes_(font()->charcodes())
         ,glyphs_(font()->glyphs())
+    	,distance_(dist)
     {
     }
 

@@ -196,7 +196,7 @@ void VideoPlayer::seekToTime(double frm_tm)
     if (!loaded_)
         throw std::logic_error("no video loaded");
 
-    seekedFrameNo_ = frm_tm;
+    seekedFrameTime_ = frm_tm;
 }
 
 bool VideoPlayer::canDropFrames() const

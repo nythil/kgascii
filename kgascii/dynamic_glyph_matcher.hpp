@@ -53,8 +53,8 @@ class DynamicGlyphMatcherContext: public GlyphMatcherContext<DynamicGlyphMatcher
 
 public:
     typedef GlyphMatcherContext<DynamicGlyphMatcherContext> BaseT;
-    typedef typename BaseT::FontImageT FontImageT;
-    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+    typedef BaseT::FontImageT FontImageT;
+    typedef BaseT::ConstSurfaceT ConstSurfaceT;
 
 public:
     template<typename TImplementation>
@@ -164,7 +164,7 @@ class DynamicGlyphMatcher: public GlyphMatcher<DynamicGlyphMatcher>
 {
 public:
     typedef GlyphMatcher<DynamicGlyphMatcher> BaseT;
-    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+    typedef BaseT::ConstSurfaceT ConstSurfaceT;
 
 public:
     template<typename TImplementation>

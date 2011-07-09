@@ -198,6 +198,8 @@ private:
         Symbol sym;
         SurfaceContainer8 data;
     };
+    template<typename Archive>
+    friend void serialize(Archive& ar, FontImage::GlyphData& gd, const unsigned int version);
     typedef boost::multi_index_container<
             GlyphData,
             boost::multi_index::indexed_by<

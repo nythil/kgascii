@@ -56,7 +56,7 @@ class PcaGlyphMatcherContext: public GlyphMatcherContext<PcaGlyphMatcherContext>
 
 public:
     typedef GlyphMatcherContext<PcaGlyphMatcherContext> BaseT;
-    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+    typedef BaseT::ConstSurfaceT ConstSurfaceT;
 
     using BaseT::font;
 
@@ -81,7 +81,7 @@ class PcaGlyphMatcher: public GlyphMatcher<PcaGlyphMatcher>
 {
 public:
     typedef GlyphMatcher<PcaGlyphMatcher> BaseT;
-    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+    typedef BaseT::ConstSurfaceT ConstSurfaceT;
 
 public:
     explicit PcaGlyphMatcher(const PcaGlyphMatcherContext* c);

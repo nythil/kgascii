@@ -56,9 +56,9 @@ class MutualInformationGlyphMatcher: public GlyphMatcher<MutualInformationGlyphM
 {
 public:
     typedef GlyphMatcher<MutualInformationGlyphMatcher> BaseT;
-    typedef typename BaseT::SurfaceT SurfaceT;
-    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
-    typedef typename Internal::Traits<MutualInformationGlyphMatcher>::SurfaceContainerT SurfaceContainerT;
+    typedef BaseT::SurfaceT SurfaceT;
+    typedef BaseT::ConstSurfaceT ConstSurfaceT;
+    typedef Internal::Traits<MutualInformationGlyphMatcher>::SurfaceContainerT SurfaceContainerT;
 
 public:
     explicit MutualInformationGlyphMatcher(const MutualInformationGlyphMatcherContext* c);
@@ -85,8 +85,8 @@ class MutualInformationGlyphMatcherContext: public GlyphMatcherContext<MutualInf
 
 public:
     typedef GlyphMatcherContext<MutualInformationGlyphMatcherContext> BaseT;
-    typedef typename BaseT::FontImageT FontImageT;
-    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+    typedef BaseT::FontImageT FontImageT;
+    typedef BaseT::ConstSurfaceT ConstSurfaceT;
 
     using BaseT::font;
     using BaseT::cellWidth;

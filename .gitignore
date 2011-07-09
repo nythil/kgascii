@@ -8,3 +8,9 @@ kgascii/kgascii_config.hpp
 Makefile
 CMakeCache.txt
 cmake_install.cmake
+*.vcproj
+*.vcproj.*.user
+*.dir/
+*.ncb
+*.sln
+*.suo

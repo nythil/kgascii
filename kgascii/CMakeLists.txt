@@ -9,6 +9,7 @@ SET(kgascii_SRCS
     asciifier.hpp
     dynamic_asciifier.hpp
     dynamic_glyph_matcher.hpp
+    font.hpp
     font_image.hpp
     font_image_loader.hpp
     font_pca.hpp

@@ -39,7 +39,7 @@ struct Traits<MutualInformationGlyphMatcherContext>
 {
     typedef MutualInformationGlyphMatcherContext GlyphMatcherContextT;
     typedef MutualInformationGlyphMatcher GlyphMatcherT;
-    typedef FontImage FontImageT;
+    typedef FontImage<PixelType8> FontImageT;
     typedef Surface8 SurfaceT;
     typedef Surface8c ConstSurfaceT;
     typedef SurfaceContainer8 SurfaceContainerT;
@@ -95,15 +95,13 @@ public:
 public:
     explicit MutualInformationGlyphMatcherContext(const FontImageT* f, size_t bins)
         :BaseT(f)
-        ,charcodes_(font()->charcodes())
-        ,glyphs_(font()->glyphs())
-        ,histograms_(glyphs_.size())
+        ,histograms_(font()->glyphCount())
         ,colorBins_(bins)
         ,colorBinSize_(256 / colorBins_)
     {
         //precompute glyph histograms
-        for (size_t ci = 0; ci < glyphs_.size(); ++ci) {
-            makeHistogram(glyphs_[ci], histograms_[ci]);
+        for (size_t ci = 0; ci < font()->glyphCount(); ++ci) {
+            makeHistogram(font()->getGlyph(ci), histograms_[ci]);
         }
     }
 
@@ -168,8 +166,6 @@ public:
     }
 
 private:
-    std::vector<Symbol> charcodes_;
-    std::vector<ConstSurfaceT> glyphs_;
     std::vector<Eigen::VectorXi> histograms_;
     size_t colorBins_;
     size_t colorBinSize_;
@@ -195,11 +191,11 @@ Symbol MutualInformationGlyphMatcher::match(const ConstSurfaceT& imgv)
 
     double nmi_max = std::numeric_limits<double>::min();
     Symbol cc_max;
-    for (size_t ci = 0; ci < context_->charcodes_.size(); ++ci) {
+    for (size_t ci = 0; ci < context_->font()->glyphCount(); ++ci) {
         const Eigen::VectorXi& glyph_histogram = context_->histograms_[ci];
         double glyph_ent = context_->entropy(glyph_histogram);
 
-        context_->makeJointHistogram(tmp_surf, context_->glyphs_[ci], jointHistogram_);
+        context_->makeJointHistogram(tmp_surf, context_->font()->getGlyph(ci), jointHistogram_);
         assert(jointHistogram_.rowwise().sum() == histogram_);
         assert(jointHistogram_.colwise().sum().transpose() == glyph_histogram);
         double joint_ent = context_->entropy(jointHistogram_);
@@ -208,7 +204,7 @@ Symbol MutualInformationGlyphMatcher::match(const ConstSurfaceT& imgv)
         double nmi = (imgv_ent + glyph_ent) / joint_ent;
         if (nmi > nmi_max) {
             nmi_max = nmi;
-            cc_max = context_->charcodes_[ci];
+            cc_max = context_->font()->getSymbol(ci);
         }
     }
     return cc_max;

@@ -28,13 +28,19 @@
 
 namespace KG { namespace Ascii {
 
+template<typename TPixel>
 class FontImage;
+template<typename TPixel>
 class FontPCA;
 
+template<typename TPixel>
 class FontPCAnalyzer
 {
 public:
-    explicit FontPCAnalyzer(const FontImage* f)
+    typedef FontImage<TPixel> FontImageT;
+
+public:
+    explicit FontPCAnalyzer(const FontImageT* f)
         :font_(f)
     {
     }
@@ -48,7 +54,7 @@ public:
 
         Eigen::MatrixXd input_samples(glyph_size, samples_cnt);
         for (size_t ci = 0; ci < samples_cnt; ++ci) {
-            Surface8c glyph_surface = font_->glyphByIndex(ci);
+            Surface8c glyph_surface = font_->getGlyph(ci);
             assert(glyph_surface.isContinuous());
             input_samples.col(ci) = VectorXuc::Map(glyph_surface.data(), glyph_surface.size()).cast<double>();
         }
@@ -77,7 +83,7 @@ public:
         assert(static_cast<size_t>(features_.cols()) == glyph_size);
     }
 
-    FontPCA extract(size_t cnt) const;
+    FontPCA<TPixel> extract(size_t cnt) const;
 
     bool saveToCache(const std::string& filename) const
     {
@@ -132,7 +138,7 @@ public:
     }
 
 public:
-    const FontImage* font() const
+    const FontImageT* font() const
     {
         return font_;
     }
@@ -158,7 +164,7 @@ public:
     }
 
 private:
-    const FontImage* font_;
+    const FontImageT* font_;
     Eigen::VectorXd mean_;
     Eigen::MatrixXd samples_;
     Eigen::VectorXd energies_;
@@ -171,9 +177,10 @@ private:
 
 namespace KG { namespace Ascii {
 
-inline FontPCA FontPCAnalyzer::extract(size_t cnt) const
+template<typename TPixel>
+FontPCA<TPixel> FontPCAnalyzer<TPixel>::extract(size_t cnt) const
 {
-    return FontPCA(this, cnt);
+    return FontPCA<TPixel>(this, cnt);
 }
 
 } } // namespace KG::Ascii

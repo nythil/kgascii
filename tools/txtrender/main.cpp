@@ -21,6 +21,7 @@
 #include <boost/filesystem.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <kgascii/font_image.hpp>
+#include <kgascii/font_io.hpp>
 #include <kgascii/surface_algorithm.hpp>
 #include <common/cmdline_tool.hpp>
 
@@ -77,8 +78,8 @@ int RenderText::doExecute()
 {
     using namespace KG::Ascii;
     
-    FontImage image;
-    if (!image.load(fontFile_)) {
+    Font font;
+    if (!font.load(fontFile_)) {
         std::cerr << "font loading error\n";
         return -1;
     }
@@ -104,8 +105,8 @@ int RenderText::doExecute()
         }
     }
 
-    size_t image_width = line_length * image.glyphWidth();
-    size_t image_height = input_lines.size() * image.glyphHeight();
+    size_t image_width = line_length * font.glyphWidth();
+    size_t image_height = input_lines.size() * font.glyphHeight();
 
     std::cerr << "image_width = " << image_width << "\n";
     std::cerr << "image_height = " << image_height << "\n";
@@ -116,11 +117,11 @@ int RenderText::doExecute()
     for (size_t rr = 0; rr < input_lines.size(); ++rr) {
         std::string line = input_lines[rr];
         for (size_t cc = 0; cc < line_length; ++cc) {
-            Surface8c glyph_surface = image.glyphByCharcode(Symbol(line[cc]));
-            unsigned colX = cc * image.glyphWidth();
-            unsigned rowY = rr * image.glyphHeight();
+            Surface8c glyph_surface = font.getGlyph(Symbol(line[cc]));
+            unsigned colX = cc * font.glyphWidth();
+            unsigned rowY = rr * font.glyphHeight();
             copyPixels(glyph_surface, output_surface.window(colX, rowY,
-                    image.glyphWidth(), image.glyphHeight()));
+                    font.glyphWidth(), font.glyphHeight()));
         }
     }
 

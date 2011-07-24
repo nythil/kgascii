@@ -22,6 +22,7 @@
 #include <boost/filesystem.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <kgascii/font_image.hpp>
+#include <kgascii/font_io.hpp>
 #include <kgascii/font_image_loader.hpp>
 #include <kgascii/surface_container.hpp>
 #include <kgascii/surface_algorithm.hpp>
@@ -42,8 +43,8 @@ protected:
     int doExecute();
     
 private:
-    void dumpFeatures(const KG::Ascii::FontPCA& pca);
-    void dumpDsc(const KG::Ascii::FontPCA& pca);
+    void dumpFeatures(const KG::Ascii::FontPCA<KG::Ascii::PixelType8>& pca);
+    void dumpDsc(const KG::Ascii::FontPCA<KG::Ascii::PixelType8>& pca);
 
 private:
     std::string inputFile_;
@@ -85,14 +86,15 @@ int PcaDump::doExecute()
 {
     using namespace KG::Ascii;
     
-    FontImage image;
-    if (!image.load(inputFile_)) {
+    Font font;
+    if (!font.load(inputFile_)) {
         std::cout << "loading error\n";
         return -1;
     }
+    FontImage<KG::Ascii::PixelType8> image(&font);
 
-    FontPCAnalyzer pcanalyzer(&image);
-    FontPCA pca(&pcanalyzer, featureCnt_);
+    FontPCAnalyzer<KG::Ascii::PixelType8> pcanalyzer(&image);
+    FontPCA<KG::Ascii::PixelType8> pca(&pcanalyzer, featureCnt_);
 
     std::cout << "features: " << featureCnt_ << "\n";
     std::cout << "energy: " << pca.energies().sum() / pcanalyzer.energies().sum() << "\n";
@@ -103,7 +105,7 @@ int PcaDump::doExecute()
     return 0;
 }
 
-void PcaDump::dumpFeatures(const KG::Ascii::FontPCA& pca)
+void PcaDump::dumpFeatures(const KG::Ascii::FontPCA<KG::Ascii::PixelType8>& pca)
 {
     using namespace KG::Ascii;
     
@@ -137,7 +139,7 @@ void PcaDump::dumpFeatures(const KG::Ascii::FontPCA& pca)
     cv::imwrite(outputFeatures_, output_image);
 }
 
-void PcaDump::dumpDsc(const KG::Ascii::FontPCA& pca)
+void PcaDump::dumpDsc(const KG::Ascii::FontPCA<KG::Ascii::PixelType8>& pca)
 {
     using namespace KG::Ascii;
     
@@ -145,7 +147,7 @@ void PcaDump::dumpDsc(const KG::Ascii::FontPCA& pca)
         return;
 
     KG::Ascii::PcaReconstructionFontImageLoader pca_loader(&pca);
-    FontImage restored_font;
+    Font restored_font;
     restored_font.load(pca_loader, Symbol(32), Symbol(126));
     restored_font.save(outputDsc_);
 }

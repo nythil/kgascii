@@ -30,9 +30,8 @@ namespace KG { namespace Ascii {
 class KGASCII_API PcaReconstructionFontImageLoader: public FontImageLoader
 {
 public:
-    explicit PcaReconstructionFontImageLoader(const FontPCA* pca)
+    explicit PcaReconstructionFontImageLoader(const FontPCA<PixelType8>* pca)
         :pca_(pca)
-        ,charcodes_(pca_->font()->charcodes())
     {
         glyphData_.resize(pca_->font()->glyphWidth(), pca_->font()->glyphHeight());
     }
@@ -65,21 +64,23 @@ public:
 
     std::vector<Symbol> charcodes() const
     {
-        return charcodes_;
+        return std::vector<Symbol>();
     }
 
     bool loadGlyph(Symbol charcode)
     {
-        std::vector<Symbol>::iterator it = std::find(charcodes_.begin(), charcodes_.end(), charcode);
-        if (it == charcodes_.end())
-            return false;
-        size_t it_idx = std::distance(charcodes_.begin(), it);
-        Eigen::VectorXf proj_glyph_vec = pca_->glyphs().col(it_idx);
-        Eigen::VectorXf glyph_vec = pca_->combine(proj_glyph_vec);
-        glyph_vec = glyph_vec.cwiseMax(Eigen::VectorXf::Zero(glyph_vec.size()));
-        glyph_vec = glyph_vec.cwiseMin(255 * Eigen::VectorXf::Ones(glyph_vec.size()));
-        copyPixels(glyph_vec, glyphData_.surface());
-        return true;
+        for (size_t i = 0; i < pca_->font()->glyphCount(); ++i) {
+            if (pca_->font()->getSymbol(i) != charcode) continue;
+
+            Eigen::VectorXf proj_glyph_vec = pca_->glyphs().col(i);
+            Eigen::VectorXf glyph_vec = pca_->combine(proj_glyph_vec);
+            glyph_vec = glyph_vec.cwiseMax(Eigen::VectorXf::Zero(glyph_vec.size()));
+            glyph_vec = glyph_vec.cwiseMin(255 * Eigen::VectorXf::Ones(glyph_vec.size()));
+            copyPixels(glyph_vec, glyphData_.surface());
+            return true;
+        }
+
+        return false;
     }
 
     Surface8c glyph() const
@@ -88,8 +89,7 @@ public:
     }
 
 private:
-    const FontPCA* pca_;
-    std::vector<Symbol> charcodes_;
+    const FontPCA<PixelType8>* pca_;
     SurfaceContainer8 glyphData_;
 };
 

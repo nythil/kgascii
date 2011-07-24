@@ -23,13 +23,19 @@
 
 namespace KG { namespace Ascii {
 
+template<typename TPixel>
 class FontImage;
+template<typename TPixel>
 class FontPCAnalyzer;
 
+template<typename TPixel>
 class FontPCA
 {
 public:
-    FontPCA(const FontPCAnalyzer* analyzer, size_t feat_cnt);
+    typedef FontImage<TPixel> FontImageT;
+
+public:
+    FontPCA(const FontPCAnalyzer<TPixel>* analyzer, size_t feat_cnt);
 
 public:
     Eigen::VectorXf combine(const Eigen::VectorXf& vec) const
@@ -72,7 +78,7 @@ public:
         return energies_.size();
     }
 
-    const FontImage* font() const
+    const FontImageT* font() const
     {
         return font_;
     }
@@ -98,7 +104,7 @@ public:
     }
 
 private:
-    const FontImage* font_;
+    const FontImageT* font_;
     Eigen::VectorXf mean_;
     Eigen::VectorXf energies_;
     Eigen::MatrixXf features_;
@@ -112,28 +118,29 @@ private:
 
 namespace KG { namespace Ascii {
 
-inline FontPCA::FontPCA(const FontPCAnalyzer* analyzer, size_t feat_cnt)
+template<typename TPixel>
+FontPCA<TPixel>::FontPCA(const FontPCAnalyzer<TPixel>* analyzer, size_t feat_cnt)
     :font_(analyzer->font())
 {
     size_t glyph_size = font_->glyphWidth() * font_->glyphHeight();
     size_t samples_cnt = font_->glyphCount();
 
-    mean_ = analyzer->mean().cast<float>();
+    mean_ = analyzer->mean().template cast<float>();
     assert(static_cast<size_t>(mean_.size()) == glyph_size);
 
     Eigen::VectorXd energies_dbl = analyzer->energies().head(feat_cnt);
     energies_dbl /= energies_dbl.sum();
     energies_dbl *= energies_dbl.size();
-    energies_ = energies_dbl.cast<float>();
+    energies_ = energies_dbl.template cast<float>();
     assert(static_cast<size_t>(energies_.size()) == feat_cnt);
 
     Eigen::MatrixXd features_dbl = analyzer->features().leftCols(feat_cnt);
-    features_ = features_dbl.cast<float>();
+    features_ = features_dbl.template cast<float>();
     assert(static_cast<size_t>(features_.rows()) == glyph_size);
     assert(static_cast<size_t>(features_.cols()) == feat_cnt);
 
     Eigen::MatrixXd glyphs_dbl = (features_dbl * energies_dbl.asDiagonal()).transpose() * analyzer->samples();
-    glyphs_ = glyphs_dbl.cast<float>();
+    glyphs_ = glyphs_dbl.template cast<float>();
     assert(static_cast<size_t>(glyphs_.cols()) == samples_cnt);
     assert(static_cast<size_t>(glyphs_.rows()) == feat_cnt);
 }

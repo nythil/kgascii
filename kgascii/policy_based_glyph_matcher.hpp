@@ -39,7 +39,7 @@ struct Traits< PolicyBasedGlyphMatcherContext<TDistance> >
 {
     typedef PolicyBasedGlyphMatcherContext<TDistance> GlyphMatcherContextT;
     typedef PolicyBasedGlyphMatcher<TDistance> GlyphMatcherT;
-    typedef FontImage FontImageT;
+    typedef FontImage<PixelType8> FontImageT;
     typedef Surface8 SurfaceT;
     typedef Surface8c ConstSurfaceT;
     typedef SurfaceContainer8 SurfaceContainerT;
@@ -102,8 +102,6 @@ public:
     explicit PolicyBasedGlyphMatcherContext(const FontImageT* f,
             const TDistance& dist=TDistance())
         :BaseT(f)
-        ,charcodes_(font()->charcodes())
-        ,glyphs_(font()->glyphs())
     	,distance_(dist)
     {
     }
@@ -115,8 +113,6 @@ public:
     }
 
 private:
-    std::vector<Symbol> charcodes_;
-    std::vector<ConstSurfaceT> glyphs_;
     TDistance distance_;
 };
 
@@ -131,11 +127,11 @@ Symbol PolicyBasedGlyphMatcher<TDistance>::match(const ConstSurfaceT& imgv)
 
     int d2_min = std::numeric_limits<int>::max();
     Symbol cc_min;
-    for (size_t ci = 0; ci < context_->charcodes_.size(); ++ci) {
-        int d2 = context_->distance_(surface_, context_->glyphs_[ci]);
+    for (size_t ci = 0; ci < context_->font()->glyphCount(); ++ci) {
+        int d2 = context_->distance_(surface_, context_->font()->getGlyph(ci));
         if (d2 < d2_min) {
             d2_min = d2;
-            cc_min = context_->charcodes_[ci];
+            cc_min = context_->font()->getSymbol(ci);
         }
     }
     return cc_min;

@@ -19,15 +19,16 @@
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <kgascii/font_image.hpp>
+#include <kgascii/font.hpp>
+#include <kgascii/font_io.hpp>
 #include <kgascii/surface_algorithm.hpp>
 #include <common/cmdline_tool.hpp>
 
 
-class ExtractFont: public CmdlineTool
+class Dsc2Img: public CmdlineTool
 {
 public:
-    ExtractFont();
+    Dsc2Img();
 
 protected:
     bool processArgs();
@@ -43,11 +44,11 @@ private:
 
 int main(int argc, char* argv[])
 {
-    return ExtractFont().execute(argc, argv);
+    return Dsc2Img().execute(argc, argv);
 }
 
 
-ExtractFont::ExtractFont()
+Dsc2Img::Dsc2Img()
     :CmdlineTool("Options")
 {
     using namespace boost::program_options;
@@ -59,7 +60,7 @@ ExtractFont::ExtractFont()
     posDesc_.add("input-file", 1);
 }
 
-bool ExtractFont::processArgs()
+bool Dsc2Img::processArgs()
 {
     requireOption("input-file");
 
@@ -71,36 +72,35 @@ bool ExtractFont::processArgs()
     return true;
 }
 
-int ExtractFont::doExecute()
+int Dsc2Img::doExecute()
 {
     using namespace KG::Ascii;
     
-    FontImage image;
-    if (!image.load(inputFile_)) {
+    Font font;
+    if (!font.load(inputFile_)) {
         std::cout << "loading error\n";
         return -1;
     }
 
-    unsigned max_chars_per_row = maxWidth_ / image.glyphWidth();
+    unsigned max_chars_per_row = maxWidth_ / font.glyphWidth();
     assert(max_chars_per_row > 1);
 
-    std::vector<Symbol> charcodes = image.charcodes();
-    size_t row_count = (charcodes.size() + max_chars_per_row - 1) / max_chars_per_row;
+    size_t row_count = (font.glyphCount() + max_chars_per_row - 1) / max_chars_per_row;
 
-    size_t image_width = std::min<size_t>(max_chars_per_row, charcodes.size()) * image.glyphWidth();
-    size_t image_height = row_count * image.glyphHeight();
+    size_t image_width = std::min<size_t>(max_chars_per_row, font.glyphCount()) * font.glyphWidth();
+    size_t image_height = row_count * font.glyphHeight();
 
     cv::Mat output_image(image_height, image_width, CV_8UC1);
     Surface8 output_surface(image_width, image_height, output_image.data, output_image.step[0]);
 
-    for (size_t ci = 0; ci < charcodes.size(); ++ci) {
-        Surface8c glyph_surface = image.glyphByIndex(ci);
+    for (size_t ci = 0; ci < font.glyphCount(); ++ci) {
+        Surface8c glyph_surface = font.getGlyph(ci);
         unsigned row = ci % max_chars_per_row;
-        unsigned rowX = row * image.glyphWidth();
+        unsigned rowX = row * font.glyphWidth();
         unsigned col = ci / max_chars_per_row;
-        unsigned colY = col * image.glyphHeight();
+        unsigned colY = col * font.glyphHeight();
         copyPixels(glyph_surface, output_surface.window(rowX, colY, 
-                image.glyphWidth(), image.glyphHeight()));
+                font.glyphWidth(), font.glyphHeight()));
     }
 
     cv::imwrite(outputFile_, output_image);

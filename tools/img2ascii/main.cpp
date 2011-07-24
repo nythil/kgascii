@@ -26,6 +26,7 @@
 #include <common/cmdline_tool.hpp>
 #include <common/validate_optional.hpp>
 #include <kgascii/font_image.hpp>
+#include <kgascii/font_io.hpp>
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/dynamic_asciifier.hpp>
 #include <kgascii/text_surface.hpp>
@@ -95,9 +96,10 @@ bool ImageToAscii::processArgs()
 int ImageToAscii::doExecute()
 {
     std::cerr << "loading font...\n";
-    KG::Ascii::FontImage font;
+    KG::Ascii::Font font;
     if (!font.load(fontFile_))
         return -1;
+    KG::Ascii::FontImage<KG::Ascii::PixelType8> font_image(&font);
     unsigned char_width = font.glyphWidth();
     unsigned char_height = font.glyphHeight();
 
@@ -126,8 +128,8 @@ int ImageToAscii::doExecute()
     std::cerr << "creating glyph matcher...\n";
     KG::Ascii::TextSurface text(row_count, col_count);
     KG::Ascii::GlyphMatcherContextFactory matcher_ctx_factory;
-    KG::Ascii::DynamicGlyphMatcherContext* matcher_ctx = matcher_ctx_factory.create(&font, algorithm_);
-    KG::Ascii::DynamicAsciifier<KG::Ascii::DynamicGlyphMatcherContext> asciifier(matcher_ctx);
+    KG::Ascii::DynamicGlyphMatcherContext<KG::Ascii::PixelType8>* matcher_ctx = matcher_ctx_factory.create(&font_image, algorithm_);
+    KG::Ascii::DynamicAsciifier< KG::Ascii::DynamicGlyphMatcherContext<KG::Ascii::PixelType8> > asciifier(matcher_ctx);
     if (threadCount_ == 1) {
         asciifier.setSequential();
     } else {

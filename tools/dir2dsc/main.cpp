@@ -21,6 +21,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <kgascii/font_image.hpp>
+#include <kgascii/font_io.hpp>
+#include <kgascii/font_image_loader.hpp>
 #include <common/cmdline_tool.hpp>
 
 
@@ -209,13 +211,13 @@ int GenerateFont::doExecute()
         return -1;
     }
 
-    FontImage image;
-    if (!image.load(loader, Symbol(32), Symbol(127))) {
+    Font font;
+    if (!font.load(loader, Symbol(32), Symbol(127))) {
         std::cout << "loading error\n";
         return -1;
     }
 
-    image.save(outputFile_);
+    font.save(outputFile_);
 
     return 0;
 }

@@ -27,6 +27,7 @@
 #include <common/console.hpp>
 #include <common/video_player.hpp>
 #include <kgascii/font_image.hpp>
+#include <kgascii/font_io.hpp>
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/dynamic_asciifier.hpp>
 #include <kgascii/text_surface.hpp>
@@ -118,7 +119,9 @@ bool VideoToAscii::processArgs()
 class MyVideoPlayer: public VideoPlayer
 {
 public:
-    explicit MyVideoPlayer(const VideoToAscii* ctx, KG::Ascii::DynamicAsciifier<KG::Ascii::DynamicGlyphMatcherContext>* asc, Console* con)
+    typedef KG::Ascii::DynamicAsciifier< KG::Ascii::DynamicGlyphMatcherContext<KG::Ascii::PixelType8> > AsciifierT;
+
+    explicit MyVideoPlayer(const VideoToAscii* ctx, AsciifierT* asc, Console* con)
         :context_(ctx)
         ,asciifier_(asc)
         ,console_(con)
@@ -251,7 +254,7 @@ protected:
 
 private:
     const VideoToAscii* context_;
-    KG::Ascii::DynamicAsciifier<KG::Ascii::DynamicGlyphMatcherContext>* asciifier_;
+    AsciifierT* asciifier_;
     Console* console_;
     KG::Ascii::TextSurface text_;
     unsigned outWidth_;
@@ -265,16 +268,17 @@ int VideoToAscii::doExecute()
 {
     try {
         cout << "loading font\n";
-        KG::Ascii::FontImage font;
+        KG::Ascii::Font font;
         if (!font.load(fontFile_)) {
             cerr << "problem loading font\n";
             return 1;
         }
+        KG::Ascii::FontImage<KG::Ascii::PixelType8> font_image(&font);
         cout << "creating glyph matcher\n";
         KG::Ascii::GlyphMatcherContextFactory matcher_ctx_factory;
-        KG::Ascii::DynamicGlyphMatcherContext* matcher_ctx = matcher_ctx_factory.create(&font, algorithm_);
+        KG::Ascii::DynamicGlyphMatcherContext<KG::Ascii::PixelType8>* matcher_ctx = matcher_ctx_factory.create(&font_image, algorithm_);
         assert(matcher_ctx);
-        KG::Ascii::DynamicAsciifier<KG::Ascii::DynamicGlyphMatcherContext> asciifier(matcher_ctx);
+        KG::Ascii::DynamicAsciifier< KG::Ascii::DynamicGlyphMatcherContext<KG::Ascii::PixelType8> > asciifier(matcher_ctx);
         assert(asciifier.context() == matcher_ctx);
         if (threads_ == 1) {
             asciifier.setSequential();

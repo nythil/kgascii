@@ -38,7 +38,7 @@ struct Traits<PcaGlyphMatcherContext>
 {
     typedef PcaGlyphMatcherContext GlyphMatcherContextT;
     typedef PcaGlyphMatcher GlyphMatcherT;
-    typedef FontImage FontImageT;
+    typedef FontImage<PixelType8> FontImageT;
     typedef Surface8 SurfaceT;
     typedef Surface8c ConstSurfaceT;
 };
@@ -61,10 +61,9 @@ public:
     using BaseT::font;
 
 public:
-    explicit PcaGlyphMatcherContext(const FontPCA* pca)
+    explicit PcaGlyphMatcherContext(const FontPCA<PixelType8>* pca)
         :BaseT(pca->font())
         ,pca_(pca)
-        ,charcodes_(font()->charcodes())
     {
     }
 
@@ -72,8 +71,7 @@ public:
     PcaGlyphMatcher* createMatcher() const;
 
 private:
-    const FontPCA* pca_;
-    std::vector<Symbol> charcodes_;
+    const FontPCA<PixelType8>* pca_;
 };
 
 
@@ -133,7 +131,7 @@ inline Symbol PcaGlyphMatcher::match(const ConstSurfaceT& imgv)
     }
 
     context_->pca_->project(imgvec_, components_);
-    return context_->charcodes_.at(context_->pca_->findClosestGlyph(components_));
+    return context_->font()->getSymbol(context_->pca_->findClosestGlyph(components_));
 }
 
 } } // namespace KG::Ascii

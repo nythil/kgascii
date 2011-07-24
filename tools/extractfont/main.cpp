@@ -19,6 +19,7 @@
 #include <sstream>
 #include <boost/filesystem.hpp>
 #include <kgascii/font_image.hpp>
+#include <kgascii/font_io.hpp>
 #include <kgascii/ft2_font_loader.hpp>
 #include <kgascii/ft2_font_image_loader.hpp>
 #include <common/cmdline_tool.hpp>
@@ -129,15 +130,14 @@ int ExtractFont::doExecute()
     loader.setHinting(hint_);
     loader.setRenderMode(mode_);
 
-    FT2FontImageLoader image_loader(loader);
-
-    FontImage image;
-    if (!image.load(image_loader, Symbol(minChar_), Symbol(maxChar_))) {
+    Font font;
+    FT2FontImageLoader font_loader(loader);
+    if (!font.load(font_loader, Symbol(minChar_), Symbol(maxChar_))) {
         std::cout << "loading error\n";
         return -1;
     }
 
-    image.save(outputFile_);
+    font.save(outputFile_);
 
     return 0;
 }

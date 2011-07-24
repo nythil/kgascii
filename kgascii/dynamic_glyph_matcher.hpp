@@ -25,36 +25,39 @@
 
 namespace KG { namespace Ascii {
 
+template<typename TPixel>
 class DynamicGlyphMatcherContext;
+template<typename TPixel>
 class DynamicGlyphMatcher;
 
 namespace Internal {
 
-template<>
-struct Traits<DynamicGlyphMatcherContext>
+template<typename TPixel>
+struct Traits< DynamicGlyphMatcherContext<TPixel> >
 {
-    typedef DynamicGlyphMatcherContext GlyphMatcherContextT;
-    typedef DynamicGlyphMatcher GlyphMatcherT;
-    typedef FontImage FontImageT;
+    typedef DynamicGlyphMatcherContext<TPixel> GlyphMatcherContextT;
+    typedef DynamicGlyphMatcher<TPixel> GlyphMatcherT;
+    typedef FontImage<TPixel> FontImageT;
     typedef Surface8 SurfaceT;
     typedef Surface8c ConstSurfaceT;
 };
 
-template<>
-struct Traits<DynamicGlyphMatcher>: public Traits<DynamicGlyphMatcherContext>
+template<typename TPixel>
+struct Traits< DynamicGlyphMatcher<TPixel> >: public Traits< DynamicGlyphMatcherContext<TPixel> >
 {
 };
 
 } // namespace Internal
 
-class DynamicGlyphMatcherContext: public GlyphMatcherContext<DynamicGlyphMatcherContext>
+template<typename TPixel>
+class DynamicGlyphMatcherContext: public GlyphMatcherContext< DynamicGlyphMatcherContext<TPixel> >
 {
-    friend class DynamicGlyphMatcher;
+    friend class DynamicGlyphMatcher<TPixel>;
 
 public:
-    typedef GlyphMatcherContext<DynamicGlyphMatcherContext> BaseT;
-    typedef BaseT::FontImageT FontImageT;
-    typedef BaseT::ConstSurfaceT ConstSurfaceT;
+    typedef GlyphMatcherContext< DynamicGlyphMatcherContext<TPixel> > BaseT;
+    typedef typename BaseT::FontImageT FontImageT;
+    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
 
 public:
     template<typename TImplementation>
@@ -85,7 +88,7 @@ public:
         return strategy_->match(imgv);
     }
 
-    DynamicGlyphMatcher* createMatcher() const
+    DynamicGlyphMatcher<TPixel>* createMatcher() const
     {
         return strategy_->createMatcher(this);
     }
@@ -117,7 +120,7 @@ private:
 
         virtual Symbol match(const ConstSurfaceT& imgv) const = 0;
 
-        virtual DynamicGlyphMatcher* createMatcher(const DynamicGlyphMatcherContext* ctx) const = 0;
+        virtual DynamicGlyphMatcher<TPixel>* createMatcher(const DynamicGlyphMatcherContext<TPixel>* ctx) const = 0;
     };
 
     template<typename TImplementation>
@@ -149,7 +152,7 @@ private:
             return impl_->match(imgv);
         }
 
-        virtual DynamicGlyphMatcher* createMatcher(const DynamicGlyphMatcherContext* ctx) const;
+        virtual DynamicGlyphMatcher<TPixel>* createMatcher(const DynamicGlyphMatcherContext<TPixel>* ctx) const;
 
     private:
         boost::scoped_ptr<TImplementation> impl_;
@@ -160,22 +163,23 @@ private:
 };
 
 
-class DynamicGlyphMatcher: public GlyphMatcher<DynamicGlyphMatcher>
+template<typename TPixel>
+class DynamicGlyphMatcher: public GlyphMatcher< DynamicGlyphMatcher<TPixel> >
 {
 public:
-    typedef GlyphMatcher<DynamicGlyphMatcher> BaseT;
-    typedef BaseT::ConstSurfaceT ConstSurfaceT;
+    typedef GlyphMatcher< DynamicGlyphMatcher<TPixel> > BaseT;
+    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
 
 public:
     template<typename TImplementation>
-    DynamicGlyphMatcher(const DynamicGlyphMatcherContext* c, GlyphMatcher<TImplementation>* stgy)
+    DynamicGlyphMatcher(const DynamicGlyphMatcherContext<TPixel>* c, GlyphMatcher<TImplementation>* stgy)
         :context_(c)
     {
         setStrategy(stgy);
     }
 
 public:
-    const DynamicGlyphMatcherContext* context() const
+    const DynamicGlyphMatcherContext<TPixel>* context() const
     {
         return context_;
     }
@@ -226,14 +230,15 @@ private:
     };
 
 private:
-    const DynamicGlyphMatcherContext* context_;
+    const DynamicGlyphMatcherContext<TPixel>* context_;
     boost::scoped_ptr<StrategyBase> strategy_;
 };
 
+template<typename TPixel>
 template<typename TImplementation>
-inline DynamicGlyphMatcher* DynamicGlyphMatcherContext::Strategy<TImplementation>::createMatcher(const DynamicGlyphMatcherContext* ctx) const
+inline DynamicGlyphMatcher<TPixel>* DynamicGlyphMatcherContext<TPixel>::Strategy<TImplementation>::createMatcher(const DynamicGlyphMatcherContext<TPixel>* ctx) const
 {
-    return new DynamicGlyphMatcher(ctx, impl_->createMatcher());
+    return new DynamicGlyphMatcher<TPixel>(ctx, impl_->createMatcher());
 }
 
 

@@ -24,7 +24,6 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <kgascii/font.hpp>
-#include <kgascii/font_image_loader.hpp>
 #include <kgascii/surface.hpp>
 #include <kgascii/surface_algorithm.hpp>
 
@@ -87,7 +86,8 @@ bool Font::load(const std::string& file_path)
     return true;
 }
 
-bool Font::load(FontImageLoader& loader, Symbol ci_min, Symbol ci_max)
+template<typename TLoader>
+bool Font::load(TLoader& loader, Symbol ci_min, Symbol ci_max)
 {
     setFamilyName(loader.familyName());
     setStyleName(loader.styleName());

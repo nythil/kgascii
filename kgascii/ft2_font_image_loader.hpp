@@ -18,15 +18,13 @@
 #ifndef KGASCII_FT2_FONT_IMAGE_LOADER_HPP
 #define KGASCII_FT2_FONT_IMAGE_LOADER_HPP
 
-#include <kgascii/kgascii_api.hpp>
-#include <kgascii/font_image_loader.hpp>
 #include <kgascii/surface_container.hpp>
 #include <kgascii/surface_algorithm.hpp>
 #include <kgascii/ft2_font_loader.hpp>
 
 namespace KG { namespace Ascii {
 
-class KGASCII_API FT2FontImageLoader: public FontImageLoader
+class FT2FontImageLoader
 {
 public:
     explicit FT2FontImageLoader(FT2FontLoader& ldr)

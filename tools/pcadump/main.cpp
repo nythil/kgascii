@@ -23,7 +23,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_io.hpp>
-#include <kgascii/font_image_loader.hpp>
 #include <kgascii/surface_container.hpp>
 #include <kgascii/surface_algorithm.hpp>
 #include <kgascii/font_pca.hpp>

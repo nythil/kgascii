@@ -22,7 +22,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_io.hpp>
-#include <kgascii/font_image_loader.hpp>
 #include <common/cmdline_tool.hpp>
 
 
@@ -75,7 +74,7 @@ bool GenerateFont::processArgs()
     return true;
 }
 
-class FromImageFontImageLoader: public KG::Ascii::FontImageLoader
+class FromImageFontImageLoader
 {
 public:
     explicit FromImageFontImageLoader()

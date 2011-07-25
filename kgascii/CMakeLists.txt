@@ -11,7 +11,6 @@ SET(kgascii_SRCS
     dynamic_glyph_matcher.hpp
     font.hpp
     font_image.hpp
-    font_image_loader.hpp
     font_io.hpp
     font_pca.hpp
     ft2_font_image_loader.hpp
@@ -58,3 +57,7 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${FREETYPE_INCLUDE_DIR_ft2build})
 INCLUDE_DIRECTORIES(${FREETYPE_INCLUDE_DIR_freetype2})
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
+
+ADD_LIBRARY(kgascii STATIC ${kgascii_SRCS})
+SET_TARGET_PROPERTIES(kgascii PROPERTIES LINKER_LANGUAGE CXX)
+

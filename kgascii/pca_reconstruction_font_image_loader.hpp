@@ -18,8 +18,6 @@
 #ifndef KGASCII_PCA_RECONSTRUCTION_FONT_IMAGE_LOADER_HPP
 #define KGASCII_PCA_RECONSTRUCTION_FONT_IMAGE_LOADER_HPP
 
-#include <kgascii/kgascii_api.hpp>
-#include <kgascii/font_image_loader.hpp>
 #include <kgascii/surface_container.hpp>
 #include <kgascii/font_pca.hpp>
 #include <kgascii/font_image.hpp>
@@ -27,7 +25,7 @@
 
 namespace KG { namespace Ascii {
 
-class KGASCII_API PcaReconstructionFontImageLoader: public FontImageLoader
+class PcaReconstructionFontImageLoader
 {
 public:
     explicit PcaReconstructionFontImageLoader(const FontPCA<PixelType8>* pca)

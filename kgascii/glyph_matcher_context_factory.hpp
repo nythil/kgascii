@@ -29,7 +29,6 @@
 #include <kgascii/squared_euclidean_distance.hpp>
 #include <kgascii/means_distance.hpp>
 #include <kgascii/pca_glyph_matcher.hpp>
-#include <kgascii/font_pcanalyzer.hpp>
 #include <kgascii/font_pca.hpp>
 #include <map>
 #include <deque>

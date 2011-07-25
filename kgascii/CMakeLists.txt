@@ -12,8 +12,8 @@ SET(kgascii_SRCS
     font.hpp
     font_image.hpp
     font_image_loader.hpp
+    font_io.hpp
     font_pca.hpp
-    font_pcanalyzer.hpp
     ft2_font_image_loader.hpp
     ft2_font_loader.hpp
     glyph_matcher.hpp

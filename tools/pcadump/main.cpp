@@ -26,7 +26,6 @@
 #include <kgascii/font_image_loader.hpp>
 #include <kgascii/surface_container.hpp>
 #include <kgascii/surface_algorithm.hpp>
-#include <kgascii/font_pcanalyzer.hpp>
 #include <kgascii/font_pca.hpp>
 #include <kgascii/pca_reconstruction_font_image_loader.hpp>
 #include <common/cmdline_tool.hpp>

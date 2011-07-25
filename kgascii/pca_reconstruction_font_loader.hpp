@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_PCA_RECONSTRUCTION_FONT_IMAGE_LOADER_HPP
-#define KGASCII_PCA_RECONSTRUCTION_FONT_IMAGE_LOADER_HPP
+#ifndef KGASCII_PCARECONSTRUCTIONFONTLOADER_HPP
+#define KGASCII_PCARECONSTRUCTIONFONTLOADER_HPP
 
+#include <boost/noncopyable.hpp>
 #include <kgascii/surface_container.hpp>
 #include <kgascii/font_pca.hpp>
 #include <kgascii/font_image.hpp>
@@ -25,10 +26,10 @@
 
 namespace KG { namespace Ascii {
 
-class PcaReconstructionFontImageLoader
+class PcaReconstructionFontLoader: boost::noncopyable
 {
 public:
-    explicit PcaReconstructionFontImageLoader(const FontPCA<PixelType8>* pca)
+    explicit PcaReconstructionFontLoader(const FontPCA<PixelType8>* pca)
         :pca_(pca)
     {
         glyphData_.resize(pca_->font()->glyphWidth(), pca_->font()->glyphHeight());
@@ -60,11 +61,6 @@ public:
         return pca_->font()->glyphHeight();
     }
 
-    std::vector<Symbol> charcodes() const
-    {
-        return std::vector<Symbol>();
-    }
-
     bool loadGlyph(Symbol charcode)
     {
         for (size_t i = 0; i < pca_->font()->glyphCount(); ++i) {
@@ -93,5 +89,5 @@ private:
 
 } } // namespace KG::Ascii
 
-#endif // KGASCII_PCA_RECONSTRUCTION_FONT_IMAGE_LOADER_HPP
+#endif // KGASCII_PCARECONSTRUCTIONFONTLOADER_HPP
 

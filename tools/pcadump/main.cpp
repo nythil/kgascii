@@ -26,7 +26,7 @@
 #include <kgascii/surface_container.hpp>
 #include <kgascii/surface_algorithm.hpp>
 #include <kgascii/font_pca.hpp>
-#include <kgascii/pca_reconstruction_font_image_loader.hpp>
+#include <kgascii/pca_reconstruction_font_loader.hpp>
 #include <common/cmdline_tool.hpp>
 
 
@@ -144,7 +144,7 @@ void PcaDump::dumpDsc(const KG::Ascii::FontPCA<KG::Ascii::PixelType8>& pca)
     if (outputDsc_.empty())
         return;
 
-    KG::Ascii::PcaReconstructionFontImageLoader pca_loader(&pca);
+    KG::Ascii::PcaReconstructionFontLoader pca_loader(&pca);
     Font restored_font;
     restored_font.load(pca_loader, Symbol(32), Symbol(126));
     restored_font.save(outputDsc_);

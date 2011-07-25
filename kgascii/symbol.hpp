@@ -21,11 +21,10 @@
 #include <boost/operators.hpp>
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/nvp.hpp>
-#include <kgascii/kgascii_api.hpp>
 
 namespace KG { namespace Ascii {
 
-class KGASCII_API Symbol:
+class Symbol:
         public boost::totally_ordered<Symbol>,
         public boost::unit_steppable<Symbol>
 {
@@ -35,13 +34,13 @@ public:
     {
     }
 
-    explicit Symbol(int val)
+    explicit Symbol(unsigned val)
         :value_(val)
     {
     }
 
 public:
-    int value() const
+    unsigned value() const
     {
         return value_;
     }
@@ -74,7 +73,7 @@ private:
     }
 
 private:
-    int value_;
+    unsigned value_;
 };
 
 inline bool operator <(const Symbol& lh, const Symbol& rh)

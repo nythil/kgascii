@@ -21,7 +21,6 @@
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_io.hpp>
 #include <kgascii/ft2_font_loader.hpp>
-#include <kgascii/ft2_font_image_loader.hpp>
 #include <common/cmdline_tool.hpp>
 
 
@@ -131,8 +130,7 @@ int ExtractFont::doExecute()
     loader.setRenderMode(mode_);
 
     Font font;
-    FT2FontImageLoader font_loader(loader);
-    if (!font.load(font_loader, Symbol(minChar_), Symbol(maxChar_))) {
+    if (!font.load(loader, Symbol(minChar_), Symbol(maxChar_))) {
         std::cout << "loading error\n";
         return -1;
     }

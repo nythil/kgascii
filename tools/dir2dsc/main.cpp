@@ -74,10 +74,10 @@ bool GenerateFont::processArgs()
     return true;
 }
 
-class FromImageFontImageLoader
+class FromImageFontLoader
 {
 public:
-    explicit FromImageFontImageLoader()
+    explicit FromImageFontLoader()
     {
     }
 
@@ -204,7 +204,7 @@ int GenerateFont::doExecute()
         std::cout << "image dir is not a directory\n";
         return -1;
     }
-    FromImageFontImageLoader loader;
+    FromImageFontLoader loader;
     if (!loader.readDir(imageDir_)) {
         std::cout << "font not found\n";
         return -1;

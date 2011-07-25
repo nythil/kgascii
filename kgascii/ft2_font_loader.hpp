@@ -15,296 +15,127 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_FT2_FONTLOADER_HPP
-#define KGASCII_FT2_FONTLOADER_HPP
+#ifndef KGASCII_FT2FONTLOADER_HPP
+#define KGASCII_FT2FONTLOADER_HPP
 
-#include <string>
-#include <vector>
-#include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
-#include <kgascii/kgascii_api.hpp>
-#include <kgascii/surface.hpp>
-#include <kgascii/ft2pp/library.hpp>
-#include <kgascii/ft2pp/face.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/ref.hpp>
+#include <kgascii/surface_container.hpp>
+#include <kgascii/surface_algorithm.hpp>
+#include <kgascii/internal/ft2_font_loader.hpp>
 
 namespace KG { namespace Ascii {
 
-class KGASCII_API FT2FontLoader: boost::noncopyable
+class FT2FontLoader: public Internal::FT2FontLoaderBase
 {
 public:
-    enum Hinting
-    {
-        HintingNormal,
-        HintingLight,
-        HintingOff
-    };
-    enum AutoHinter
-    {
-        AutoHinterForce,
-        AutoHinterOn,
-        AutoHinterOff
-    };
-    enum RenderMode
-    {
-        RenderGrayscale,
-        RenderMonochrome
-    };
-    
-public:
     FT2FontLoader()
-        :library_(boost::make_shared<FT2pp::Library>())
-        ,glyph_loaded_(false)
-        ,hinting_(HintingNormal)
-        ,autohint_(AutoHinterOff)
-        ,mode_(RenderGrayscale)
     {
     }
 
 public:
     bool loadFont(const std::string& file_path, unsigned pixel_size)
     {
-        int face_idx = 0;
-        int num_faces = 1;
-        while (face_idx < num_faces) {
-            boost::shared_ptr<FT2pp::Face> ft_face_ptr =
-                boost::make_shared<FT2pp::Face>(boost::ref(*library_), file_path, face_idx);
-            FT2pp::Face& ft_face = *ft_face_ptr;
-
-            if (face_idx == 0) {
-                num_faces = ft_face->num_faces;
-            }
-            face_idx++;
-
-            if (!FT_HAS_HORIZONTAL(ft_face.handle()))
-                continue;
-            if (FT_IS_SCALABLE(ft_face.handle())) {
-                ft_face.setPixelSizes(pixel_size, pixel_size);
-                face_ = ft_face_ptr;
-                return true;
-            }
-            if (!FT_HAS_FIXED_SIZES(ft_face.handle()))
-                continue;
-
-            for (int si = 0; si < ft_face->num_fixed_sizes; ++si) {
-                FT_Bitmap_Size size = ft_face->available_sizes[si];
-                if (static_cast<unsigned>(size.y_ppem / 64) == pixel_size) {
-                    ft_face.setPixelSizes(pixel_size, pixel_size);
-                    face_ = ft_face_ptr;
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return loader_.loadFont(file_path, pixel_size);
     }
 
     bool isFontOk() const
     {
-        return face_;
-    }
-
-    std::string familyName() const
-    {
-        assert(isFontOk());
-        return (*face_)->family_name;
-    }
-
-    std::string styleName() const
-    {
-        assert(isFontOk());
-        return (*face_)->style_name;
-    }
-
-    unsigned pixelSize() const
-    {
-        assert(isFontOk());
-        return (*face_)->size->metrics.y_ppem;
-    }
-
-    unsigned ascender() const
-    {
-        assert(isFontOk());
-        return (*face_)->size->metrics.ascender / 64;
-    }
-
-    unsigned descender() const
-    {
-        assert(isFontOk());
-        return -(*face_)->size->metrics.descender / 64;
-    }
-
-    unsigned maxAdvance() const
-    {
-        assert(isFontOk());
-        return (*face_)->size->metrics.max_advance / 64;
-    }
-
-    bool fixedWidth() const
-    {
-        assert(isFontOk());
-        return (FT_IS_FIXED_WIDTH(face_->handle()) != 0);
-    }
-
-    std::vector<unsigned> charcodes() const
-    {
-        return std::vector<unsigned>();
+        return loader_.isFontOk();
     }
 
     Hinting hinting() const
     {
-        return hinting_;
+        return loader_.hinting();
     }
 
     void setHinting(Hinting val)
     {
-        hinting_ = val;
+        loader_.setHinting(val);
     }
 
     AutoHinter autohinter() const
     {
-        return autohint_;
+        return loader_.autohinter();
     }
 
     void setAutohinter(AutoHinter val)
     {
-        autohint_ = val;
+        loader_.setAutohinter(val);
     }
 
     RenderMode renderMode() const
     {
-        return mode_;
+        return loader_.renderMode();
     }
 
     void setRenderMode(RenderMode val)
     {
-        mode_ = val;
+        loader_.setRenderMode(val);
     }
 
-    bool loadGlyph(unsigned charcode)
+public:
+    std::string familyName() const
     {
-        assert(isFontOk());
-
-        glyph_loaded_ = false;
-
-        face_->loadChar(charcode, makeLoadFlags());
-        face_->renderChar(static_cast<FT_Render_Mode>(makeRenderFlags()));
-
-        FT_Bitmap bmp = (*face_)->glyph->bitmap;
-        glyphData_.resize(bmp.width * bmp.rows);
-        glyph_.assign(bmp.width, bmp.rows, &glyphData_[0]);
-
-        unsigned char* pbmp = bmp.buffer;
-        if (bmp.pixel_mode == FT_PIXEL_MODE_MONO) {
-            for (int y = 0; y < bmp.rows; ++y) {
-                for (int x = 0; x < bmp.width; ++x) {
-                    int xbyte = x >> 3;
-                    int xbit = x & 7;
-                    int pix = (pbmp[xbyte] >> (7 - xbit)) & 1;
-                    glyph_(x, y) = pix * 255;
-                }
-                pbmp += bmp.pitch;
-            }
-        } else if (bmp.pixel_mode == FT_PIXEL_MODE_GRAY) {
-            int grays_max = bmp.num_grays - 1;
-            for (int y = 0; y < bmp.rows; ++y) {
-                for (int x = 0; x < bmp.width; ++x) {
-                    glyph_(x, y) = (pbmp[x] * 255) / grays_max;
-                }
-                pbmp += bmp.pitch;
-            }
-        } else {
-            assert(false);
-            return false;
-        }
-
-        glyph_loaded_ = true;
-
-        return true;
+        return loader_.familyName();
     }
 
-    bool isGlyphOk() const
+    std::string styleName() const
     {
-        return glyph_loaded_;
+        return loader_.styleName();
     }
 
-    int glyphLeft() const
+    unsigned pixelSize() const
     {
-        assert(isFontOk());
-        assert(isGlyphOk());
-        return (*face_)->glyph->bitmap_left;
-    }
-    
-    int glyphTop() const
-    {
-        assert(isFontOk());
-        assert(isGlyphOk());
-        return (*face_)->glyph->bitmap_top;
+        return loader_.pixelSize();
     }
 
     unsigned glyphWidth() const
     {
-        assert(isFontOk());
-        assert(isGlyphOk());
-        return (*face_)->glyph->bitmap.width;
+        return loader_.maxAdvance();
     }
 
     unsigned glyphHeight() const
     {
-        assert(isFontOk());
-        assert(isGlyphOk());
-        return (*face_)->glyph->bitmap.rows;
+        return loader_.ascender() + loader_.descender();
+    }
+
+    bool loadGlyph(Symbol charcode)
+    {
+        if (!loader_.loadGlyph(charcode.value()))
+            return false;
+
+        unsigned bmp_off_x = std::max<int>(-loader_.glyphLeft(), 0);
+        unsigned bmp_off_y = std::max<int>(loader_.glyphTop() - loader_.ascender(), 0);
+        unsigned bmp_width = std::min<unsigned>(loader_.glyphWidth(), glyphWidth() - bmp_off_x);
+        unsigned bmp_height = std::min<unsigned>(loader_.glyphHeight(), glyphHeight() - bmp_off_y);
+
+        unsigned img_off_x = std::max<int>(loader_.glyphLeft(), 0);
+        unsigned img_off_y = std::max<int>(loader_.ascender() - loader_.glyphTop(), 0);
+        unsigned common_width = std::min<unsigned>(bmp_width, glyphWidth() - img_off_x);
+        unsigned common_height = std::min<unsigned>(bmp_height, glyphHeight() - img_off_y);
+
+        assert(img_off_x + common_width <= glyphWidth());
+        assert(img_off_y + common_height <= glyphHeight());
+
+        glyphData_.resize(glyphWidth(), glyphHeight());
+        const Surface8& glyph_surf = glyphData_.surface();
+        fillPixels(glyph_surf, 0);
+        copyPixels(loader_.glyph().window(bmp_off_x, bmp_off_y, common_width, common_height),
+                glyph_surf.window(img_off_x, img_off_y, common_width, common_height));
+
+        return true;
     }
 
     Surface8c glyph() const
     {
-        assert(isFontOk());
-        assert(isGlyphOk());
-        return glyph_;
+        return glyphData_.surface();
     }
 
 private:
-    int makeLoadFlags() const
-    {
-        int loadf = FT_LOAD_DEFAULT;
-
-        switch (autohint_) {
-        case AutoHinterForce: loadf |= FT_LOAD_FORCE_AUTOHINT; break;
-        case AutoHinterOn: break;
-        case AutoHinterOff: loadf |= FT_LOAD_NO_AUTOHINT; break;
-        }
-
-        switch (hinting_) {
-        case HintingNormal: loadf |= FT_LOAD_TARGET_NORMAL; break;
-        case HintingLight: loadf |= FT_LOAD_TARGET_LIGHT; break;
-        case HintingOff: loadf |= FT_LOAD_NO_HINTING; break;
-        }
-
-        return loadf;
-    }
-
-    int makeRenderFlags() const
-    {
-        switch (mode_) {
-        case RenderGrayscale: return FT_RENDER_MODE_NORMAL;
-        case RenderMonochrome: return FT_RENDER_MODE_MONO;
-        }
-        return 0;
-    }
-
-private:
-    boost::shared_ptr<FT2pp::Library> library_;
-    boost::shared_ptr<FT2pp::Face> face_;
-    bool glyph_loaded_;
-    Surface8 glyph_;
-    std::vector<Surface8::value_type> glyphData_;
-    Hinting hinting_;
-    AutoHinter autohint_;
-    RenderMode mode_;
+    Internal::FT2FontLoader loader_;
+    SurfaceContainer8 glyphData_;
 };
 
 } } // namespace KG::Ascii
 
-#endif // KGASCII_FT2_FONTLOADER_HPP
+#endif // KGASCII_FT2FONTLOADER_HPP
 

@@ -6,6 +6,7 @@ SET(kgascii_SRCS
     ft2pp/library.hpp 
     ft2pp/util.hpp 
     internal/traits.hpp 
+    internal/ft2_font_loader.hpp 
     asciifier.hpp
     dynamic_asciifier.hpp
     dynamic_glyph_matcher.hpp
@@ -13,7 +14,6 @@ SET(kgascii_SRCS
     font_image.hpp
     font_io.hpp
     font_pca.hpp
-    ft2_font_image_loader.hpp
     ft2_font_loader.hpp
     glyph_matcher.hpp
     glyph_matcher_context_factory.hpp
@@ -23,7 +23,7 @@ SET(kgascii_SRCS
     mutual_information_glyph_matcher.hpp
     parallel_asciifier.hpp
     pca_glyph_matcher.hpp
-    pca_reconstruction_font_image_loader.hpp
+    pca_reconstruction_font_loader.hpp
     policy_based_glyph_matcher.hpp
     sequential_asciifier.hpp
     squared_euclidean_distance.hpp

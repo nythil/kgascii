@@ -42,11 +42,6 @@ struct Traits< DynamicGlyphMatcherContext<TPixel> >
     typedef Surface8c ConstSurfaceT;
 };
 
-template<typename TPixel>
-struct Traits< DynamicGlyphMatcher<TPixel> >: public Traits< DynamicGlyphMatcherContext<TPixel> >
-{
-};
-
 } // namespace Internal
 
 template<typename TPixel>
@@ -164,22 +159,23 @@ private:
 
 
 template<typename TPixel>
-class DynamicGlyphMatcher: public GlyphMatcher< DynamicGlyphMatcher<TPixel> >
+class DynamicGlyphMatcher: boost::noncopyable
 {
 public:
-    typedef GlyphMatcher< DynamicGlyphMatcher<TPixel> > BaseT;
-    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+    typedef DynamicGlyphMatcherContext<TPixel> GlyphMatcherContextT;
+    typedef Surface<TPixel> SurfaceT;
+    typedef Surface<const TPixel> ConstSurfaceT;
 
 public:
     template<typename TImplementation>
-    DynamicGlyphMatcher(const DynamicGlyphMatcherContext<TPixel>* c, GlyphMatcher<TImplementation>* stgy)
+    DynamicGlyphMatcher(const GlyphMatcherContextT* c, TImplementation* stgy)
         :context_(c)
     {
         setStrategy(stgy);
     }
 
 public:
-    const DynamicGlyphMatcherContext<TPixel>* context() const
+    const GlyphMatcherContextT* context() const
     {
         return context_;
     }
@@ -191,9 +187,9 @@ public:
 
 private:
     template<typename TImplementation>
-    void setStrategy(GlyphMatcher<TImplementation>* impl)
+    void setStrategy(TImplementation* impl)
     {
-        strategy_.reset(new Strategy<TImplementation>(&impl->derived()));
+        strategy_.reset(new Strategy<TImplementation>(impl));
     }
 
 private:
@@ -230,7 +226,7 @@ private:
     };
 
 private:
-    const DynamicGlyphMatcherContext<TPixel>* context_;
+    const GlyphMatcherContextT* context_;
     boost::scoped_ptr<StrategyBase> strategy_;
 };
 

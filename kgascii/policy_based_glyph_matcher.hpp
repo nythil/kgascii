@@ -45,22 +45,17 @@ struct Traits< PolicyBasedGlyphMatcherContext<TDistance> >
     typedef SurfaceContainer8 SurfaceContainerT;
 };
 
-template<typename TDistance>
-struct Traits< PolicyBasedGlyphMatcher<TDistance> >: public Traits< PolicyBasedGlyphMatcherContext<TDistance> >
-{
-};
-
 } // namespace Internal
 
 template<typename TDistance>
-class PolicyBasedGlyphMatcher: public GlyphMatcher< PolicyBasedGlyphMatcher<TDistance> >
+class PolicyBasedGlyphMatcher: boost::noncopyable
 {
 public:
-    typedef GlyphMatcher<PolicyBasedGlyphMatcher> BaseT;
-    typedef typename BaseT::GlyphMatcherContextT GlyphMatcherContextT;
-    typedef typename BaseT::SurfaceT SurfaceT;
-    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
-    typedef typename Internal::Traits< PolicyBasedGlyphMatcher<TDistance> >::SurfaceContainerT SurfaceContainerT;
+    typedef PolicyBasedGlyphMatcherContext<TDistance> GlyphMatcherContextT;
+    typedef FontImage<PixelType8> FontImageT;
+    typedef Surface8 SurfaceT;
+    typedef Surface8c ConstSurfaceT;
+    typedef SurfaceContainer8 SurfaceContainerT;
 
 public:
     explicit PolicyBasedGlyphMatcher(const GlyphMatcherContextT* c)

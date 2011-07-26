@@ -27,44 +27,6 @@
 namespace KG { namespace Ascii {
 
 template<typename TDerived>
-class GlyphMatcherContext;
-
-template<typename TDerived>
-class GlyphMatcher: boost::noncopyable
-{
-public:
-    typedef typename Internal::Traits<TDerived>::GlyphMatcherContextT GlyphMatcherContextT;
-    typedef typename Internal::Traits<TDerived>::SurfaceT SurfaceT;
-    typedef typename Internal::Traits<TDerived>::ConstSurfaceT ConstSurfaceT;
-
-public:
-    TDerived& derived()
-    {
-        return static_cast<TDerived&>(*this);
-    }
-
-    const TDerived& derived() const
-    {
-        return static_cast<const TDerived&>(*this);
-    }
-
-    const GlyphMatcherContextT* context() const
-    {
-        return derived().context();
-    }
-
-    Symbol match(const ConstSurfaceT& imgv)
-    {
-        return derived().match(imgv);
-    }
-
-protected:
-    GlyphMatcher()
-    {
-    }
-};
-
-template<typename TDerived>
 class GlyphMatcherContext: boost::noncopyable
 {
 public:

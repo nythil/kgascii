@@ -45,26 +45,22 @@ struct Traits<MutualInformationGlyphMatcherContext>
     typedef SurfaceContainer8 SurfaceContainerT;
 };
 
-template<>
-struct Traits<MutualInformationGlyphMatcher>: public Traits<MutualInformationGlyphMatcherContext>
-{
-};
-
 } // namespace Internal
 
-class MutualInformationGlyphMatcher: public GlyphMatcher<MutualInformationGlyphMatcher>
+class MutualInformationGlyphMatcher
 {
 public:
-    typedef GlyphMatcher<MutualInformationGlyphMatcher> BaseT;
-    typedef BaseT::SurfaceT SurfaceT;
-    typedef BaseT::ConstSurfaceT ConstSurfaceT;
-    typedef Internal::Traits<MutualInformationGlyphMatcher>::SurfaceContainerT SurfaceContainerT;
+    typedef MutualInformationGlyphMatcherContext GlyphMatcherContextT;
+    typedef FontImage<PixelType8> FontImageT;
+    typedef Surface8 SurfaceT;
+    typedef Surface8c ConstSurfaceT;
+    typedef SurfaceContainer8 SurfaceContainerT;
 
 public:
-    explicit MutualInformationGlyphMatcher(const MutualInformationGlyphMatcherContext* c);
+    explicit MutualInformationGlyphMatcher(const GlyphMatcherContextT* c);
 
 public:
-    const MutualInformationGlyphMatcherContext* context() const
+    const GlyphMatcherContextT* context() const
     {
         return context_;
     }
@@ -72,7 +68,7 @@ public:
     Symbol match(const ConstSurfaceT& imgv);
 
 private:
-    const MutualInformationGlyphMatcherContext* context_;
+    const GlyphMatcherContextT* context_;
     Eigen::VectorXi histogram_;
     Eigen::MatrixXi jointHistogram_;
     SurfaceContainerT surfaceData_;

@@ -75,65 +75,60 @@ private:
 };
 
 
-class PcaGlyphMatcher: public GlyphMatcher<PcaGlyphMatcher>
+class PcaGlyphMatcher: boost::noncopyable
 {
 public:
-    typedef GlyphMatcher<PcaGlyphMatcher> BaseT;
-    typedef BaseT::ConstSurfaceT ConstSurfaceT;
+    typedef PcaGlyphMatcherContext GlyphMatcherContextT;
+    typedef FontImage<PixelType8> FontImageT;
+    typedef Surface8 SurfaceT;
+    typedef Surface8c ConstSurfaceT;
 
 public:
-    explicit PcaGlyphMatcher(const PcaGlyphMatcherContext* c);
+    explicit PcaGlyphMatcher(const GlyphMatcherContextT* c)
+        :context_(c)
+        ,imgvec_(context_->font()->glyphSize())
+        ,components_(context_->pca_->featureCount())
+    {
+    }
 
 public:
-    const PcaGlyphMatcherContext* context() const
+    const GlyphMatcherContextT* context() const
     {
         return context_;
     }
 
-    Symbol match(const ConstSurfaceT& imgv);
+    Symbol match(const ConstSurfaceT& imgv)
+    {
+        assert(imgv.width() <= context_->cellWidth());
+        assert(imgv.height() <= context_->cellHeight());
+
+        typedef Eigen::Matrix<typename ConstSurfaceT::value_type, Eigen::Dynamic, 1> VectorXuc;
+        if (imgv.isContinuous() && imgv.size() == static_cast<size_t>(imgvec_.size())) {
+            imgvec_ = VectorXuc::Map(imgv.data(), imgv.size()).cast<float>();
+        } else {
+            imgvec_.setZero();
+            size_t img_w = imgv.width();
+            for (size_t y = 0; y < imgv.height(); ++y) {
+                imgvec_.segment(y * img_w, img_w) = VectorXuc::Map(imgv.row(y), img_w).cast<float>();
+            }
+        }
+
+        context_->pca_->project(imgvec_, components_);
+        return context_->font()->getSymbol(context_->pca_->findClosestGlyph(components_));
+    }
 
 private:
-    const PcaGlyphMatcherContext* context_;
+    const GlyphMatcherContextT* context_;
     Eigen::VectorXf imgvec_;
     Eigen::VectorXf components_;
 };
-
-} } // namespace KG::Ascii
-
-namespace KG { namespace Ascii {
 
 inline PcaGlyphMatcher* PcaGlyphMatcherContext::createMatcher() const
 {
     return new PcaGlyphMatcher(this);
 }
 
-inline PcaGlyphMatcher::PcaGlyphMatcher(const PcaGlyphMatcherContext* c)
-    :context_(c)
-    ,imgvec_(context_->font()->glyphSize())
-    ,components_(context_->pca_->featureCount())
-{
-}
-
-inline Symbol PcaGlyphMatcher::match(const ConstSurfaceT& imgv)
-{
-    assert(imgv.width() <= context_->cellWidth());
-    assert(imgv.height() <= context_->cellHeight());
-
-    typedef Eigen::Matrix<typename ConstSurfaceT::value_type, Eigen::Dynamic, 1> VectorXuc;
-    if (imgv.isContinuous() && imgv.size() == static_cast<size_t>(imgvec_.size())) {
-        imgvec_ = VectorXuc::Map(imgv.data(), imgv.size()).cast<float>();
-    } else {
-        imgvec_.setZero();
-        size_t img_w = imgv.width();
-        for (size_t y = 0; y < imgv.height(); ++y) {
-            imgvec_.segment(y * img_w, img_w) = VectorXuc::Map(imgv.row(y), img_w).cast<float>();
-        }
-    }
-
-    context_->pca_->project(imgvec_, components_);
-    return context_->font()->getSymbol(context_->pca_->findClosestGlyph(components_));
-}
-
 } } // namespace KG::Ascii
+
 
 #endif // KGASCII_PCAGLYPHMATCHER_HPP

@@ -157,9 +157,6 @@ public:
 
     bool load(const std::string& file_path);
 
-    template<typename TLoader>
-    bool load(TLoader& loader, Symbol ci_min, Symbol ci_max);
-
 private:
     friend class boost::serialization::access;
 

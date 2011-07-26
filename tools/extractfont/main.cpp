@@ -130,7 +130,7 @@ int ExtractFont::doExecute()
     loader.setRenderMode(mode_);
 
     Font font;
-    if (!font.load(loader, Symbol(minChar_), Symbol(maxChar_))) {
+    if (!load(font, loader, Symbol(minChar_), Symbol(maxChar_))) {
         std::cout << "loading error\n";
         return -1;
     }

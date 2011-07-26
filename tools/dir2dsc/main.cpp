@@ -216,7 +216,7 @@ int GenerateFont::doExecute()
     }
 
     Font font;
-    if (!font.load(loader, Symbol(32), Symbol(127))) {
+    if (!load(font, loader)) {
         std::cout << "loading error\n";
         return -1;
     }

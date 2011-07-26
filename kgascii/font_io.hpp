@@ -28,6 +28,9 @@
 #include <boost/serialization/split_free.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
+#include <boost/range/iterator.hpp>
+#include <boost/range/algorithm/lower_bound.hpp>
+#include <boost/range/algorithm/upper_bound.hpp>
 #include <kgascii/font.hpp>
 #include <kgascii/surface.hpp>
 #include <kgascii/surface_algorithm.hpp>
@@ -94,26 +97,40 @@ bool Font::load(const std::string& file_path)
     return true;
 }
 
-template<typename TLoader>
-bool Font::load(TLoader& loader, Symbol ci_min, Symbol ci_max)
+namespace Internal {
+
+template<typename TLoader, typename TSymbolIterator>
+void doLoad(Font& font, TLoader& loader, TSymbolIterator first, TSymbolIterator last)
 {
-    setFamilyName(loader.familyName());
-    setStyleName(loader.styleName());
-    setPixelSize(loader.pixelSize());
-    setGlyphSize(loader.glyphWidth(), loader.glyphHeight());
+    font.setFamilyName(loader.familyName());
+    font.setStyleName(loader.styleName());
+    font.setPixelSize(loader.pixelSize());
+    font.setGlyphSize(loader.glyphWidth(), loader.glyphHeight());
 
-    clear();
-
-    typedef typename TLoader::SymbolCollectionT SymbolCollectionT;
-    SymbolCollectionT symbols = loader.symbols();
-    SymbolCollectionT::const_iterator sym_low = std::lower_bound(symbols.begin(), symbols.end(), ci_min);
-    SymbolCollectionT::const_iterator sym_up = std::upper_bound(symbols.begin(), symbols.end(), ci_max);
-
-    for (SymbolCollectionT::const_iterator sym = sym_low; sym != sym_up; ++sym) {
+    font.clear();
+    for (TSymbolIterator sym = first; sym != last; ++sym) {
         if (!loader.loadGlyph(*sym))
             BOOST_THROW_EXCEPTION(FontIOError() << boost::errinfo_api_function("loadGlyph"));
-        copyPixels(loader.glyph(), addGlyph(*sym));
+        copyPixels(loader.glyph(), font.addGlyph(*sym));
     }
+}
+
+} // namespace Internal
+
+template<typename TLoader>
+bool load(Font& font, TLoader& loader)
+{
+    typename TLoader::SymbolCollectionT symbols = loader.symbols();
+    Internal::doLoad(font, loader, symbols.begin(), symbols.end());
+
+    return true;
+}
+
+template<typename TLoader>
+bool load(Font& font, TLoader& loader, Symbol ci_min, Symbol ci_max)
+{
+    typename TLoader::SymbolCollectionT symbols = loader.symbols();
+    Internal::doLoad(font, loader, boost::lower_bound(symbols, ci_min), boost::upper_bound(symbols, ci_max));
 
     return true;
 }

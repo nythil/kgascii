@@ -19,6 +19,7 @@
 #define KGASCII_INTERNAL_FT2FONTLOADER_HPP
 
 #include <string>
+#include <set>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
@@ -177,6 +178,19 @@ public:
     void setRenderMode(RenderMode val)
     {
         mode_ = val;
+    }
+
+    std::set<unsigned> charcodes()
+    {
+        assert(isFontOk());
+
+        std::set<unsigned> result;
+        boost::optional<unsigned> charcode = face_->getFirstChar();
+        while (charcode) {
+            result.insert(charcode.get());
+            charcode = face_->getNextChar(charcode.get());
+        }
+        return result;
     }
 
     bool loadGlyph(unsigned charcode)

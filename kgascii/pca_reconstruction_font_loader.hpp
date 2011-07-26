@@ -18,7 +18,12 @@
 #ifndef KGASCII_PCARECONSTRUCTIONFONTLOADER_HPP
 #define KGASCII_PCARECONSTRUCTIONFONTLOADER_HPP
 
+#include <iterator>
+#include <set>
 #include <boost/noncopyable.hpp>
+#include <boost/bind.hpp>
+#include <boost/range/irange.hpp>
+#include <boost/range/algorithm/transform.hpp>
 #include <kgascii/surface_container.hpp>
 #include <kgascii/font_pca.hpp>
 #include <kgascii/font_image.hpp>
@@ -28,6 +33,9 @@ namespace KG { namespace Ascii {
 
 class PcaReconstructionFontLoader: boost::noncopyable
 {
+public:
+    typedef std::set<Symbol> SymbolCollectionT;
+
 public:
     explicit PcaReconstructionFontLoader(const FontPCA<PixelType8>* pca)
         :pca_(pca)
@@ -59,6 +67,16 @@ public:
     unsigned glyphHeight() const
     {
         return pca_->font()->glyphHeight();
+    }
+
+    SymbolCollectionT symbols() const
+    {
+        using namespace boost;
+        SymbolCollectionT result;
+        transform(irange<size_t>(0, pca_->font()->glyphCount()),
+            std::inserter(result, result.begin()),
+            bind(&FontImage<PixelType8>::getSymbol, pca_->font(), _1));
+        return result;
     }
 
     bool loadGlyph(Symbol charcode)

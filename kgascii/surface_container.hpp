@@ -108,12 +108,12 @@ public:
 
     SurfaceT surface()
     {
-        return SurfaceT(width_, height_, &data_[0]);
+        return SurfaceT(width_, height_, data_.empty() ? 0 : &data_[0]);
     }
 
     ConstSurfaceT surface() const
     {
-        return ConstSurfaceT(width_, height_, &data_[0]);
+        return ConstSurfaceT(width_, height_, data_.empty() ? 0 : &data_[0]);
     }
 
 private:

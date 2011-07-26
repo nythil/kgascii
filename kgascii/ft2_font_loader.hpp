@@ -18,6 +18,10 @@
 #ifndef KGASCII_FT2FONTLOADER_HPP
 #define KGASCII_FT2FONTLOADER_HPP
 
+#include <iterator>
+#include <set>
+#include <boost/range/algorithm/transform.hpp>
+#include <boost/functional/value_factory.hpp>
 #include <kgascii/surface_container.hpp>
 #include <kgascii/surface_algorithm.hpp>
 #include <kgascii/internal/ft2_font_loader.hpp>
@@ -26,6 +30,9 @@ namespace KG { namespace Ascii {
 
 class FT2FontLoader: public Internal::FT2FontLoaderBase
 {
+public:
+    typedef std::set<Symbol> SymbolCollectionT;
+
 public:
     FT2FontLoader()
     {
@@ -98,18 +105,29 @@ public:
         return loader_.ascender() + loader_.descender();
     }
 
+    SymbolCollectionT symbols()
+    {
+        assert(isFontOk());
+
+        SymbolCollectionT result;
+        boost::transform(loader_.charcodes(),
+            std::inserter(result, result.begin()),
+            boost::value_factory<Symbol>());
+        return result;
+    }
+
     bool loadGlyph(Symbol charcode)
     {
         if (!loader_.loadGlyph(charcode.value()))
             return false;
 
-        unsigned bmp_off_x = std::max<int>(-loader_.glyphLeft(), 0);
-        unsigned bmp_off_y = std::max<int>(loader_.glyphTop() - loader_.ascender(), 0);
-        unsigned bmp_width = std::min<unsigned>(loader_.glyphWidth(), glyphWidth() - bmp_off_x);
-        unsigned bmp_height = std::min<unsigned>(loader_.glyphHeight(), glyphHeight() - bmp_off_y);
+        unsigned bmp_off_x = std::min<unsigned>(loader_.glyphWidth(), std::max<int>(-loader_.glyphLeft(), 0));
+        unsigned bmp_off_y = std::min<unsigned>(loader_.glyphHeight(), std::max<int>(loader_.glyphTop() - loader_.ascender(), 0));
+        unsigned bmp_width = std::min<unsigned>(loader_.glyphWidth() - bmp_off_x, glyphWidth());
+        unsigned bmp_height = std::min<unsigned>(loader_.glyphHeight() - bmp_off_y, glyphHeight());
 
-        unsigned img_off_x = std::max<int>(loader_.glyphLeft(), 0);
-        unsigned img_off_y = std::max<int>(loader_.ascender() - loader_.glyphTop(), 0);
+        unsigned img_off_x = std::min<unsigned>(glyphWidth(), std::max<int>(loader_.glyphLeft(), 0));
+        unsigned img_off_y = std::min<unsigned>(glyphHeight(), std::max<int>(loader_.ascender() - loader_.glyphTop(), 0));
         unsigned common_width = std::min<unsigned>(bmp_width, glyphWidth() - img_off_x);
         unsigned common_height = std::min<unsigned>(bmp_height, glyphHeight() - img_off_y);
 

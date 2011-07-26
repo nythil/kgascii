@@ -20,12 +20,10 @@
 
 #include <string>
 #include <cassert>
-
 #include <boost/noncopyable.hpp>
-
+#include <boost/optional.hpp>
 #include <ft2build.h>
 #include FT_FREETYPE_H
-
 #include <kgascii/ft2pp/error.hpp>
 
 namespace KG { namespace Ascii { namespace FT2pp {
@@ -39,7 +37,7 @@ public:
         :library_(lib)
         ,handle_(0)
     {
-        checkCall(FT_New_Face(lib.handle(), filename.c_str(), face_index, &handle_));
+        KGASCII_FREETYPE_CALL(FT_New_Face, lib.handle(), filename.c_str(), face_index, &handle_);
     }
 
     ~Face()
@@ -62,18 +60,32 @@ public:
 public:
     void setPixelSizes(int x_ppem, int y_ppem)
     {
-        checkCall(FT_Set_Pixel_Sizes(handle_, x_ppem, y_ppem));
+        KGASCII_FREETYPE_CALL(FT_Set_Pixel_Sizes, handle_, x_ppem, y_ppem);
     }
 
-    void loadChar(int charcode, int flags)
+    boost::optional<unsigned> getFirstChar()
     {
-        checkCall(FT_Load_Char(handle_, charcode, flags));
+        unsigned agindex = 0;
+        unsigned charcode = FT_Get_First_Char(handle_, &agindex);
+        return boost::make_optional(agindex != 0, charcode);
+    }
+
+    boost::optional<unsigned> getNextChar(unsigned charcode)
+    {
+        unsigned agindex = 0;
+        unsigned next_charcode = FT_Get_Next_Char(handle_, charcode, &agindex);
+        return boost::make_optional(agindex != 0, next_charcode);
+    }
+
+    void loadChar(unsigned charcode, int flags)
+    {
+        KGASCII_FREETYPE_CALL(FT_Load_Char, handle_, charcode, flags);
     }
 
     void renderChar(FT_Render_Mode flags)
     {
         assert(handle_->glyph);
-        checkCall(FT_Render_Glyph(handle_->glyph, flags));
+        KGASCII_FREETYPE_CALL(FT_Render_Glyph, handle_->glyph, flags);
     }
 
 private:

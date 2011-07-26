@@ -19,6 +19,11 @@
 #define KGASCII_FONT_IO_HPP
 
 #include <fstream>
+#include <stdexcept>
+#include <boost/exception/exception.hpp>
+#include <boost/exception/info.hpp>
+#include <boost/exception/errinfo_api_function.hpp>
+#include <boost/throw_exception.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/split_free.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -29,6 +34,9 @@
 
 
 namespace KG { namespace Ascii {
+
+struct FontIOError: virtual std::exception, virtual boost::exception {};
+
 
 template<typename TArchive>
 void Font::serialize(TArchive& ar, const unsigned int version)
@@ -66,7 +74,7 @@ bool Font::save(const std::string& file_path) const
 {
     std::ofstream ofs(file_path.c_str(), std::ios_base::out | std::ios_base::trunc);
     if (!ofs.good())
-        BOOST_THROW_EXCEPTION(std::runtime_error("ofstream"));
+        BOOST_THROW_EXCEPTION(FontIOError() << boost::errinfo_api_function("ofstream"));
 
     boost::archive::text_oarchive oa(ofs);
     oa << boost::serialization::make_nvp("font-image", *this);
@@ -78,7 +86,7 @@ bool Font::load(const std::string& file_path)
 {
     std::ifstream ifs(file_path.c_str(), std::ios_base::in);
     if (!ifs.good())
-        BOOST_THROW_EXCEPTION(std::runtime_error("ifstream"));
+        BOOST_THROW_EXCEPTION(FontIOError() << boost::errinfo_api_function("ifstream"));
 
     boost::archive::text_iarchive ia(ifs);
     ia >> boost::serialization::make_nvp("font-image", *this);
@@ -95,10 +103,16 @@ bool Font::load(TLoader& loader, Symbol ci_min, Symbol ci_max)
     setGlyphSize(loader.glyphWidth(), loader.glyphHeight());
 
     clear();
-    for (Symbol sym = ci_min; sym <= ci_max; ++sym) {
-        if (!loader.loadGlyph(sym))
-            continue;
-        copyPixels(loader.glyph(), addGlyph(sym));
+
+    typedef typename TLoader::SymbolCollectionT SymbolCollectionT;
+    SymbolCollectionT symbols = loader.symbols();
+    SymbolCollectionT::const_iterator sym_low = std::lower_bound(symbols.begin(), symbols.end(), ci_min);
+    SymbolCollectionT::const_iterator sym_up = std::upper_bound(symbols.begin(), symbols.end(), ci_max);
+
+    for (SymbolCollectionT::const_iterator sym = sym_low; sym != sym_up; ++sym) {
+        if (!loader.loadGlyph(*sym))
+            BOOST_THROW_EXCEPTION(FontIOError() << boost::errinfo_api_function("loadGlyph"));
+        copyPixels(loader.glyph(), addGlyph(*sym));
     }
 
     return true;

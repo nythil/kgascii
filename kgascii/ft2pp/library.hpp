@@ -19,10 +19,8 @@
 #define KGASCII_FT2PP_LIBRARY_HPP
 
 #include <boost/noncopyable.hpp>
-
 #include <ft2build.h>
 #include FT_FREETYPE_H
-
 #include <kgascii/ft2pp/error.hpp>
 
 namespace KG { namespace Ascii { namespace FT2pp {
@@ -33,7 +31,7 @@ public:
     Library()
         :handle_(0)
     {
-        checkCall(FT_Init_FreeType(&handle_));
+        KGASCII_FREETYPE_CALL(FT_Init_FreeType, &handle_);
     }
 
     ~Library()

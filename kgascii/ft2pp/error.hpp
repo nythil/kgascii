@@ -18,37 +18,31 @@
 #ifndef KGASCII_FT2PP_ERROR_HPP
 #define KGASCII_FT2PP_ERROR_HPP
 
+#include <string>
 #include <stdexcept>
-
+#include <boost/exception/exception.hpp>
+#include <boost/exception/info.hpp>
+#include <boost/throw_exception.hpp>
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
 namespace KG { namespace Ascii { namespace FT2pp {
 
-class Error: public std::exception
-{
-public:
-    explicit Error(FT_Error err)
-        :error_(err)
-    {
-    }
+typedef boost::error_info<struct tag_fterror, FT_Error> errinfo_fterror;
+typedef boost::error_info<struct tag_ftapi, std::string> errinfo_ftapi;
 
-public:
-    FT_Error error() const
-    {
-        return error_;
-    }
+struct FreeTypeError: virtual std::exception, virtual boost::exception {};
 
-private:
-    FT_Error error_;
-};
-
-inline void checkCall(FT_Error err)
-{
-    if (err) {
-        throw Error(err);
-    }
-}
+#define KGASCII_FREETYPE_CALL(fun, ...)         \
+        do {                                    \
+            FT_Error err = (fun)(__VA_ARGS__);  \
+            if (err)                            \
+                BOOST_THROW_EXCEPTION(          \
+                    FreeTypeError() <<          \
+                    errinfo_fterror(err) <<     \
+                    errinfo_ftapi(#fun)         \
+                );                              \
+        } while (0)
 
 } } } // namespace KG::Ascii::FT2pp
 

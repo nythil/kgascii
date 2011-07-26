@@ -17,6 +17,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <set>
 #include <boost/filesystem.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -77,6 +78,9 @@ bool GenerateFont::processArgs()
 class FromImageFontLoader
 {
 public:
+    typedef std::set<KG::Ascii::Symbol> SymbolCollectionT;
+
+public:
     explicit FromImageFontLoader()
     {
     }
@@ -107,9 +111,10 @@ public:
         return glyphHeight_;
     }
 
-    std::vector<KG::Ascii::Symbol> charcodes() const
+    SymbolCollectionT symbols() const
     {
-        return charcodes_;
+        SymbolCollectionT result(charcodes_.begin(), charcodes_.end());
+        return result;
     }
 
     bool loadGlyph(KG::Ascii::Symbol charcode)

@@ -20,7 +20,6 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <kgascii/asciifier.hpp>
 #include <kgascii/glyph_matcher.hpp>
 #include <kgascii/text_surface.hpp>
 #include <kgascii/surface.hpp>
@@ -28,28 +27,12 @@
 namespace KG { namespace Ascii {
 
 template<typename TGlyphMatcherContext>
-class SequentialAsciifier;
-
-namespace Internal {
-
-template<typename TGlyphMatcherContext>
-struct Traits< SequentialAsciifier<TGlyphMatcherContext> >
+class SequentialAsciifier: boost::noncopyable
 {
+public:
     typedef TGlyphMatcherContext GlyphMatcherContextT;
     typedef typename TGlyphMatcherContext::GlyphMatcherT GlyphMatcherT;
     typedef typename TGlyphMatcherContext::ConstSurfaceT ConstSurfaceT;
-};
-
-} // namespace Internal
-
-template<typename TGlyphMatcherContext>
-class SequentialAsciifier: public Asciifier< SequentialAsciifier<TGlyphMatcherContext> >
-{
-public:
-    typedef Asciifier< SequentialAsciifier<TGlyphMatcherContext> > BaseT;
-    typedef typename BaseT::GlyphMatcherContextT GlyphMatcherContextT;
-    typedef typename BaseT::GlyphMatcherT GlyphMatcherT;
-    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
 
 public:
     SequentialAsciifier(const GlyphMatcherContextT* c)

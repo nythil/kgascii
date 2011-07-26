@@ -20,42 +20,33 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <kgascii/asciifier.hpp>
-#include <kgascii/kgascii_api.hpp>
+#include <boost/pointee.hpp>
+#include <boost/bind.hpp>
+#include <boost/functional/factory.hpp>
 #include <kgascii/sequential_asciifier.hpp>
 #include <kgascii/parallel_asciifier.hpp>
 
 namespace KG { namespace Ascii {
 
 template<typename TGlyphMatcherContext>
-class DynamicAsciifier;
-
-namespace Internal {
-
-template<typename TGlyphMatcherContext>
-struct Traits< DynamicAsciifier<TGlyphMatcherContext> >
+class DynamicAsciifier: boost::noncopyable
 {
+public:
     typedef TGlyphMatcherContext GlyphMatcherContextT;
     typedef typename TGlyphMatcherContext::GlyphMatcherT GlyphMatcherT;
     typedef typename TGlyphMatcherContext::ConstSurfaceT ConstSurfaceT;
-};
-
-} // namespace Internal
-
-template<typename TGlyphMatcherContext>
-class DynamicAsciifier: public Asciifier< DynamicAsciifier<TGlyphMatcherContext> >
-{
-public:
-    typedef Asciifier< DynamicAsciifier<TGlyphMatcherContext> > BaseT;
-    typedef typename BaseT::GlyphMatcherContextT GlyphMatcherContextT;
-    typedef typename BaseT::GlyphMatcherT GlyphMatcherT;
-    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
 
 public:
-    DynamicAsciifier(const GlyphMatcherContextT* c)
-        :context_(c)
+    explicit DynamicAsciifier(const GlyphMatcherContextT* ctx)
+        :context_(ctx)
     {
         setSequential();
+    }
+
+    explicit DynamicAsciifier(const GlyphMatcherContextT* ctx, unsigned thr_cnt)
+        :context_(ctx)
+    {
+        setParallel(thr_cnt);
     }
 
 public:
@@ -77,29 +68,29 @@ public:
 
     void setSequential()
     {
-        setStrategy(new SequentialAsciifier<TGlyphMatcherContext>(context_));
+        typedef SequentialAsciifier<TGlyphMatcherContext> SequentialAsciifierT;
+        setStrategy(boost::factory<SequentialAsciifierT*>());
     }
 
     void setParallel(unsigned cnt)
     {
-        setStrategy(new ParallelAsciifier<TGlyphMatcherContext>(context_, cnt));
+        typedef ParallelAsciifier<TGlyphMatcherContext> ParallelAsciifierT;
+        setStrategy(boost::bind(boost::factory<ParallelAsciifierT*>(), _1, cnt));
     }
 
-private:
-    template<typename TAsciifier>
-    void setStrategy(Asciifier<TAsciifier>* impl)
+    template<typename TAsciifierFactory>
+    void setStrategy(TAsciifierFactory make_impl=TAsciifierFactory())
     {
-        strategy_.reset(new Strategy<TAsciifier>(&impl->derived()));
+        typedef typename boost::pointee<typename TAsciifierFactory::result_type>::type AsciifierT;
+        boost::scoped_ptr<AsciifierT> new_impl(make_impl(context_));
+        boost::scoped_ptr<StrategyBase> new_strategy(new Strategy<AsciifierT>(new_impl));
+        strategy_.swap(new_strategy);
     }
 
 private:
     class StrategyBase
     {
     public:
-        StrategyBase()
-        {
-        }
-
         virtual ~StrategyBase()
         {
         }
@@ -113,9 +104,9 @@ private:
     class Strategy: public StrategyBase
     {
     public:
-        explicit Strategy(TAsciifier* impl)
-            :impl_(impl)
+        explicit Strategy(boost::scoped_ptr<TAsciifier>& impl)
         {
+            impl_.swap(impl);
         }
 
         virtual unsigned threadCount() const

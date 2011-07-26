@@ -21,7 +21,6 @@
 #include <vector>
 #include <limits>
 #include <cmath>
-#include <kgascii/glyph_matcher.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/surface_container.hpp>
 #include <kgascii/surface_algorithm.hpp>
@@ -31,21 +30,6 @@ namespace KG { namespace Ascii {
 
 class MutualInformationGlyphMatcher;
 class MutualInformationGlyphMatcherContext;
-
-namespace Internal {
-
-template<>
-struct Traits<MutualInformationGlyphMatcherContext>
-{
-    typedef MutualInformationGlyphMatcherContext GlyphMatcherContextT;
-    typedef MutualInformationGlyphMatcher GlyphMatcherT;
-    typedef FontImage<PixelType8> FontImageT;
-    typedef Surface8 SurfaceT;
-    typedef Surface8c ConstSurfaceT;
-    typedef SurfaceContainer8 SurfaceContainerT;
-};
-
-} // namespace Internal
 
 class MutualInformationGlyphMatcher
 {
@@ -75,22 +59,20 @@ private:
 };
 
 
-class MutualInformationGlyphMatcherContext: public GlyphMatcherContext<MutualInformationGlyphMatcherContext>
+class MutualInformationGlyphMatcherContext: boost::noncopyable
 {
     friend class MutualInformationGlyphMatcher;
 
 public:
-    typedef GlyphMatcherContext<MutualInformationGlyphMatcherContext> BaseT;
-    typedef BaseT::FontImageT FontImageT;
-    typedef BaseT::ConstSurfaceT ConstSurfaceT;
-
-    using BaseT::font;
-    using BaseT::cellWidth;
-    using BaseT::cellHeight;
+    typedef MutualInformationGlyphMatcher GlyphMatcherT;
+    typedef FontImage<PixelType8> FontImageT;
+    typedef Surface8 SurfaceT;
+    typedef Surface8c ConstSurfaceT;
+    typedef SurfaceContainer8 SurfaceContainerT;
 
 public:
     explicit MutualInformationGlyphMatcherContext(const FontImageT* f, size_t bins)
-        :BaseT(f)
+        :font_(f)
         ,histograms_(font()->glyphCount())
         ,colorBins_(bins)
         ,colorBinSize_(256 / colorBins_)
@@ -102,6 +84,21 @@ public:
     }
 
 public:
+    const FontImageT* font() const
+    {
+        return font_;
+    }
+
+    unsigned cellWidth() const
+    {
+        return font_->glyphWidth();
+    }
+
+    unsigned cellHeight() const
+    {
+        return font_->glyphHeight();
+    }
+
     MutualInformationGlyphMatcher* createMatcher() const
     {
         return new MutualInformationGlyphMatcher(this);
@@ -162,6 +159,7 @@ public:
     }
 
 private:
+    const FontImageT* font_;
     std::vector<Eigen::VectorXi> histograms_;
     size_t colorBins_;
     size_t colorBinSize_;

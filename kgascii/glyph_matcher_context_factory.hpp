@@ -21,7 +21,6 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 #include <kgascii/kgascii_api.hpp>
-#include <kgascii/glyph_matcher.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/dynamic_glyph_matcher.hpp>
 #include <kgascii/policy_based_glyph_matcher.hpp>

@@ -18,9 +18,7 @@
 #ifndef KGASCII_POLICYBASEDGLYPHMATCHER_HPP
 #define KGASCII_POLICYBASEDGLYPHMATCHER_HPP
 
-#include <vector>
 #include <limits>
-#include <kgascii/glyph_matcher.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/surface_container.hpp>
 #include <kgascii/surface_algorithm.hpp>
@@ -31,21 +29,6 @@ template<typename TDistance>
 class PolicyBasedGlyphMatcherContext;
 template<typename TDistance>
 class PolicyBasedGlyphMatcher;
-
-namespace Internal {
-
-template<typename TDistance>
-struct Traits< PolicyBasedGlyphMatcherContext<TDistance> >
-{
-    typedef PolicyBasedGlyphMatcherContext<TDistance> GlyphMatcherContextT;
-    typedef PolicyBasedGlyphMatcher<TDistance> GlyphMatcherT;
-    typedef FontImage<PixelType8> FontImageT;
-    typedef Surface8 SurfaceT;
-    typedef Surface8c ConstSurfaceT;
-    typedef SurfaceContainer8 SurfaceContainerT;
-};
-
-} // namespace Internal
 
 template<typename TDistance>
 class PolicyBasedGlyphMatcher: boost::noncopyable
@@ -81,33 +64,46 @@ private:
 
 
 template<typename TDistance>
-class PolicyBasedGlyphMatcherContext: public GlyphMatcherContext< PolicyBasedGlyphMatcherContext<TDistance> >
+class PolicyBasedGlyphMatcherContext: boost::noncopyable
 {
     friend class PolicyBasedGlyphMatcher<TDistance>;
 public:
-    typedef GlyphMatcherContext<PolicyBasedGlyphMatcherContext> BaseT;
-    typedef typename BaseT::GlyphMatcherT GlyphMatcherT;
-    typedef typename BaseT::FontImageT FontImageT;
-    typedef typename BaseT::SurfaceT SurfaceT;
-    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
-
-    using BaseT::font;
+    typedef PolicyBasedGlyphMatcher<TDistance> GlyphMatcherT;
+    typedef FontImage<PixelType8> FontImageT;
+    typedef Surface8 SurfaceT;
+    typedef Surface8c ConstSurfaceT;
+    typedef SurfaceContainer8 SurfaceContainerT;
 
 public:
     explicit PolicyBasedGlyphMatcherContext(const FontImageT* f,
             const TDistance& dist=TDistance())
-        :BaseT(f)
+        :font_(f)
     	,distance_(dist)
     {
     }
 
-public:
+    const FontImageT* font() const
+    {
+        return font_;
+    }
+
+    unsigned cellWidth() const
+    {
+        return font_->glyphWidth();
+    }
+
+    unsigned cellHeight() const
+    {
+        return font_->glyphHeight();
+    }
+
     GlyphMatcherT* createMatcher() const
     {
         return new GlyphMatcherT(this);
     }
 
 private:
+    const FontImageT* font_;
     TDistance distance_;
 };
 

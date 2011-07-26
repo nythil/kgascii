@@ -27,7 +27,6 @@
 #include <common/validate_optional.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_io.hpp>
-#include <kgascii/glyph_matcher.hpp>
 #include <kgascii/dynamic_asciifier.hpp>
 #include <kgascii/text_surface.hpp>
 #include <kgascii/glyph_matcher_context_factory.hpp>

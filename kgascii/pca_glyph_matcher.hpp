@@ -18,11 +18,8 @@
 #ifndef KGASCII_PCAGLYPHMATCHER_HPP
 #define KGASCII_PCAGLYPHMATCHER_HPP
 
-#include <vector>
 #include <boost/noncopyable.hpp>
 #include <Eigen/Dense>
-#include <kgascii/glyph_matcher.hpp>
-#include <kgascii/kgascii_api.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_pca.hpp>
 
@@ -31,46 +28,43 @@ namespace KG { namespace Ascii {
 class PcaGlyphMatcherContext;
 class PcaGlyphMatcher;
 
-namespace Internal {
-
-template<>
-struct Traits<PcaGlyphMatcherContext>
-{
-    typedef PcaGlyphMatcherContext GlyphMatcherContextT;
-    typedef PcaGlyphMatcher GlyphMatcherT;
-    typedef FontImage<PixelType8> FontImageT;
-    typedef Surface8 SurfaceT;
-    typedef Surface8c ConstSurfaceT;
-};
-
-template<>
-struct Traits<PcaGlyphMatcher>: public Traits<PcaGlyphMatcherContext>
-{
-};
-
-} // namespace Internal
-
-class PcaGlyphMatcherContext: public GlyphMatcherContext<PcaGlyphMatcherContext>
+class PcaGlyphMatcherContext: boost::noncopyable
 {
     friend class PcaGlyphMatcher;
 
 public:
-    typedef GlyphMatcherContext<PcaGlyphMatcherContext> BaseT;
-    typedef BaseT::ConstSurfaceT ConstSurfaceT;
-
-    using BaseT::font;
+    typedef PcaGlyphMatcher GlyphMatcherT;
+    typedef FontImage<PixelType8> FontImageT;
+    typedef Surface8 SurfaceT;
+    typedef Surface8c ConstSurfaceT;
 
 public:
     explicit PcaGlyphMatcherContext(const FontPCA<PixelType8>* pca)
-        :BaseT(pca->font())
+        :font_(pca->font())
         ,pca_(pca)
     {
     }
 
 public:
+    const FontImageT* font() const
+    {
+        return font_;
+    }
+
+    unsigned cellWidth() const
+    {
+        return font_->glyphWidth();
+    }
+
+    unsigned cellHeight() const
+    {
+        return font_->glyphHeight();
+    }
+
     PcaGlyphMatcher* createMatcher() const;
 
 private:
+    const FontImageT* font_;
     const FontPCA<PixelType8>* pca_;
 };
 

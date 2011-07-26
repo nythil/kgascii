@@ -20,7 +20,6 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
-#include <kgascii/glyph_matcher.hpp>
 #include <kgascii/text_surface.hpp>
 #include <kgascii/surface.hpp>
 #include <boost/bind.hpp>

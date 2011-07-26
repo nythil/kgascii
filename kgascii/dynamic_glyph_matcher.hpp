@@ -18,9 +18,8 @@
 #ifndef KGASCII_DYNAMIC_GLYPH_MATCHER_HPP
 #define KGASCII_DYNAMIC_GLYPH_MATCHER_HPP
 
-#include <vector>
 #include <boost/noncopyable.hpp>
-#include <kgascii/glyph_matcher.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <kgascii/font_image.hpp>
 
 namespace KG { namespace Ascii {
@@ -30,34 +29,20 @@ class DynamicGlyphMatcherContext;
 template<typename TPixel>
 class DynamicGlyphMatcher;
 
-namespace Internal {
-
 template<typename TPixel>
-struct Traits< DynamicGlyphMatcherContext<TPixel> >
-{
-    typedef DynamicGlyphMatcherContext<TPixel> GlyphMatcherContextT;
-    typedef DynamicGlyphMatcher<TPixel> GlyphMatcherT;
-    typedef FontImage<TPixel> FontImageT;
-    typedef Surface8 SurfaceT;
-    typedef Surface8c ConstSurfaceT;
-};
-
-} // namespace Internal
-
-template<typename TPixel>
-class DynamicGlyphMatcherContext: public GlyphMatcherContext< DynamicGlyphMatcherContext<TPixel> >
+class DynamicGlyphMatcherContext: boost::noncopyable
 {
     friend class DynamicGlyphMatcher<TPixel>;
 
 public:
-    typedef GlyphMatcherContext< DynamicGlyphMatcherContext<TPixel> > BaseT;
-    typedef typename BaseT::FontImageT FontImageT;
-    typedef typename BaseT::ConstSurfaceT ConstSurfaceT;
+    typedef DynamicGlyphMatcher<TPixel> GlyphMatcherT;
+    typedef FontImage<TPixel> FontImageT;
+    typedef Surface<TPixel> SurfaceT;
+    typedef Surface<const TPixel> ConstSurfaceT;
 
 public:
     template<typename TImplementation>
-    explicit DynamicGlyphMatcherContext(GlyphMatcherContext<TImplementation>* stgy)
-        :BaseT(0)
+    explicit DynamicGlyphMatcherContext(TImplementation* stgy)
     {
         setStrategy(stgy);
     }
@@ -78,21 +63,16 @@ public:
         return strategy_->cellHeight();
     }
 
-    Symbol match(const ConstSurfaceT& imgv) const
-    {
-        return strategy_->match(imgv);
-    }
-
-    DynamicGlyphMatcher<TPixel>* createMatcher() const
+    GlyphMatcherT* createMatcher() const
     {
         return strategy_->createMatcher(this);
     }
 
 private:
     template<typename TImplementation>
-    void setStrategy(GlyphMatcherContext<TImplementation>* impl)
+    void setStrategy(TImplementation* impl)
     {
-        strategy_.reset(new Strategy<TImplementation>(&impl->derived()));
+        strategy_.reset(new Strategy<TImplementation>(impl));
     }
 
 private:
@@ -113,9 +93,7 @@ private:
 
         virtual unsigned cellHeight() const = 0;
 
-        virtual Symbol match(const ConstSurfaceT& imgv) const = 0;
-
-        virtual DynamicGlyphMatcher<TPixel>* createMatcher(const DynamicGlyphMatcherContext<TPixel>* ctx) const = 0;
+        virtual GlyphMatcherT* createMatcher(const DynamicGlyphMatcherContext<TPixel>* ctx) const = 0;
     };
 
     template<typename TImplementation>
@@ -142,12 +120,7 @@ private:
             return impl_->cellHeight();
         }
 
-        virtual Symbol match(const ConstSurfaceT& imgv) const
-        {
-            return impl_->match(imgv);
-        }
-
-        virtual DynamicGlyphMatcher<TPixel>* createMatcher(const DynamicGlyphMatcherContext<TPixel>* ctx) const;
+        virtual GlyphMatcherT* createMatcher(const DynamicGlyphMatcherContext<TPixel>* ctx) const;
 
     private:
         boost::scoped_ptr<TImplementation> impl_;

@@ -43,19 +43,13 @@ class DynamicGlyphMatcherContext;
 template<typename TPixel>
 class FontImage;
 
-class KGASCII_API GlyphMatcherContextFactory: boost::noncopyable
+class GlyphMatcherContextFactory: boost::noncopyable
 {
 public:
-    GlyphMatcherContextFactory()
-    {
-    }
-
-    virtual ~GlyphMatcherContextFactory()
-    {
-    }
+    typedef DynamicGlyphMatcherContext<PixelType8> GlyphMatcherContextT;
 
 public:
-    virtual DynamicGlyphMatcherContext<PixelType8>* create(const FontImage<PixelType8>* font,
+    virtual GlyphMatcherContextT* create(const FontImage<PixelType8>* font,
             const std::string& options) const
     {
         using namespace boost::algorithm;
@@ -88,17 +82,23 @@ public:
                 pcanalyzer->saveToCache(options_map["makecache"]);
             }
             FontPCA<PixelType8>* pca = new FontPCA<PixelType8>(pcanalyzer, nfeatures);
-            return new DynamicGlyphMatcherContext<PixelType8>(new PcaGlyphMatcherContext(pca));
+            boost::scoped_ptr<PcaGlyphMatcherContext> impl_holder(new PcaGlyphMatcherContext(pca));
+            return new GlyphMatcherContextT(impl_holder);
         } else if (algo_name == "sed") {
-            return new DynamicGlyphMatcherContext<PixelType8>(new PolicyBasedGlyphMatcherContext<SquaredEuclideanDistance>(font));
+            typedef PolicyBasedGlyphMatcherContext<SquaredEuclideanDistance> RealGlyphMatcherContextT;
+            boost::scoped_ptr<RealGlyphMatcherContextT> impl_holder(new RealGlyphMatcherContextT(font));
+            return new GlyphMatcherContextT(impl_holder);
         } else if (algo_name == "md") {
-            return new DynamicGlyphMatcherContext<PixelType8>(new PolicyBasedGlyphMatcherContext<MeansDistance>(font));
+            typedef PolicyBasedGlyphMatcherContext<MeansDistance> RealGlyphMatcherContextT;
+            boost::scoped_ptr<RealGlyphMatcherContextT> impl_holder(new RealGlyphMatcherContextT(font));
+            return new GlyphMatcherContextT(impl_holder);
         } else if (algo_name == "mi") {
             size_t bins = 16;
             try {
                 bins = boost::lexical_cast<size_t>(options_map["bins"]);
             } catch (boost::bad_lexical_cast&) { }
-            return new DynamicGlyphMatcherContext<PixelType8>(new MutualInformationGlyphMatcherContext(font, bins));
+            boost::scoped_ptr<MutualInformationGlyphMatcherContext> impl_holder(new MutualInformationGlyphMatcherContext(font, bins));
+            return new GlyphMatcherContextT(impl_holder);
         } else {
             throw std::runtime_error("unknown algo name");
         }

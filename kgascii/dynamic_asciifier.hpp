@@ -38,21 +38,19 @@ public:
 
 public:
     explicit DynamicAsciifier(const GlyphMatcherContextT* ctx)
-        :context_(ctx)
     {
-        setSequential();
+        setSequential(ctx);
     }
 
     explicit DynamicAsciifier(const GlyphMatcherContextT* ctx, unsigned thr_cnt)
-        :context_(ctx)
     {
-        setParallel(thr_cnt);
+        setParallel(ctx, thr_cnt);
     }
 
 public:
     const GlyphMatcherContextT* context() const
     {
-        return context_;
+        return strategy_->context();
     }
 
     unsigned threadCount() const
@@ -68,22 +66,37 @@ public:
 
     void setSequential()
     {
-        typedef SequentialAsciifier<TGlyphMatcherContext> SequentialAsciifierT;
-        setStrategy(boost::factory<SequentialAsciifierT*>());
+        setSequential(context());
     }
 
-    void setParallel(unsigned cnt)
+    void setSequential(const GlyphMatcherContextT* ctx)
+    {
+        typedef SequentialAsciifier<TGlyphMatcherContext> SequentialAsciifierT;
+        setStrategy(new SequentialAsciifierT(ctx));
+    }
+
+    void setParallel(unsigned thr_cnt)
+    {
+        setParallel(context(), thr_cnt);
+    }
+
+    void setParallel(const GlyphMatcherContextT* ctx, unsigned thr_cnt)
     {
         typedef ParallelAsciifier<TGlyphMatcherContext> ParallelAsciifierT;
-        setStrategy(boost::bind(boost::factory<ParallelAsciifierT*>(), _1, cnt));
+        setStrategy(new ParallelAsciifierT(ctx, thr_cnt));
     }
 
-    template<typename TAsciifierFactory>
-    void setStrategy(TAsciifierFactory make_impl=TAsciifierFactory())
+    template<typename TAsciifier>
+    void setStrategy(TAsciifier* impl)
     {
-        typedef typename boost::pointee<typename TAsciifierFactory::result_type>::type AsciifierT;
-        boost::scoped_ptr<AsciifierT> new_impl(make_impl(context_));
-        boost::scoped_ptr<StrategyBase> new_strategy(new Strategy<AsciifierT>(new_impl));
+        boost::scoped_ptr<TAsciifier> impl_holder(impl);
+        setStrategy(impl_holder);
+    }
+
+    template<typename TAsciifier>
+    void setStrategy(boost::scoped_ptr<TAsciifier>& impl)
+    {
+        boost::scoped_ptr<StrategyBase> new_strategy(new Strategy<TAsciifier>(impl));
         strategy_.swap(new_strategy);
     }
 
@@ -94,6 +107,8 @@ private:
         virtual ~StrategyBase()
         {
         }
+
+        virtual const GlyphMatcherContextT* context() const = 0;
 
         virtual unsigned threadCount() const = 0;
 
@@ -107,6 +122,11 @@ private:
         explicit Strategy(boost::scoped_ptr<TAsciifier>& impl)
         {
             impl_.swap(impl);
+        }
+
+        virtual const GlyphMatcherContextT* context() const
+        {
+            return impl_->context();
         }
 
         virtual unsigned threadCount() const
@@ -124,7 +144,6 @@ private:
     };
 
 private:
-    const GlyphMatcherContextT* context_;
     boost::scoped_ptr<StrategyBase> strategy_;
 };
 

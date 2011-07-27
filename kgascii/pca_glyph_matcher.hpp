@@ -18,10 +18,15 @@
 #ifndef KGASCII_PCAGLYPHMATCHER_HPP
 #define KGASCII_PCAGLYPHMATCHER_HPP
 
+#include <map>
+#include <boost/scoped_ptr.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
 #include <Eigen/Dense>
+#include <kgascii/surface.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_pca.hpp>
+#include <kgascii/dynamic_glyph_matcher.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -121,6 +126,44 @@ inline PcaGlyphMatcher* PcaGlyphMatcherContext::createMatcher() const
 {
     return new PcaGlyphMatcher(this);
 }
+
+template<typename TPixel>
+class PcaGlyphMatcherContextFactory
+{
+};
+
+template<>
+class PcaGlyphMatcherContextFactory<PixelType8>
+{
+public:
+    typedef PcaGlyphMatcherContext GlyphMatcherContextT;
+
+    DynamicGlyphMatcherContext<PixelType8>* operator()(const FontImage<PixelType8>* font, const std::map<std::string, std::string>& options)
+    {
+        size_t nfeatures = 10;
+        if (options.count("nf")) {
+            try {
+                nfeatures = boost::lexical_cast<size_t>(options.find("nf")->second);
+            } catch (boost::bad_lexical_cast&) { }
+        }
+
+        FontPCAnalyzer<PixelType8>* pcanalyzer = new FontPCAnalyzer<PixelType8>(font);
+        if (options.count("cache") && !options.find("cache")->second.empty()) {
+            pcanalyzer->loadFromCache(options.find("cache")->second);
+        } else {
+            pcanalyzer->analyze();
+        }
+        if (options.count("makecache") && !options.find("makecache")->second.empty()) {
+            pcanalyzer->saveToCache(options.find("makecache")->second);
+        }
+
+        FontPCA<PixelType8>* pca = new FontPCA<PixelType8>(pcanalyzer, nfeatures);
+
+        boost::scoped_ptr<GlyphMatcherContextT> impl_holder(new GlyphMatcherContextT(pca));
+        return new DynamicGlyphMatcherContext<PixelType8>(impl_holder);
+    }
+};
+
 
 } } // namespace KG::Ascii
 

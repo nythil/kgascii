@@ -274,9 +274,11 @@ int VideoToAscii::doExecute()
         }
         KG::Ascii::FontImage<KG::Ascii::PixelType8> font_image(&font);
         cout << "creating glyph matcher\n";
-        KG::Ascii::GlyphMatcherContextFactory matcher_ctx_factory;
-        KG::Ascii::DynamicGlyphMatcherContext<KG::Ascii::PixelType8>* matcher_ctx = matcher_ctx_factory.create(&font_image, algorithm_);
+
+        KG::Ascii::registerGlyphMatcherFactories<KG::Ascii::PixelType8>();
+        KG::Ascii::DynamicGlyphMatcherContext<KG::Ascii::PixelType8>* matcher_ctx = KG::Ascii::GlyphMatcherContextFactory::create(&font_image, algorithm_);
         assert(matcher_ctx);
+
         KG::Ascii::DynamicAsciifier< KG::Ascii::DynamicGlyphMatcherContext<KG::Ascii::PixelType8> > asciifier(matcher_ctx);
         assert(asciifier.context() == matcher_ctx);
         if (threads_ == 1) {

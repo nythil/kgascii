@@ -19,7 +19,13 @@
 #define KGASCII_MEANSDISTANCE_HPP
 
 #include <cstdlib>
+#include <map>
+#include <boost/scoped_ptr.hpp>
+#include <boost/lexical_cast.hpp>
 #include <kgascii/surface.hpp>
+#include <kgascii/font_image.hpp>
+#include <kgascii/policy_based_glyph_matcher.hpp>
+#include <kgascii/dynamic_glyph_matcher.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -39,6 +45,25 @@ public:
             }
         }
         return abs(sum1 - sum2);
+    }
+};
+
+template<typename TPixel>
+class MeansDistanceGlyphMatcherContextFactory
+{
+};
+
+template<>
+class MeansDistanceGlyphMatcherContextFactory<PixelType8>
+{
+public:
+    typedef PolicyBasedGlyphMatcherContext<MeansDistance> GlyphMatcherContextT;
+
+    DynamicGlyphMatcherContext<PixelType8>* operator()(const FontImage<PixelType8>* font, const std::map<std::string, std::string>& options)
+    {
+        (void)options;
+        boost::scoped_ptr<GlyphMatcherContextT> impl_holder(new GlyphMatcherContextT(font));
+        return new DynamicGlyphMatcherContext<PixelType8>(impl_holder);
     }
 };
 

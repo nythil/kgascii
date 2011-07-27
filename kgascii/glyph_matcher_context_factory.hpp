@@ -19,8 +19,10 @@
 #define KGASCII_GLYPH_MATCHER_CONTEXT_FACTORY_HPP
 
 #include <string>
-#include <boost/noncopyable.hpp>
-#include <kgascii/kgascii_api.hpp>
+#include <map>
+#include <vector>
+#include <boost/scoped_ptr.hpp>
+#include <boost/algorithm/string.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/dynamic_glyph_matcher.hpp>
 #include <kgascii/policy_based_glyph_matcher.hpp>
@@ -28,79 +30,53 @@
 #include <kgascii/squared_euclidean_distance.hpp>
 #include <kgascii/means_distance.hpp>
 #include <kgascii/pca_glyph_matcher.hpp>
-#include <kgascii/font_pca.hpp>
-#include <map>
-#include <deque>
-#include <vector>
-#include <boost/scoped_ptr.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string.hpp>
+#include <kgascii/internal/glyph_matcher_registration.hpp>
 
 namespace KG { namespace Ascii {
 
 template<typename TPixel>
-class DynamicGlyphMatcherContext;
-template<typename TPixel>
-class FontImage;
+inline void registerGlyphMatcherFactories()
+{
+    static Internal::GlyphMatcherRegistration<TPixel, SquaredEuclideanDistanceGlyphMatcherContextFactory> reg_sed("sed");
+    static Internal::GlyphMatcherRegistration<TPixel, MeansDistanceGlyphMatcherContextFactory> reg_md("md");
+    static Internal::GlyphMatcherRegistration<TPixel, MutualInformationGlyphMatcherContextFactory> reg_mi("mi");
+    static Internal::GlyphMatcherRegistration<TPixel, PcaGlyphMatcherContextFactory> reg_pca("pca");
+}
 
-class GlyphMatcherContextFactory: boost::noncopyable
+class GlyphMatcherContextFactory
 {
 public:
-    typedef DynamicGlyphMatcherContext<PixelType8> GlyphMatcherContextT;
+    template<typename TPixel>
+    static DynamicGlyphMatcherContext<TPixel>* create(const FontImage<TPixel>* font, const std::string& options)
+    {
+        std::string algo_name = "pca";
+        std::map<std::string, std::string> options_map;
+        parseOptions(options, algo_name, options_map);
 
-public:
-    virtual GlyphMatcherContextT* create(const FontImage<PixelType8>* font,
-            const std::string& options) const
+        typedef typename Internal::GlyphMatcherRegistry<TPixel>::CreatorFuncT CreatorFuncT;
+        if (const CreatorFuncT* func = Internal::GlyphMatcherRegistry<TPixel>::findFactory(algo_name)) {
+            return (*func)(font, options_map);
+        }
+        throw std::runtime_error("unknown algo name");
+    }
+
+    static void parseOptions(const std::string& options, std::string& algo_name, std::map<std::string, std::string>& options_map)
     {
         using namespace boost::algorithm;
+
         std::vector<std::string> options_tokens;
         split(options_tokens, options, is_any_of(":"), token_compress_on);
-        std::string algo_name = "pca";
+
         if (!options_tokens.empty()) {
             algo_name = options_tokens.front();
         }
-        std::map<std::string, std::string> options_map;
+
         for (size_t i = 1; i < options_tokens.size(); ++i) {
             std::vector<std::string> opt_tokens;
             split(opt_tokens, options_tokens[i], is_any_of("="), token_compress_on);
             std::string opt_name = opt_tokens[0];
             std::string opt_value = opt_tokens.size() > 1 ? opt_tokens[1] : "";
             options_map[opt_name] = opt_value;
-        }
-        if (algo_name == "pca") {
-            size_t nfeatures = 10;
-            try {
-                nfeatures = boost::lexical_cast<size_t>(options_map["nf"]);
-            } catch (boost::bad_lexical_cast&) { }
-            FontPCAnalyzer<PixelType8>* pcanalyzer = new FontPCAnalyzer<PixelType8>(font);
-            if (options_map.count("cache") && !options_map["cache"].empty()) {
-                pcanalyzer->loadFromCache(options_map["cache"]);
-            } else {
-                pcanalyzer->analyze();
-            }
-            if (options_map.count("makecache") && !options_map["makecache"].empty()) {
-                pcanalyzer->saveToCache(options_map["makecache"]);
-            }
-            FontPCA<PixelType8>* pca = new FontPCA<PixelType8>(pcanalyzer, nfeatures);
-            boost::scoped_ptr<PcaGlyphMatcherContext> impl_holder(new PcaGlyphMatcherContext(pca));
-            return new GlyphMatcherContextT(impl_holder);
-        } else if (algo_name == "sed") {
-            typedef PolicyBasedGlyphMatcherContext<SquaredEuclideanDistance> RealGlyphMatcherContextT;
-            boost::scoped_ptr<RealGlyphMatcherContextT> impl_holder(new RealGlyphMatcherContextT(font));
-            return new GlyphMatcherContextT(impl_holder);
-        } else if (algo_name == "md") {
-            typedef PolicyBasedGlyphMatcherContext<MeansDistance> RealGlyphMatcherContextT;
-            boost::scoped_ptr<RealGlyphMatcherContextT> impl_holder(new RealGlyphMatcherContextT(font));
-            return new GlyphMatcherContextT(impl_holder);
-        } else if (algo_name == "mi") {
-            size_t bins = 16;
-            try {
-                bins = boost::lexical_cast<size_t>(options_map["bins"]);
-            } catch (boost::bad_lexical_cast&) { }
-            boost::scoped_ptr<MutualInformationGlyphMatcherContext> impl_holder(new MutualInformationGlyphMatcherContext(font, bins));
-            return new GlyphMatcherContextT(impl_holder);
-        } else {
-            throw std::runtime_error("unknown algo name");
         }
     }
 };

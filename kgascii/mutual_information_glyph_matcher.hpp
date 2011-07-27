@@ -21,10 +21,16 @@
 #include <vector>
 #include <limits>
 #include <cmath>
-#include <kgascii/font_image.hpp>
+#include <map>
+#include <boost/scoped_ptr.hpp>
+#include <boost/lexical_cast.hpp>
+#include <Eigen/Dense>
+#include <kgascii/surface.hpp>
 #include <kgascii/surface_container.hpp>
 #include <kgascii/surface_algorithm.hpp>
-#include <Eigen/Dense>
+#include <kgascii/font_image.hpp>
+#include <kgascii/dynamic_glyph_matcher.hpp>
+
 
 namespace KG { namespace Ascii {
 
@@ -203,6 +209,31 @@ Symbol MutualInformationGlyphMatcher::match(const ConstSurfaceT& imgv)
     }
     return cc_max;
 }
+
+template<typename TPixel>
+class MutualInformationGlyphMatcherContextFactory
+{
+};
+
+template<>
+class MutualInformationGlyphMatcherContextFactory<PixelType8>
+{
+public:
+    typedef MutualInformationGlyphMatcherContext GlyphMatcherContextT;
+
+    DynamicGlyphMatcherContext<PixelType8>* operator()(const FontImage<PixelType8>* font, const std::map<std::string, std::string>& options)
+    {
+        size_t bins = 16;
+        if (options.count("bins")) {
+            try {
+                bins = boost::lexical_cast<size_t>(options.find("bins")->second);
+            } catch (boost::bad_lexical_cast&) { }
+        }
+
+        boost::scoped_ptr<GlyphMatcherContextT> impl_holder(new GlyphMatcherContextT(font, bins));
+        return new DynamicGlyphMatcherContext<PixelType8>(impl_holder);
+    }
+};
 
 } } // namespace KG::Ascii
 

@@ -22,9 +22,6 @@
 #include <boost/timer.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-namespace KG { namespace Ascii {
-} } // namespace KG::Ascii
-
 
 class VideoPlayer: boost::noncopyable
 {

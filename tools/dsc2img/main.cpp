@@ -24,6 +24,7 @@
 #include <kgascii/surface_algorithm.hpp>
 #include <common/cmdline_tool.hpp>
 
+using namespace KG::Ascii;
 
 class Dsc2Img: public CmdlineTool
 {
@@ -74,8 +75,6 @@ bool Dsc2Img::processArgs()
 
 int Dsc2Img::doExecute()
 {
-    using namespace KG::Ascii;
-    
     Font font;
     if (!font.load(inputFile_)) {
         std::cout << "loading error\n";

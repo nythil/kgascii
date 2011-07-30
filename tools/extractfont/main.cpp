@@ -24,6 +24,8 @@
 #include <common/cmdline_tool.hpp>
 
 
+using namespace KG::Ascii;
+
 class ExtractFont: public CmdlineTool
 {
 public:
@@ -38,11 +40,11 @@ private:
     unsigned minChar_;
     unsigned maxChar_;
     std::string strHint_;
-    KG::Ascii::FT2FontLoader::Hinting hint_;
+    FT2FontLoader::Hinting hint_;
     std::string strAutohint_;
-    KG::Ascii::FT2FontLoader::AutoHinter autohint_;
+    FT2FontLoader::AutoHinter autohint_;
     std::string strMode_;
-    KG::Ascii::FT2FontLoader::RenderMode mode_;
+    FT2FontLoader::RenderMode mode_;
     std::string fontFile_;
     unsigned fontSize_;
     std::string outputFile_;
@@ -73,8 +75,6 @@ ExtractFont::ExtractFont()
 
 bool ExtractFont::processArgs()
 {
-    using namespace KG::Ascii;
-    
     requireOption("input-file");
     requireOption("pixel-size");
 
@@ -118,8 +118,6 @@ bool ExtractFont::processArgs()
 
 int ExtractFont::doExecute()
 {
-    using namespace KG::Ascii;
-
     FT2FontLoader loader;
     if (!loader.loadFont(fontFile_, fontSize_)) {
         std::cout << "font not found\n";

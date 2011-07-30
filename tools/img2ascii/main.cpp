@@ -31,7 +31,7 @@
 #include <kgascii/text_surface.hpp>
 #include <kgascii/glyph_matcher_context_factory.hpp>
 
-using std::cout;
+using namespace KG::Ascii;
 
 class ImageToAscii: public CmdlineTool
 {
@@ -95,10 +95,10 @@ bool ImageToAscii::processArgs()
 int ImageToAscii::doExecute()
 {
     std::cerr << "loading font...\n";
-    KG::Ascii::Font font;
+    Font font;
     if (!font.load(fontFile_))
         return -1;
-    KG::Ascii::FontImage<KG::Ascii::PixelType8> font_image(&font);
+    FontImage<PixelType8> font_image(&font);
     unsigned char_width = font.glyphWidth();
     unsigned char_height = font.glyphHeight();
 
@@ -125,23 +125,23 @@ int ImageToAscii::doExecute()
     unsigned row_count = (out_height + char_height - 1) / char_height;
 
     std::cerr << "creating glyph matcher...\n";
-    KG::Ascii::TextSurface text(row_count, col_count);
-    KG::Ascii::registerGlyphMatcherFactories<KG::Ascii::PixelType8>();
-    KG::Ascii::DynamicGlyphMatcherContext<KG::Ascii::PixelType8>* matcher_ctx = KG::Ascii::GlyphMatcherContextFactory::create(&font_image, algorithm_);
+    TextSurface text(row_count, col_count);
+    registerGlyphMatcherFactories<PixelType8>();
+    DynamicGlyphMatcherContext<PixelType8>* matcher_ctx = GlyphMatcherContextFactory::create(&font_image, algorithm_);
     assert(matcher_ctx);
-    KG::Ascii::DynamicAsciifier< KG::Ascii::DynamicGlyphMatcherContext<KG::Ascii::PixelType8> > asciifier(matcher_ctx);
+    DynamicAsciifier< DynamicGlyphMatcherContext<PixelType8> > asciifier(matcher_ctx);
     if (threadCount_ == 1) {
         asciifier.setSequential();
     } else {
         asciifier.setParallel(threadCount_);
     }
 
-    cout << "image width " << frame_width << "\n";
-    cout << "image height " << frame_height << "\n";
-    cout << "output width " << out_width << "\n";
-    cout << "output height " << out_height << "\n";
-    cout << "output columns " << col_count << "\n";
-    cout << "output rows " << row_count << "\n";
+    std::cout << "image width " << frame_width << "\n";
+    std::cout << "image height " << frame_height << "\n";
+    std::cout << "output width " << out_width << "\n";
+    std::cout << "output height " << out_height << "\n";
+    std::cout << "output columns " << col_count << "\n";
+    std::cout << "output rows " << row_count << "\n";
 
     cv::Mat scaled_frame;
     if (frame_width == out_width && frame_height == out_height) {
@@ -161,7 +161,7 @@ int ImageToAscii::doExecute()
     assert(static_cast<unsigned>(gray_frame.rows) == out_height);
     assert(gray_frame.type() == CV_8UC1);
 
-    KG::Ascii::Surface8c gray_surface(out_width, out_height, 
+    Surface8c gray_surface(out_width, out_height, 
             gray_frame.data, gray_frame.step[0]);
 
     std::cerr << "converting...\n";

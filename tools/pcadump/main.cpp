@@ -29,6 +29,7 @@
 #include <kgascii/pca_reconstruction_font_loader.hpp>
 #include <common/cmdline_tool.hpp>
 
+using namespace KG::Ascii;
 
 class PcaDump: public CmdlineTool
 {
@@ -41,8 +42,8 @@ protected:
     int doExecute();
     
 private:
-    void dumpFeatures(const KG::Ascii::FontPCA<KG::Ascii::PixelType8>& pca);
-    void dumpDsc(const KG::Ascii::FontPCA<KG::Ascii::PixelType8>& pca);
+    void dumpFeatures(const FontPCA<PixelType8>& pca);
+    void dumpDsc(const FontPCA<PixelType8>& pca);
 
 private:
     std::string inputFile_;
@@ -82,17 +83,15 @@ bool PcaDump::processArgs()
 
 int PcaDump::doExecute()
 {
-    using namespace KG::Ascii;
-    
     Font font;
     if (!font.load(inputFile_)) {
         std::cout << "loading error\n";
         return -1;
     }
-    FontImage<KG::Ascii::PixelType8> image(&font);
+    FontImage<PixelType8> image(&font);
 
-    FontPCAnalyzer<KG::Ascii::PixelType8> pcanalyzer(&image);
-    FontPCA<KG::Ascii::PixelType8> pca(&pcanalyzer, featureCnt_);
+    FontPCAnalyzer<PixelType8> pcanalyzer(&image);
+    FontPCA<PixelType8> pca(&pcanalyzer, featureCnt_);
 
     std::cout << "features: " << featureCnt_ << "\n";
     std::cout << "energy: " << pca.energies().sum() / pcanalyzer.energies().sum() << "\n";
@@ -103,10 +102,8 @@ int PcaDump::doExecute()
     return 0;
 }
 
-void PcaDump::dumpFeatures(const KG::Ascii::FontPCA<KG::Ascii::PixelType8>& pca)
+void PcaDump::dumpFeatures(const FontPCA<PixelType8>& pca)
 {
-    using namespace KG::Ascii;
-    
     if (outputFeatures_.empty())
         return;
 
@@ -137,14 +134,12 @@ void PcaDump::dumpFeatures(const KG::Ascii::FontPCA<KG::Ascii::PixelType8>& pca)
     cv::imwrite(outputFeatures_, output_image);
 }
 
-void PcaDump::dumpDsc(const KG::Ascii::FontPCA<KG::Ascii::PixelType8>& pca)
+void PcaDump::dumpDsc(const FontPCA<PixelType8>& pca)
 {
-    using namespace KG::Ascii;
-    
     if (outputDsc_.empty())
         return;
 
-    KG::Ascii::PcaReconstructionFontLoader pca_loader(&pca);
+    PcaReconstructionFontLoader pca_loader(&pca);
     Font restored_font;
     load(restored_font, pca_loader);
     restored_font.save(outputDsc_);

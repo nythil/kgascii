@@ -32,8 +32,7 @@
 #include <kgascii/text_surface.hpp>
 #include <kgascii/glyph_matcher_context_factory.hpp>
 
-using std::cout;
-using std::cerr;
+using namespace KG::Ascii;
 
 class VideoToAscii: public CmdlineTool
 {
@@ -118,7 +117,7 @@ bool VideoToAscii::processArgs()
 class MyVideoPlayer: public VideoPlayer
 {
 public:
-    typedef KG::Ascii::DynamicAsciifier< KG::Ascii::DynamicGlyphMatcherContext<KG::Ascii::PixelType8> > AsciifierT;
+    typedef DynamicAsciifier< DynamicGlyphMatcherContext<PixelType8> > AsciifierT;
 
     explicit MyVideoPlayer(const VideoToAscii* ctx, AsciifierT* asc, Console* con)
         :context_(ctx)
@@ -130,7 +129,7 @@ public:
 protected:
     virtual void onLoaded()
     {
-        cout << "initializing...\n";
+        std::cout << "initializing...\n";
 
         unsigned char_width = asciifier_->context()->cellWidth();
         unsigned char_height = asciifier_->context()->cellHeight();
@@ -148,27 +147,27 @@ protected:
         cols_ = (outWidth_ + char_width - 1) / char_width;
         rows_ = (outHeight_ + char_height - 1) / char_height;
 
-        cout << "video width " << frameWidth() << "\n";
-        cout << "video height " << frameHeight() << "\n";
-        cout << "video frame count " << frameCount() << "\n";
-        cout << "output width " << outWidth_ << "\n";
-        cout << "output height " << outHeight_ << "\n";
-        cout << "output columns " << cols_ << "\n";
-        cout << "output rows " << rows_ << "\n";
-        cout << "worker threads " << asciifier_->threadCount() << "\n";
+        std::cout << "video width " << frameWidth() << "\n";
+        std::cout << "video height " << frameHeight() << "\n";
+        std::cout << "video frame count " << frameCount() << "\n";
+        std::cout << "output width " << outWidth_ << "\n";
+        std::cout << "output height " << outHeight_ << "\n";
+        std::cout << "output columns " << cols_ << "\n";
+        std::cout << "output rows " << rows_ << "\n";
+        std::cout << "worker threads " << asciifier_->threadCount() << "\n";
 
         if (context_->startFrame_) {
-            cout << "positioning...\n";
+            std::cout << "positioning...\n";
             seekToFrame(context_->startFrame_.get());
         } else if (context_->startTime_) {
-            cout << "positioning...\n";
+            std::cout << "positioning...\n";
             seekToTime(context_->startTime_.get());
         }
     }
 
     virtual void onPlaybackStart()
     {
-        cout << "playback start\n";
+        std::cout << "playback start\n";
         if (context_->renderAll_) {
             setCanDropFrames(false);
             setCanWaitForFrame(false);
@@ -182,7 +181,7 @@ protected:
 
     virtual void onPlaybackEnd()
     {
-        cout << "playback end\n";
+        std::cout << "playback end\n";
         if (context_->showVideo_) {
             cv::destroyWindow("test");
         }
@@ -217,7 +216,7 @@ protected:
 
     virtual void onFrameRead(cv::Mat frm, double tm_left)
     {
-    	(void)tm_left;
+        (void)tm_left;
         cv::Mat scaled_frame;
         if (frameWidth() == outWidth_ && frameHeight() == outHeight_) {
             scaled_frame = frm;
@@ -235,7 +234,7 @@ protected:
         assert(static_cast<unsigned>(grayFrame_.rows) == outHeight_);
         assert(grayFrame_.type() == CV_8UC1);
 
-        KG::Ascii::Surface8c gray_surface(outWidth_, outHeight_,
+        Surface8c gray_surface(outWidth_, outHeight_,
                 grayFrame_.data, grayFrame_.step[0]);
 
         text_.clear();
@@ -244,7 +243,7 @@ protected:
 
     virtual void onFrameDisplay(cv::Mat frm)
     {
-    	(void)frm;
+        (void)frm;
         if (context_->showVideo_) {
             cv::imshow("test", grayFrame_);
         }
@@ -255,7 +254,7 @@ private:
     const VideoToAscii* context_;
     AsciifierT* asciifier_;
     Console* console_;
-    KG::Ascii::TextSurface text_;
+    TextSurface text_;
     unsigned outWidth_;
     unsigned outHeight_;
     unsigned cols_;
@@ -266,20 +265,20 @@ private:
 int VideoToAscii::doExecute()
 {
     try {
-        cout << "loading font\n";
-        KG::Ascii::Font font;
+        std::cout << "loading font\n";
+        Font font;
         if (!font.load(fontFile_)) {
-            cerr << "problem loading font\n";
+            std::cerr << "problem loading font\n";
             return 1;
         }
-        KG::Ascii::FontImage<KG::Ascii::PixelType8> font_image(&font);
-        cout << "creating glyph matcher\n";
+        FontImage<PixelType8> font_image(&font);
+        std::cout << "creating glyph matcher\n";
 
-        KG::Ascii::registerGlyphMatcherFactories<KG::Ascii::PixelType8>();
-        KG::Ascii::DynamicGlyphMatcherContext<KG::Ascii::PixelType8>* matcher_ctx = KG::Ascii::GlyphMatcherContextFactory::create(&font_image, algorithm_);
+        registerGlyphMatcherFactories<PixelType8>();
+        DynamicGlyphMatcherContext<PixelType8>* matcher_ctx = GlyphMatcherContextFactory::create(&font_image, algorithm_);
         assert(matcher_ctx);
 
-        KG::Ascii::DynamicAsciifier< KG::Ascii::DynamicGlyphMatcherContext<KG::Ascii::PixelType8> > asciifier(matcher_ctx);
+        DynamicAsciifier< DynamicGlyphMatcherContext<PixelType8> > asciifier(matcher_ctx);
         assert(asciifier.context() == matcher_ctx);
         if (threads_ == 1) {
             asciifier.setSequential();
@@ -289,7 +288,7 @@ int VideoToAscii::doExecute()
 
         Console con;
 
-        cout << "loading video\n";
+        std::cout << "loading video\n";
 
         MyVideoPlayer vplayer(this, &asciifier, &con);
         if (!vplayer.load(inputFile_))
@@ -300,14 +299,14 @@ int VideoToAscii::doExecute()
         double frm_tm_spn = vplayer.currentFrameTime() - vplayer.startFrameTime();
         double plr_tm_spn = vplayer.currentTime() - vplayer.startTime();
 
-        cout << "total frames " << vplayer.allReadFrames() << "\n";
-        cout << "displayed frames " << vplayer.readFrames() << "\n";
-        cout << "skipped frames " << (vplayer.allReadFrames() - vplayer.readFrames()) << "\n";
-        cout << "total video time " << frm_tm_spn << "\n";
-        cout << "processing time " << plr_tm_spn << "\n";
-        cout << "processing time / frame " << plr_tm_spn / vplayer.readFrames() << "\n";
+        std::cout << "total frames " << vplayer.allReadFrames() << "\n";
+        std::cout << "displayed frames " << vplayer.readFrames() << "\n";
+        std::cout << "skipped frames " << (vplayer.allReadFrames() - vplayer.readFrames()) << "\n";
+        std::cout << "total video time " << frm_tm_spn << "\n";
+        std::cout << "processing time " << plr_tm_spn << "\n";
+        std::cout << "processing time / frame " << plr_tm_spn / vplayer.readFrames() << "\n";
     } catch (std::exception& e) {
-        cerr << "error: " << e.what() << "\n";
+        std::cerr << "error: " << e.what() << "\n";
         return 1;
     }
 

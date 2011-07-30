@@ -25,6 +25,8 @@
 #include <kgascii/surface_algorithm.hpp>
 #include <common/cmdline_tool.hpp>
 
+using namespace KG::Ascii;
+
 
 class RenderText: public CmdlineTool
 {
@@ -76,8 +78,6 @@ bool RenderText::processArgs()
 
 int RenderText::doExecute()
 {
-    using namespace KG::Ascii;
-    
     Font font;
     if (!font.load(fontFile_)) {
         std::cerr << "font loading error\n";

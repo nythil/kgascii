@@ -78,7 +78,7 @@ public:
     explicit PolicyBasedGlyphMatcherContext(const FontImageT* f,
             const TDistance& dist=TDistance())
         :font_(f)
-    	,distance_(dist)
+        ,distance_(dist)
     {
     }
 

@@ -25,6 +25,7 @@
 #include <kgascii/font_io.hpp>
 #include <common/cmdline_tool.hpp>
 
+using namespace KG::Ascii;
 
 class GenerateFont: public CmdlineTool
 {
@@ -60,8 +61,6 @@ GenerateFont::GenerateFont()
 
 bool GenerateFont::processArgs()
 {
-    using namespace KG::Ascii;
-    
     requireOption("input-dir");
 
     if (!vm_.count("output-file")) {
@@ -78,7 +77,7 @@ bool GenerateFont::processArgs()
 class FromImageFontLoader
 {
 public:
-    typedef std::set<KG::Ascii::Symbol> SymbolCollectionT;
+    typedef std::set<Symbol> SymbolCollectionT;
 
 public:
     explicit FromImageFontLoader()
@@ -117,9 +116,9 @@ public:
         return result;
     }
 
-    bool loadGlyph(KG::Ascii::Symbol charcode)
+    bool loadGlyph(Symbol charcode)
     {
-        std::vector<KG::Ascii::Symbol>::iterator it = std::find(
+        std::vector<Symbol>::iterator it = std::find(
                 charcodes_.begin(), charcodes_.end(), charcode);
         if (it == charcodes_.end())
             return false;
@@ -129,7 +128,7 @@ public:
         return true;
     }
 
-    KG::Ascii::Surface8c glyph() const
+    Surface8c glyph() const
     {
         return glyphs_[loadedIndex_].surface();
     }
@@ -168,14 +167,14 @@ public:
                     BOOST_THROW_EXCEPTION(std::runtime_error("rows != font_height"));
             }
 
-            KG::Ascii::Surface8c glyph_image_surface(font_width, font_height,
+            Surface8c glyph_image_surface(font_width, font_height,
                     gray_glyph_image.data, gray_glyph_image.step[0]);
 
-            KG::Ascii::SurfaceContainer8 glyph_container(font_width, font_height);
-            KG::Ascii::copyPixels(glyph_image_surface, glyph_container.surface());
+            SurfaceContainer8 glyph_container(font_width, font_height);
+            copyPixels(glyph_image_surface, glyph_container.surface());
 
             glyphs_.push_back(glyph_container);
-            charcodes_.push_back(KG::Ascii::Symbol(32 + img_cnt));
+            charcodes_.push_back(Symbol(32 + img_cnt));
 
             img_cnt++;
         }
@@ -191,16 +190,14 @@ private:
     boost::filesystem::path imageDir_;
     unsigned glyphWidth_;
     unsigned glyphHeight_;
-    std::vector<KG::Ascii::SurfaceContainer8> glyphs_;
-    std::vector<KG::Ascii::Symbol> charcodes_;
+    std::vector<SurfaceContainer8> glyphs_;
+    std::vector<Symbol> charcodes_;
     size_t loadedIndex_;
 };
 
 
 int GenerateFont::doExecute()
 {
-    using namespace KG::Ascii;
-
     if (!boost::filesystem::exists(imageDir_)) {
         std::cout << "image dir does not exist\n";
         return -1;

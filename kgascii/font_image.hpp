@@ -54,7 +54,7 @@ public:
         for (size_t i = 0; i < glyph_count; ++i) {
             ViewT glyph_surface = subimage_view(view(data_), 0, glyphHeight_ * i, glyphWidth_, glyphHeight_);
             GlyphRecord gr = { font_->getSymbol(i), glyph_surface };
-            copy_pixels(font_->getGlyph(i), glyph_surface);
+            copy_and_convert_pixels(font_->getGlyph(i), glyph_surface);
             glyphs_.push_back(gr);
         }
     }

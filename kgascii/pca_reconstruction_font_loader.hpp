@@ -29,16 +29,21 @@
 
 namespace KG { namespace Ascii {
 
+template<class TFontPCA, class TImage=typename TFontPCA::FontImageT::ImageT>
 class PcaReconstructionFontLoader: boost::noncopyable
 {
 public:
+    typedef TImage ImageT;
+    typedef typename ImageT::view_t ViewT;
+    typedef typename ImageT::const_view_t ConstViewT;
+    typedef typename TFontPCA::FontImageT FontImageT;
     typedef std::set<Symbol> SymbolCollectionT;
 
 public:
-    explicit PcaReconstructionFontLoader(const FontPCA<PixelType8>* pca)
+    explicit PcaReconstructionFontLoader(const TFontPCA* pca)
         :pca_(pca)
     {
-        glyphData_.resize(pca_->font()->glyphWidth(), pca_->font()->glyphHeight());
+        glyphData_.recreate(pca_->font()->glyphWidth(), pca_->font()->glyphHeight());
     }
 
 public:
@@ -73,7 +78,7 @@ public:
         SymbolCollectionT result;
         transform(irange<size_t>(0, pca_->font()->glyphCount()),
             std::inserter(result, result.begin()),
-            bind(&FontImage<PixelType8>::getSymbol, pca_->font(), _1));
+            bind(&FontImageT::getSymbol, pca_->font(), _1));
         return result;
     }
 
@@ -85,22 +90,27 @@ public:
             Eigen::VectorXf proj_glyph_vec = pca_->glyphs().col(i);
             Eigen::VectorXf glyph_vec = pca_->combine(proj_glyph_vec);
             glyph_vec = glyph_vec.cwiseMax(Eigen::VectorXf::Zero(glyph_vec.size()));
-            glyph_vec = glyph_vec.cwiseMin(255 * Eigen::VectorXf::Ones(glyph_vec.size()));
-            copyPixels(glyph_vec, glyphData_.surface());
+            glyph_vec = glyph_vec.cwiseMin(Eigen::VectorXf::Ones(glyph_vec.size()));
+            boost::gil::copy_and_convert_pixels(
+                    boost::gil::interleaved_view(
+                            pca_->font()->glyphWidth(), pca_->font()->glyphHeight(),
+                            reinterpret_cast<const boost::gil::gray32f_pixel_t*>(glyph_vec.data()),
+                            pca_->font()->glyphWidth() * sizeof(float)),
+                    boost::gil::view(glyphData_));
             return true;
         }
 
         return false;
     }
 
-    Surface8c glyph() const
+    ConstViewT glyph() const
     {
-        return glyphData_.surface();
+        return boost::gil::const_view(glyphData_);
     }
 
 private:
-    const FontPCA<PixelType8>* pca_;
-    SurfaceContainer8 glyphData_;
+    const TFontPCA* pca_;
+    ImageT glyphData_;
 };
 
 } } // namespace KG::Ascii

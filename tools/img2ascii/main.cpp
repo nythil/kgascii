@@ -34,7 +34,7 @@
 
 using namespace KG::Ascii;
 
-typedef FontImage< Font<> > FontImageT;
+typedef FontImage< Font<>, boost::gil::gray16_image_t > FontImageT;
 typedef DynamicGlyphMatcherContext<FontImageT> DynamicGlyphMatcherContextT;
 typedef DynamicAsciifier<DynamicGlyphMatcherContextT> DynamicAsciifierT;
 
@@ -167,12 +167,15 @@ int ImageToAscii::doExecute()
     assert(static_cast<unsigned>(gray_frame.rows) == out_height);
     assert(gray_frame.type() == CV_8UC1);
 
-    boost::gil::gray8c_view_t gray_surface =
-            castSurface<const boost::gil::gray8_pixel_t>(gray_frame);
+    boost::gil::gray16_image_t gray16_image(out_width, out_height);
+    boost::gil::copy_and_convert_pixels(
+            castSurface<const boost::gil::gray8_pixel_t>(gray_frame),
+            boost::gil::view(gray16_image)
+            );
 
     std::cerr << "converting...\n";
     text.clear();
-    asciifier.generate(gray_surface, text);
+    asciifier.generate(boost::gil::view(gray16_image), text);
 
     std::ofstream fout(outputFile_.c_str());
     for (size_t r = 0; r < text.rows(); ++r) {

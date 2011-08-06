@@ -28,19 +28,19 @@
 
 namespace KG { namespace Ascii {
 
-template<typename TPixel>
+template<class TFontImage>
 class FontPCA;
-template<typename TPixel>
+template<class TFontImage>
 class FontPCAnalyzer;
 
-template<typename TPixel>
+template<class TFontImage>
 class FontPCA
 {
 public:
-    typedef FontImage<TPixel> FontImageT;
+    typedef TFontImage FontImageT;
 
 public:
-    FontPCA(const FontPCAnalyzer<TPixel>* analyzer, size_t feat_cnt);
+    FontPCA(const FontPCAnalyzer<FontImageT>* analyzer, size_t feat_cnt);
 
 public:
     Eigen::VectorXf combine(const Eigen::VectorXf& vec) const
@@ -116,11 +116,13 @@ private:
     Eigen::MatrixXf glyphs_;
 };
 
-template<typename TPixel>
+template<class TFontImage>
 class FontPCAnalyzer
 {
 public:
-    typedef FontImage<TPixel> FontImageT;
+    typedef TFontImage FontImageT;
+    typedef typename FontImageT::ViewT ViewT;
+    typedef typename FontImageT::ConstViewT ConstViewT;
 
 public:
     explicit FontPCAnalyzer(const FontImageT* f)
@@ -133,13 +135,24 @@ public:
         size_t glyph_size = font_->glyphWidth() * font_->glyphHeight();
         size_t samples_cnt = font_->glyphCount();
 
-        typedef Eigen::Matrix<Surface8::value_type, Eigen::Dynamic, 1> VectorXuc;
+        typedef boost::gil::layout<
+                typename boost::gil::color_space_type<ConstViewT>::type,
+                typename boost::gil::channel_mapping_type<ConstViewT>::type
+                > LayoutT;
+        typedef typename boost::gil::pixel_value_type<boost::gil::bits32f, LayoutT>::type FloatPixelT;
+        typedef typename boost::gil::type_from_x_iterator<FloatPixelT*>::view_t FloatViewT;
+
+        Eigen::VectorXf tmp_glyph_data(glyph_size * boost::gil::num_channels<FloatPixelT>::value);
+        FloatViewT tmp_glyph_view = boost::gil::interleaved_view(
+                font_->glyphWidth(), font_->glyphHeight(),
+                reinterpret_cast<FloatPixelT*>(tmp_glyph_data.data()),
+                font_->glyphWidth() * sizeof(FloatPixelT));
 
         Eigen::MatrixXd input_samples(glyph_size, samples_cnt);
         for (size_t ci = 0; ci < samples_cnt; ++ci) {
-            Surface8c glyph_surface = font_->getGlyph(ci);
-            assert(glyph_surface.isContinuous());
-            input_samples.col(ci) = VectorXuc::Map(glyph_surface.data(), glyph_surface.size()).cast<double>();
+            ConstViewT glyph_surface = font_->getGlyph(ci);
+            boost::gil::copy_and_convert_pixels(glyph_surface, tmp_glyph_view);
+            input_samples.col(ci) = tmp_glyph_data.template cast<double>();
         }
 
         mean_ = input_samples.rowwise().sum() / samples_cnt;
@@ -166,9 +179,9 @@ public:
         assert(static_cast<size_t>(features_.cols()) == glyph_size);
     }
 
-    FontPCA<TPixel> extract(size_t cnt) const
+    FontPCA<FontImageT> extract(size_t cnt) const
     {
-        return FontPCA<TPixel>(this, cnt);
+        return FontPCA<FontImageT>(this, cnt);
     }
 
     bool saveToCache(const std::string& filename) const
@@ -257,8 +270,8 @@ private:
     Eigen::MatrixXd features_;
 };
 
-template<typename TPixel>
-FontPCA<TPixel>::FontPCA(const FontPCAnalyzer<TPixel>* analyzer, size_t feat_cnt)
+template<class FontImageT>
+FontPCA<FontImageT>::FontPCA(const FontPCAnalyzer<FontImageT>* analyzer, size_t feat_cnt)
     :font_(analyzer->font())
 {
     size_t glyph_size = font_->glyphWidth() * font_->glyphHeight();

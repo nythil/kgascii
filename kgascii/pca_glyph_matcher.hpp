@@ -29,21 +29,24 @@
 
 namespace KG { namespace Ascii {
 
+template<class TFontImage>
 class PcaGlyphMatcherContext;
+template<class TFontImage>
 class PcaGlyphMatcher;
 
+template<class TFontImage>
 class PcaGlyphMatcherContext: boost::noncopyable
 {
-    friend class PcaGlyphMatcher;
+public:
+    typedef TFontImage FontImageT;
+    typedef PcaGlyphMatcher<FontImageT> GlyphMatcherT;
+    typedef typename FontImageT::PixelT PixelT;
+    typedef typename FontImageT::ImageT ImageT;
+    typedef typename FontImageT::ViewT ViewT;
+    typedef typename FontImageT::ConstViewT ConstViewT;
 
 public:
-    typedef PcaGlyphMatcher GlyphMatcherT;
-    typedef FontImage<PixelType8> FontImageT;
-    typedef Surface8 SurfaceT;
-    typedef Surface8c ConstSurfaceT;
-
-public:
-    explicit PcaGlyphMatcherContext(const FontPCA<PixelType8>* pca)
+    explicit PcaGlyphMatcherContext(const FontPCA<FontImageT>* pca)
         :font_(pca->font())
         ,pca_(pca)
     {
@@ -65,27 +68,35 @@ public:
         return font_->glyphHeight();
     }
 
-    PcaGlyphMatcher* createMatcher() const;
+    GlyphMatcherT* createMatcher() const;
+
+    const FontPCA<FontImageT>* pca() const
+    {
+        return pca_;
+    }
 
 private:
     const FontImageT* font_;
-    const FontPCA<PixelType8>* pca_;
+    const FontPCA<FontImageT>* pca_;
 };
 
 
+template<class TFontImage>
 class PcaGlyphMatcher: boost::noncopyable
 {
 public:
-    typedef PcaGlyphMatcherContext GlyphMatcherContextT;
-    typedef FontImage<PixelType8> FontImageT;
-    typedef Surface8 SurfaceT;
-    typedef Surface8c ConstSurfaceT;
+    typedef TFontImage FontImageT;
+    typedef PcaGlyphMatcherContext<FontImageT> GlyphMatcherContextT;
+    typedef typename FontImageT::PixelT PixelT;
+    typedef typename FontImageT::ImageT ImageT;
+    typedef typename FontImageT::ViewT ViewT;
+    typedef typename FontImageT::ConstViewT ConstViewT;
 
 public:
     explicit PcaGlyphMatcher(const GlyphMatcherContextT* c)
         :context_(c)
-        ,imgvec_(context_->font()->glyphSize())
-        ,components_(context_->pca_->featureCount())
+        ,components_(context_->pca()->featureCount())
+        ,imageData_(context_->font()->glyphSize() * boost::gil::num_channels<ViewT>::value)
     {
     }
 
@@ -95,49 +106,61 @@ public:
         return context_;
     }
 
-    Symbol match(const ConstSurfaceT& imgv)
+    template<typename TSomeView>
+    Symbol match(const TSomeView& imgv)
     {
-        assert(imgv.width() <= context_->cellWidth());
-        assert(imgv.height() <= context_->cellHeight());
+        assert(static_cast<size_t>(imgv.width()) <= context_->cellWidth());
+        assert(static_cast<size_t>(imgv.height()) <= context_->cellHeight());
 
-        typedef Eigen::Matrix<typename ConstSurfaceT::value_type, Eigen::Dynamic, 1> VectorXuc;
-        if (imgv.isContinuous() && imgv.size() == static_cast<size_t>(imgvec_.size())) {
-            imgvec_ = VectorXuc::Map(imgv.data(), imgv.size()).cast<float>();
-        } else {
-            imgvec_.setZero();
-            size_t img_w = imgv.width();
-            for (size_t y = 0; y < imgv.height(); ++y) {
-                imgvec_.segment(y * img_w, img_w) = VectorXuc::Map(imgv.row(y), img_w).cast<float>();
-            }
-        }
+        typedef boost::gil::layout<
+                typename boost::gil::color_space_type<ConstViewT>::type,
+                typename boost::gil::channel_mapping_type<TSomeView>::type
+                > LayoutT;
+        typedef typename boost::gil::pixel_value_type<boost::gil::bits32f, LayoutT>::type FloatPixelT;
+        typedef typename boost::gil::type_from_x_iterator<FloatPixelT*>::view_t FloatViewT;
 
-        context_->pca_->project(imgvec_, components_);
-        return context_->font()->getSymbol(context_->pca_->findClosestGlyph(components_));
+        FloatViewT tmp_glyph_view = boost::gil::interleaved_view(
+                context_->cellWidth(), context_->cellHeight(),
+                reinterpret_cast<FloatPixelT*>(imageData_.data()),
+                context_->cellWidth() * sizeof(FloatPixelT));
+
+        boost::gil::fill_pixels(tmp_glyph_view, FloatPixelT());
+        boost::gil::copy_and_convert_pixels(imgv, subimage_view(
+                tmp_glyph_view, 0, 0, imgv.width(), imgv.height()));
+
+//        if (imgv.isContinuous() && imgv.size() == static_cast<size_t>(imgvec_.size())) {
+//            imgvec_ = Eigen::VectorXf::Map(imgv.data(), imgv.size()).cast<float>();
+//        } else {
+//            imgvec_.setZero();
+//            size_t img_w = imgv.width();
+//            for (size_t y = 0; y < imgv.height(); ++y) {
+//                imgvec_.segment(y * img_w, img_w) = Eigen::VectorXf::Map(imgv.row(y), img_w).cast<float>();
+//            }
+//        }
+
+        context_->pca()->project(imageData_, components_);
+        return context_->font()->getSymbol(context_->pca()->findClosestGlyph(components_));
     }
 
 private:
     const GlyphMatcherContextT* context_;
-    Eigen::VectorXf imgvec_;
     Eigen::VectorXf components_;
+    Eigen::VectorXf imageData_;
 };
 
-inline PcaGlyphMatcher* PcaGlyphMatcherContext::createMatcher() const
+template<class TFontImage>
+PcaGlyphMatcher<TFontImage>* PcaGlyphMatcherContext<TFontImage>::createMatcher() const
 {
-    return new PcaGlyphMatcher(this);
+    return new PcaGlyphMatcher<TFontImage>(this);
 }
 
-template<typename TPixel>
+template<class TFontImage>
 class PcaGlyphMatcherContextFactory
 {
-};
-
-template<>
-class PcaGlyphMatcherContextFactory<PixelType8>
-{
 public:
-    typedef PcaGlyphMatcherContext GlyphMatcherContextT;
+    typedef PcaGlyphMatcherContext<TFontImage> GlyphMatcherContextT;
 
-    DynamicGlyphMatcherContext<PixelType8>* operator()(const FontImage<PixelType8>* font, const std::map<std::string, std::string>& options)
+    DynamicGlyphMatcherContext<TFontImage>* operator()(const TFontImage* font, const std::map<std::string, std::string>& options)
     {
         size_t nfeatures = 10;
         if (options.count("nf")) {
@@ -146,7 +169,7 @@ public:
             } catch (boost::bad_lexical_cast&) { }
         }
 
-        FontPCAnalyzer<PixelType8>* pcanalyzer = new FontPCAnalyzer<PixelType8>(font);
+        FontPCAnalyzer<TFontImage>* pcanalyzer = new FontPCAnalyzer<TFontImage>(font);
         if (options.count("cache") && !options.find("cache")->second.empty()) {
             pcanalyzer->loadFromCache(options.find("cache")->second);
         } else {
@@ -156,10 +179,10 @@ public:
             pcanalyzer->saveToCache(options.find("makecache")->second);
         }
 
-        FontPCA<PixelType8>* pca = new FontPCA<PixelType8>(pcanalyzer, nfeatures);
+        FontPCA<TFontImage>* pca = new FontPCA<TFontImage>(pcanalyzer, nfeatures);
 
         boost::scoped_ptr<GlyphMatcherContextT> impl_holder(new GlyphMatcherContextT(pca));
-        return new DynamicGlyphMatcherContext<PixelType8>(impl_holder);
+        return new DynamicGlyphMatcherContext<TFontImage>(impl_holder);
     }
 };
 

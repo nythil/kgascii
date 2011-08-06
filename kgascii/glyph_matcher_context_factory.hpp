@@ -29,7 +29,7 @@
 #include <kgascii/squared_euclidean_distance.hpp>
 #include <kgascii/means_distance.hpp>
 #include <kgascii/mutual_information_glyph_matcher.hpp>
-//#include <kgascii/pca_glyph_matcher.hpp>
+#include <kgascii/pca_glyph_matcher.hpp>
 #include <kgascii/internal/glyph_matcher_registration.hpp>
 
 namespace KG { namespace Ascii {
@@ -40,7 +40,7 @@ inline void registerGlyphMatcherFactories()
     static Internal::GlyphMatcherRegistration<TFontImage, SquaredEuclideanDistanceGlyphMatcherContextFactory> reg_sed("sed");
     static Internal::GlyphMatcherRegistration<TFontImage, MeansDistanceGlyphMatcherContextFactory> reg_md("md");
     static Internal::GlyphMatcherRegistration<TFontImage, MutualInformationGlyphMatcherContextFactory> reg_mi("mi");
-//    static Internal::GlyphMatcherRegistration<TFontImage, PcaGlyphMatcherContextFactory> reg_pca("pca");
+    static Internal::GlyphMatcherRegistration<TFontImage, PcaGlyphMatcherContextFactory> reg_pca("pca");
 }
 
 class GlyphMatcherContextFactory

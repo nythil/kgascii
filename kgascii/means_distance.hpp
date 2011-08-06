@@ -31,15 +31,16 @@ namespace KG { namespace Ascii {
 class MeansDistance
 {
 public:
-    int operator()(const boost::gil::gray8c_view_t& view1, const boost::gil::gray8c_view_t& view2) const
+    template<class TView>
+    int operator()(const TView& view1, const TView& view2) const
     {
         assert(view1.dimensions() == view2.dimensions());
         size_t width = view1.width();
         size_t height = view1.height();
         int sum1 = 0, sum2 = 0;
         for (size_t y = 0; y < height; ++y) {
-            boost::gil::gray8c_view_t::x_iterator it1 = view1.row_begin(y);
-            boost::gil::gray8c_view_t::x_iterator it2 = view2.row_begin(y);
+            typename TView::x_iterator it1 = view1.row_begin(y);
+            typename TView::x_iterator it2 = view2.row_begin(y);
             for (size_t x = 0; x < width; ++x) {
                 sum1 += get_color(*it1++, boost::gil::gray_color_t());
                 sum2 += get_color(*it2++, boost::gil::gray_color_t());

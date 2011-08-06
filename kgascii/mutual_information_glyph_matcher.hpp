@@ -31,17 +31,21 @@
 
 namespace KG { namespace Ascii {
 
+template<class TFontImage>
 class MutualInformationGlyphMatcher;
+template<class TFontImage>
 class MutualInformationGlyphMatcherContext;
 
+template<class TFontImage>
 class MutualInformationGlyphMatcher
 {
 public:
-    typedef MutualInformationGlyphMatcherContext GlyphMatcherContextT;
-    typedef FontImage<PixelType8> FontImageT;
-    typedef Surface8 SurfaceT;
-    typedef Surface8c ConstSurfaceT;
-    typedef SurfaceContainer8 SurfaceContainerT;
+    typedef TFontImage FontImageT;
+    typedef MutualInformationGlyphMatcherContext<FontImageT> GlyphMatcherContextT;
+    typedef typename FontImageT::PixelT PixelT;
+    typedef typename FontImageT::ImageT ImageT;
+    typedef typename FontImageT::ViewT ViewT;
+    typedef typename FontImageT::ConstViewT ConstViewT;
 
 public:
     explicit MutualInformationGlyphMatcher(const GlyphMatcherContextT* c);
@@ -52,26 +56,27 @@ public:
         return context_;
     }
 
-    Symbol match(const ConstSurfaceT& imgv);
+    template<class TSomeView>
+    Symbol match(const TSomeView& imgv);
 
 private:
     const GlyphMatcherContextT* context_;
     Eigen::VectorXi histogram_;
     Eigen::MatrixXi jointHistogram_;
-    SurfaceContainerT surfaceData_;
+    ImageT surfaceData_;
 };
 
 
+template<class TFontImage>
 class MutualInformationGlyphMatcherContext: boost::noncopyable
 {
-    friend class MutualInformationGlyphMatcher;
-
 public:
-    typedef MutualInformationGlyphMatcher GlyphMatcherT;
-    typedef FontImage<PixelType8> FontImageT;
-    typedef Surface8 SurfaceT;
-    typedef Surface8c ConstSurfaceT;
-    typedef SurfaceContainer8 SurfaceContainerT;
+    typedef TFontImage FontImageT;
+    typedef MutualInformationGlyphMatcher<FontImageT> GlyphMatcherT;
+    typedef typename FontImageT::PixelT PixelT;
+    typedef typename FontImageT::ImageT ImageT;
+    typedef typename FontImageT::ViewT ViewT;
+    typedef typename FontImageT::ConstViewT ConstViewT;
 
 public:
     explicit MutualInformationGlyphMatcherContext(const FontImageT* f, size_t bins)
@@ -102,42 +107,47 @@ public:
         return font_->glyphHeight();
     }
 
-    MutualInformationGlyphMatcher* createMatcher() const
+    GlyphMatcherT* createMatcher() const
     {
-        return new MutualInformationGlyphMatcher(this);
+        return new GlyphMatcherT(this);
     }
 
-    void makeHistogram(const ConstSurfaceT& surf, Eigen::VectorXi& hist) const
+    size_t colorBins() const
     {
-        assert(surf.width() == cellWidth());
-        assert(surf.height() == cellHeight());
+        return colorBins_;
+    }
+
+    void makeHistogram(const ConstViewT& surf, Eigen::VectorXi& hist) const
+    {
+        assert(static_cast<size_t>(surf.width()) == cellWidth());
+        assert(static_cast<size_t>(surf.height()) == cellHeight());
 
         hist.setZero(colorBins_);
 
         for (size_t y = 0; y < cellHeight(); ++y) {
-            Surface8c::pointer ptr = surf.row(y);
+            typename ConstViewT::x_iterator ptr = surf.row_begin(y);
             for (size_t x = 0; x < cellWidth(); ++x) {
-                hist[ptr[x] / colorBinSize_]++;
+                hist[(*ptr++) / colorBinSize_]++;
             }
         }
 
         assert(static_cast<size_t>(hist.sum()) == cellWidth() * cellHeight());
     }
 
-    void makeJointHistogram(const ConstSurfaceT& surf1, const ConstSurfaceT& surf2, Eigen::MatrixXi& hist) const
+    void makeJointHistogram(const ConstViewT& surf1, const ConstViewT& surf2, Eigen::MatrixXi& hist) const
     {
-        assert(surf1.width() == cellWidth());
-        assert(surf2.width() == cellWidth());
-        assert(surf1.height() == cellHeight());
-        assert(surf2.height() == cellHeight());
+        assert(static_cast<size_t>(surf1.width()) == cellWidth());
+        assert(static_cast<size_t>(surf2.width()) == cellWidth());
+        assert(static_cast<size_t>(surf1.height()) == cellHeight());
+        assert(static_cast<size_t>(surf2.height()) == cellHeight());
 
         hist.setZero(colorBins_, colorBins_);
 
         for (size_t y = 0; y < cellHeight(); ++y) {
-            Surface8c::pointer ptr1 = surf1.row(y);
-            Surface8c::pointer ptr2 = surf2.row(y);
+            typename ConstViewT::x_iterator ptr1 = surf1.row_begin(y);
+            typename ConstViewT::x_iterator ptr2 = surf2.row_begin(y);
             for (size_t x = 0; x < cellWidth(); ++x) {
-                hist(ptr1[x] / colorBinSize_, ptr2[x] / colorBinSize_)++;
+                hist((*ptr1++) / colorBinSize_, (*ptr2++) / colorBinSize_)++;
             }
         }
 
@@ -161,6 +171,11 @@ public:
         return std::max(ent, 0.0);
     }
 
+    const Eigen::VectorXi& histogram(size_t index) const
+    {
+        return histograms_.at(index);
+    }
+
 private:
     const FontImageT* font_;
     std::vector<Eigen::VectorXi> histograms_;
@@ -168,31 +183,34 @@ private:
     size_t colorBinSize_;
 };
 
-MutualInformationGlyphMatcher::MutualInformationGlyphMatcher(const MutualInformationGlyphMatcherContext* c)
+template<class TFontImage>
+MutualInformationGlyphMatcher<TFontImage>::MutualInformationGlyphMatcher(const MutualInformationGlyphMatcherContext<TFontImage>* c)
     :context_(c)
-    ,histogram_(context_->colorBins_)
-    ,jointHistogram_(context_->colorBins_, context_->colorBins_)
+    ,histogram_(context_->colorBins())
+    ,jointHistogram_(context_->colorBins(), context_->colorBins())
     ,surfaceData_(context_->cellWidth(), context_->cellHeight())
 {
 }
 
-Symbol MutualInformationGlyphMatcher::match(const ConstSurfaceT& imgv)
+template<class TFontImage>
+template<class TSomeView>
+Symbol MutualInformationGlyphMatcher<TFontImage>::match(const TSomeView& imgv)
 {
     //copy imgv to tmp_surf padding with black pixels
-    SurfaceT tmp_surf = surfaceData_.surface();
-    fillPixels(tmp_surf, 0);
-    copyPixels(imgv, tmp_surf.window(0, 0, imgv.width(), imgv.height()));
+    ViewT tmp_view = view(surfaceData_);
+    fill_pixels(tmp_view, PixelT());
+    copy_pixels(imgv, subimage_view(tmp_view, 0, 0, imgv.width(), imgv.height()));
 
-    context_->makeHistogram(tmp_surf, histogram_);
+    context_->makeHistogram(tmp_view, histogram_);
     double imgv_ent = context_->entropy(histogram_);
 
     double nmi_max = std::numeric_limits<double>::min();
     Symbol cc_max;
     for (size_t ci = 0; ci < context_->font()->glyphCount(); ++ci) {
-        const Eigen::VectorXi& glyph_histogram = context_->histograms_[ci];
+        const Eigen::VectorXi& glyph_histogram = context_->histogram(ci);
         double glyph_ent = context_->entropy(glyph_histogram);
 
-        context_->makeJointHistogram(tmp_surf, context_->font()->getGlyph(ci), jointHistogram_);
+        context_->makeJointHistogram(tmp_view, context_->font()->getGlyph(ci), jointHistogram_);
         assert(jointHistogram_.rowwise().sum() == histogram_);
         assert(jointHistogram_.colwise().sum().transpose() == glyph_histogram);
         double joint_ent = context_->entropy(jointHistogram_);
@@ -207,18 +225,13 @@ Symbol MutualInformationGlyphMatcher::match(const ConstSurfaceT& imgv)
     return cc_max;
 }
 
-template<typename TPixel>
+template<class TFontImage>
 class MutualInformationGlyphMatcherContextFactory
 {
-};
-
-template<>
-class MutualInformationGlyphMatcherContextFactory<PixelType8>
-{
 public:
-    typedef MutualInformationGlyphMatcherContext GlyphMatcherContextT;
+    typedef MutualInformationGlyphMatcherContext<TFontImage> GlyphMatcherContextT;
 
-    DynamicGlyphMatcherContext<PixelType8>* operator()(const FontImage<PixelType8>* font, const std::map<std::string, std::string>& options)
+    DynamicGlyphMatcherContext<TFontImage>* operator()(const TFontImage* font, const std::map<std::string, std::string>& options)
     {
         size_t bins = 16;
         if (options.count("bins")) {
@@ -228,7 +241,7 @@ public:
         }
 
         boost::scoped_ptr<GlyphMatcherContextT> impl_holder(new GlyphMatcherContextT(font, bins));
-        return new DynamicGlyphMatcherContext<PixelType8>(impl_holder);
+        return new DynamicGlyphMatcherContext<TFontImage>(impl_holder);
     }
 };
 

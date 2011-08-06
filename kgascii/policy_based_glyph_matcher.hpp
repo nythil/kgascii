@@ -53,8 +53,8 @@ public:
         return context_;
     }
 
-    template<class TSomeConstView>
-    Symbol match(const TSomeConstView& imgv);
+    template<class TSomeView>
+    Symbol match(const TSomeView& imgv);
 
 private:
     const GlyphMatcherContextT* context_;
@@ -111,12 +111,9 @@ private:
     TDistance distance_;
 };
 
-template<class TConstView>
-Symbol match(const TConstView& imgv);
-
 template<class TFontImage, class TDistance>
-template<class TSomeConstView>
-Symbol PolicyBasedGlyphMatcher<TFontImage, TDistance>::match(const TSomeConstView& imgv)
+template<class TSomeView>
+Symbol PolicyBasedGlyphMatcher<TFontImage, TDistance>::match(const TSomeView& imgv)
 {
     assert(imgv.width() <= image_.width());
     assert(imgv.height() <= image_.height());

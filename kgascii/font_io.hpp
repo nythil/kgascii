@@ -85,7 +85,7 @@ namespace KG { namespace Ascii {
 struct FontIOError: virtual std::exception, virtual boost::exception {};
 
 template<class TImage>
-template<typename TArchive>
+template<class TArchive>
 void Font<TImage>::serialize(TArchive& ar, const unsigned int version)
 {
     using namespace boost::serialization;
@@ -99,7 +99,7 @@ void Font<TImage>::serialize(TArchive& ar, const unsigned int version)
 }
 
 template<class TImage>
-template<typename TArchive>
+template<class TArchive>
 void Font<TImage>::GlyphRecord::load(TArchive& ar, const unsigned int version)
 {
     using namespace boost::serialization;
@@ -110,7 +110,7 @@ void Font<TImage>::GlyphRecord::load(TArchive& ar, const unsigned int version)
 }
 
 template<class TImage>
-template<typename TArchive>
+template<class TArchive>
 void Font<TImage>::GlyphRecord::save(TArchive& ar, const unsigned int version) const
 {
     using namespace boost::serialization;
@@ -147,7 +147,7 @@ bool Font<TImage>::load(const std::string& file_path)
 
 namespace Internal {
 
-template<typename TFont, typename TLoader, typename TSymbolIterator>
+template<class TFont, class TLoader, typename TSymbolIterator>
 void doLoad(TFont& font, TLoader& loader, TSymbolIterator first, TSymbolIterator last)
 {
     font.setFamilyName(loader.familyName());
@@ -165,7 +165,7 @@ void doLoad(TFont& font, TLoader& loader, TSymbolIterator first, TSymbolIterator
 
 } // namespace Internal
 
-template<class TImage, typename TLoader>
+template<class TImage, class TLoader>
 bool load(Font<TImage>& font, TLoader& loader)
 {
     typename TLoader::SymbolCollectionT symbols = loader.symbols();
@@ -174,7 +174,7 @@ bool load(Font<TImage>& font, TLoader& loader)
     return true;
 }
 
-template<class TImage, typename TLoader>
+template<class TImage, class TLoader>
 bool load(Font<TImage>& font, TLoader& loader, Symbol ci_min, Symbol ci_max)
 {
     typename TLoader::SymbolCollectionT symbols = loader.symbols();

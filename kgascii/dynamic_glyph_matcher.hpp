@@ -27,28 +27,27 @@
 
 namespace KG { namespace Ascii {
 
-template<class TFontImage>
+template<class TFontImage, class TView>
 class DynamicGlyphMatcherContext;
-template<class TFontImage>
+template<class TFontImage, class TView>
 class DynamicGlyphMatcher;
 
-template<class TFontImage>
+template<class TFontImage, class TView=typename TFontImage::ConstViewT>
 class DynamicGlyphMatcherContext: boost::noncopyable
 {
 public:
     typedef TFontImage FontImageT;
-    typedef DynamicGlyphMatcher<FontImageT> GlyphMatcherT;
-    typedef typename FontImageT::PixelT PixelT;
-    typedef typename FontImageT::ConstViewT ConstViewT;
+    typedef TView ViewT;
+    typedef DynamicGlyphMatcher<FontImageT, ViewT> GlyphMatcherT;
 
 public:
-    template<typename TGlyphMatcherContext>
+    template<class TGlyphMatcherContext>
     explicit DynamicGlyphMatcherContext(boost::scoped_ptr<TGlyphMatcherContext>& impl)
     {
         setStrategy(impl);
     }
 
-    template<typename TGlyphMatcherContext>
+    template<class TGlyphMatcherContext>
     explicit DynamicGlyphMatcherContext(TGlyphMatcherContext* impl)
     {
         setStrategy(impl);
@@ -75,14 +74,14 @@ public:
         return strategy_->createMatcher(this);
     }
 
-    template<typename TGlyphMatcherContext>
+    template<class TGlyphMatcherContext>
     void setStrategy(TGlyphMatcherContext* impl)
     {
         boost::scoped_ptr<TGlyphMatcherContext> impl_holder(impl);
         setStrategy(impl_holder);
     }
 
-    template<typename TGlyphMatcherContext>
+    template<class TGlyphMatcherContext>
     void setStrategy(boost::scoped_ptr<TGlyphMatcherContext>& impl)
     {
         boost::scoped_ptr<StrategyBase> new_strategy(new Strategy<TGlyphMatcherContext>(impl));
@@ -106,7 +105,7 @@ private:
         virtual GlyphMatcherT* createMatcher(const DynamicGlyphMatcherContext* ctx) const = 0;
     };
 
-    template<typename TGlyphMatcherContext>
+    template<class TGlyphMatcherContext>
     class Strategy: public StrategyBase
     {
     public:
@@ -141,24 +140,23 @@ private:
 };
 
 
-template<class TFontImage>
+template<class TFontImage, class TView=typename TFontImage::ConstViewT>
 class DynamicGlyphMatcher: boost::noncopyable
 {
 public:
     typedef TFontImage FontImageT;
-    typedef DynamicGlyphMatcherContext<FontImageT> GlyphMatcherContextT;
-    typedef typename FontImageT::PixelT PixelT;
-    typedef typename FontImageT::ConstViewT ConstViewT;
+    typedef TView ViewT;
+    typedef DynamicGlyphMatcherContext<FontImageT, ViewT> GlyphMatcherContextT;
 
 public:
-    template<typename TGlyphMatcher>
+    template<class TGlyphMatcher>
     explicit DynamicGlyphMatcher(const GlyphMatcherContextT* c, TGlyphMatcher* impl)
         :context_(c)
     {
         setStrategy(impl);
     }
 
-    template<typename TGlyphMatcher>
+    template<class TGlyphMatcher>
     explicit DynamicGlyphMatcher(const GlyphMatcherContextT* c, boost::scoped_ptr<TGlyphMatcher>& impl)
         :context_(c)
     {
@@ -171,19 +169,19 @@ public:
         return context_;
     }
 
-    Symbol match(const ConstViewT& imgv)
+    Symbol match(const ViewT& imgv)
     {
         return strategy_->match(imgv);
     }
 
-    template<typename TGlyphMatcher>
+    template<class TGlyphMatcher>
     void setStrategy(TGlyphMatcher* impl)
     {
         boost::scoped_ptr<TGlyphMatcher> impl_holder(impl);
         setStrategy(impl_holder);
     }
 
-    template<typename TGlyphMatcher>
+    template<class TGlyphMatcher>
     void setStrategy(boost::scoped_ptr<TGlyphMatcher>& impl)
     {
         boost::scoped_ptr<StrategyBase> new_strategy(new Strategy<TGlyphMatcher>(impl));
@@ -198,10 +196,10 @@ private:
         {
         }
 
-        virtual Symbol match(const ConstViewT& imgv) = 0;
+        virtual Symbol match(const ViewT& imgv) = 0;
     };
 
-    template<typename TGlyphMatcher>
+    template<class TGlyphMatcher>
     class Strategy: public StrategyBase
     {
     public:
@@ -210,7 +208,7 @@ private:
             impl_.swap(impl);
         }
 
-        virtual Symbol match(const ConstViewT& imgv)
+        virtual Symbol match(const ViewT& imgv)
         {
             return impl_->match(imgv);
         }
@@ -224,13 +222,14 @@ private:
     boost::scoped_ptr<StrategyBase> strategy_;
 };
 
-template<class TFontImage>
+template<class TFontImage, class TView>
 template<class TGlyphMatcherContext>
-inline DynamicGlyphMatcher<TFontImage>* DynamicGlyphMatcherContext<TFontImage>::Strategy<TGlyphMatcherContext>::createMatcher(const DynamicGlyphMatcherContext* ctx) const
+inline DynamicGlyphMatcher<TFontImage, TView>*
+DynamicGlyphMatcherContext<TFontImage, TView>::Strategy<TGlyphMatcherContext>::createMatcher(const DynamicGlyphMatcherContext* ctx) const
 {
     typedef typename TGlyphMatcherContext::GlyphMatcherT RealGlyphMatcherT;
     boost::scoped_ptr<RealGlyphMatcherT> matcher_holder(impl_->createMatcher());
-    return new DynamicGlyphMatcher<TFontImage>(ctx, matcher_holder);
+    return new DynamicGlyphMatcher<TFontImage, TView>(ctx, matcher_holder);
 }
 
 

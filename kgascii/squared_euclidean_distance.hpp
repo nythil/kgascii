@@ -50,7 +50,7 @@ public:
     }
 };
 
-template<typename TFontImage>
+template<class TFontImage>
 class SquaredEuclideanDistanceGlyphMatcherContextFactory
 {
 public:

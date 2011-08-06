@@ -24,12 +24,12 @@
 
 namespace KG { namespace Ascii {
 
-template<typename TFontImage, typename TDistance>
+template<class TFontImage, class TDistance>
 class PolicyBasedGlyphMatcherContext;
-template<typename TFontImage, typename TDistance>
+template<class TFontImage, class TDistance>
 class PolicyBasedGlyphMatcher;
 
-template<typename TFontImage, typename TDistance>
+template<class TFontImage, class TDistance>
 class PolicyBasedGlyphMatcher: boost::noncopyable
 {
 public:
@@ -53,7 +53,7 @@ public:
         return context_;
     }
 
-    template<typename TSomeConstView>
+    template<class TSomeConstView>
     Symbol match(const TSomeConstView& imgv);
 
 private:
@@ -62,7 +62,7 @@ private:
 };
 
 
-template<typename TFontImage, typename TDistance>
+template<class TFontImage, class TDistance>
 class PolicyBasedGlyphMatcherContext: boost::noncopyable
 {
 public:
@@ -111,11 +111,11 @@ private:
     TDistance distance_;
 };
 
-template<typename TConstView>
+template<class TConstView>
 Symbol match(const TConstView& imgv);
 
-template<typename TFontImage, typename TDistance>
-template<typename TSomeConstView>
+template<class TFontImage, class TDistance>
+template<class TSomeConstView>
 Symbol PolicyBasedGlyphMatcher<TFontImage, TDistance>::match(const TSomeConstView& imgv)
 {
     assert(imgv.width() <= image_.width());

@@ -24,7 +24,7 @@
 
 namespace KG { namespace Ascii {
 
-template<typename Task>
+template<class Task>
 class TaskQueue: boost::noncopyable
 {
 public:

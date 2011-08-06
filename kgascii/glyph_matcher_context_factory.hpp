@@ -34,7 +34,7 @@
 
 namespace KG { namespace Ascii {
 
-template<typename TFontImage>
+template<class TFontImage>
 inline void registerGlyphMatcherFactories()
 {
     static Internal::GlyphMatcherRegistration<TFontImage, SquaredEuclideanDistanceGlyphMatcherContextFactory> reg_sed("sed");
@@ -46,7 +46,7 @@ inline void registerGlyphMatcherFactories()
 class GlyphMatcherContextFactory
 {
 public:
-    template<typename TFontImage>
+    template<class TFontImage>
     static DynamicGlyphMatcherContext<TFontImage>* create(const TFontImage* font, const std::string& options)
     {
         std::string algo_name = "pca";

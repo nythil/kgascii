@@ -28,13 +28,13 @@
 
 namespace KG { namespace Ascii {
 
-template<typename TGlyphMatcherContext>
+template<class TGlyphMatcherContext, class TView=typename TGlyphMatcherContext::ViewT>
 class DynamicAsciifier: boost::noncopyable
 {
 public:
     typedef TGlyphMatcherContext GlyphMatcherContextT;
+    typedef TView ViewT;
     typedef typename TGlyphMatcherContext::GlyphMatcherT GlyphMatcherT;
-    typedef typename TGlyphMatcherContext::ConstViewT ConstViewT;
 
 public:
     explicit DynamicAsciifier(const GlyphMatcherContextT* ctx)
@@ -59,7 +59,7 @@ public:
     }
 
 public:
-    void generate(const ConstViewT& imgv, TextSurface& text)
+    void generate(const ViewT& imgv, TextSurface& text)
     {
         strategy_->generate(imgv, text);
     }
@@ -86,14 +86,14 @@ public:
         setStrategy(new ParallelAsciifierT(ctx, thr_cnt));
     }
 
-    template<typename TAsciifier>
+    template<class TAsciifier>
     void setStrategy(TAsciifier* impl)
     {
         boost::scoped_ptr<TAsciifier> impl_holder(impl);
         setStrategy(impl_holder);
     }
 
-    template<typename TAsciifier>
+    template<class TAsciifier>
     void setStrategy(boost::scoped_ptr<TAsciifier>& impl)
     {
         boost::scoped_ptr<StrategyBase> new_strategy(new Strategy<TAsciifier>(impl));
@@ -112,10 +112,10 @@ private:
 
         virtual unsigned threadCount() const = 0;
 
-        virtual void generate(const ConstViewT& imgv, TextSurface& text) = 0;
+        virtual void generate(const ViewT& imgv, TextSurface& text) = 0;
     };
 
-    template<typename TAsciifier>
+    template<class TAsciifier>
     class Strategy: public StrategyBase
     {
     public:
@@ -134,7 +134,7 @@ private:
             return impl_->threadCount();
         }
 
-        virtual void generate(const ConstViewT& imgv, TextSurface& text)
+        virtual void generate(const ViewT& imgv, TextSurface& text)
         {
             impl_->generate(imgv, text);
         }

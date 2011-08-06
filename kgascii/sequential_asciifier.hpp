@@ -24,13 +24,12 @@
 
 namespace KG { namespace Ascii {
 
-template<typename TGlyphMatcherContext>
+template<class TGlyphMatcherContext>
 class SequentialAsciifier: boost::noncopyable
 {
 public:
     typedef TGlyphMatcherContext GlyphMatcherContextT;
     typedef typename TGlyphMatcherContext::GlyphMatcherT GlyphMatcherT;
-    typedef typename TGlyphMatcherContext::ConstViewT ConstViewT;
 
 public:
     SequentialAsciifier(const GlyphMatcherContextT* c)
@@ -51,7 +50,8 @@ public:
     }
 
 public:
-    void generate(const ConstViewT& imgv, TextSurface& text)
+    template<class TView>
+    void generate(const TView& imgv, TextSurface& text)
     {
         //single character size
         size_t char_w = context_->cellWidth();

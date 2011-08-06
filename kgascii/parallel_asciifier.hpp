@@ -29,13 +29,13 @@
 
 namespace KG { namespace Ascii {
 
-template<typename TGlyphMatcherContext>
+template<class TGlyphMatcherContext, class TView=typename TGlyphMatcherContext::ViewT>
 class ParallelAsciifier: boost::noncopyable
 {
 public:
     typedef TGlyphMatcherContext GlyphMatcherContextT;
+    typedef TView ViewT;
     typedef typename TGlyphMatcherContext::GlyphMatcherT GlyphMatcherT;
-    typedef typename TGlyphMatcherContext::ConstViewT ConstViewT;
 
 public:
     ParallelAsciifier(const GlyphMatcherContextT* c, unsigned thr_cnt)
@@ -61,7 +61,7 @@ public:
     }
 
 public:
-    void generate(const ConstViewT& imgv, TextSurface& text)
+    void generate(const ViewT& imgv, TextSurface& text)
     {
         //single character size
         size_t char_w = context_->cellWidth();
@@ -101,7 +101,7 @@ private:
         group_.join_all();
     }
 
-    void enqueue(const ConstViewT& surf, Symbol* outp)
+    void enqueue(const ViewT& surf, Symbol* outp)
     {
         WorkItem wi = { surf, outp };
         queue_.push(wi);
@@ -136,7 +136,7 @@ private:
     boost::thread_group group_;
     struct WorkItem
     {
-        ConstViewT imgv;
+        ViewT imgv;
         Symbol* outp;
     };
     TaskQueue<WorkItem> queue_;

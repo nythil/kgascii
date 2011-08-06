@@ -49,7 +49,7 @@ public:
     }
 };
 
-template<typename TFontImage>
+template<class TFontImage>
 class MeansDistanceGlyphMatcherContextFactory
 {
 public:

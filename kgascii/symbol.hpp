@@ -65,10 +65,9 @@ public:
 
 private:
     friend class boost::serialization::access;
-    template<typename Archive>
-    void serialize(Archive& ar, const unsigned int version)
+    template<class Archive>
+    void serialize(Archive& ar, const unsigned int)
     {
-        (void)version;
         ar & boost::serialization::make_nvp("value", value_);
     }
 

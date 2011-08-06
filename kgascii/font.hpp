@@ -178,7 +178,7 @@ private:
         return 0;
     }
 
-    template<typename Archive>
+    template<class Archive>
     void serialize(Archive& ar, const unsigned int version);
 
 private:
@@ -206,10 +206,10 @@ private:
         {
         }
 
-        template<typename Archive>
+        template<class Archive>
         void load(Archive& ar, const unsigned int version);
 
-        template<typename Archive>
+        template<class Archive>
         void save(Archive& ar, const unsigned int version) const;
 
         BOOST_SERIALIZATION_SPLIT_MEMBER()

@@ -26,35 +26,35 @@
 #include <kgascii/font_image.hpp>
 #include <kgascii/dynamic_glyph_matcher.hpp>
 #include <kgascii/policy_based_glyph_matcher.hpp>
-#include <kgascii/mutual_information_glyph_matcher.hpp>
 #include <kgascii/squared_euclidean_distance.hpp>
 #include <kgascii/means_distance.hpp>
-#include <kgascii/pca_glyph_matcher.hpp>
+//#include <kgascii/mutual_information_glyph_matcher.hpp>
+//#include <kgascii/pca_glyph_matcher.hpp>
 #include <kgascii/internal/glyph_matcher_registration.hpp>
 
 namespace KG { namespace Ascii {
 
-template<typename TPixel>
+template<typename TFontImage>
 inline void registerGlyphMatcherFactories()
 {
-    static Internal::GlyphMatcherRegistration<TPixel, SquaredEuclideanDistanceGlyphMatcherContextFactory> reg_sed("sed");
-    static Internal::GlyphMatcherRegistration<TPixel, MeansDistanceGlyphMatcherContextFactory> reg_md("md");
-    static Internal::GlyphMatcherRegistration<TPixel, MutualInformationGlyphMatcherContextFactory> reg_mi("mi");
-    static Internal::GlyphMatcherRegistration<TPixel, PcaGlyphMatcherContextFactory> reg_pca("pca");
+    static Internal::GlyphMatcherRegistration<TFontImage, SquaredEuclideanDistanceGlyphMatcherContextFactory> reg_sed("sed");
+    static Internal::GlyphMatcherRegistration<TFontImage, MeansDistanceGlyphMatcherContextFactory> reg_md("md");
+//    static Internal::GlyphMatcherRegistration<TFontImage, MutualInformationGlyphMatcherContextFactory> reg_mi("mi");
+//    static Internal::GlyphMatcherRegistration<TFontImage, PcaGlyphMatcherContextFactory> reg_pca("pca");
 }
 
 class GlyphMatcherContextFactory
 {
 public:
-    template<typename TPixel>
-    static DynamicGlyphMatcherContext<TPixel>* create(const FontImage<TPixel>* font, const std::string& options)
+    template<typename TFontImage>
+    static DynamicGlyphMatcherContext<TFontImage>* create(const TFontImage* font, const std::string& options)
     {
         std::string algo_name = "pca";
         std::map<std::string, std::string> options_map;
         parseOptions(options, algo_name, options_map);
 
-        typedef typename Internal::GlyphMatcherRegistry<TPixel>::CreatorFuncT CreatorFuncT;
-        if (const CreatorFuncT* func = Internal::GlyphMatcherRegistry<TPixel>::findFactory(algo_name)) {
+        typedef typename Internal::GlyphMatcherRegistry<TFontImage>::CreatorFuncT CreatorFuncT;
+        if (const CreatorFuncT* func = Internal::GlyphMatcherRegistry<TFontImage>::findFactory(algo_name)) {
             return (*func)(font, options_map);
         }
         throw std::runtime_error("unknown algo name");

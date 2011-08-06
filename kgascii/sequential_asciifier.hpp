@@ -21,7 +21,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <kgascii/text_surface.hpp>
-#include <kgascii/surface.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -31,7 +30,7 @@ class SequentialAsciifier: boost::noncopyable
 public:
     typedef TGlyphMatcherContext GlyphMatcherContextT;
     typedef typename TGlyphMatcherContext::GlyphMatcherT GlyphMatcherT;
-    typedef typename TGlyphMatcherContext::ConstSurfaceT ConstSurfaceT;
+    typedef typename TGlyphMatcherContext::ConstViewT ConstViewT;
 
 public:
     SequentialAsciifier(const GlyphMatcherContextT* c)
@@ -52,7 +51,7 @@ public:
     }
 
 public:
-    void generate(const ConstSurfaceT& imgv, TextSurface& text)
+    void generate(const ConstViewT& imgv, TextSurface& text)
     {
         //single character size
         size_t char_w = context_->cellWidth();
@@ -61,29 +60,29 @@ public:
         size_t text_w = text.cols() * char_w;
         size_t text_h = text.rows() * char_h;
         //processed image region size
-        size_t roi_w = std::min(imgv.width(), text_w);
-        size_t roi_h = std::min(imgv.height(), text_h);
+        size_t roi_w = std::min<size_t>(imgv.width(), text_w);
+        size_t roi_h = std::min<size_t>(imgv.height(), text_h);
 
         size_t y = 0, r = 0;
         for (; y + char_h <= roi_h; y += char_h, ++r) {
             size_t x = 0, c = 0;
             for (; x + char_w <= roi_w; x += char_w, ++c) {
-                text(r, c) = matcher_->match(imgv.window(x, y, char_w, char_h));
+                text(r, c) = matcher_->match(subimage_view(imgv, x, y, char_w, char_h));
             }
             if (x < roi_w) {
                 size_t dx = roi_w - x;
-                text(r, c) = matcher_->match(imgv.window(x, y, dx, char_h));
+                text(r, c) = matcher_->match(subimage_view(imgv, x, y, dx, char_h));
             }
         }
         if (y < roi_h) {
             size_t dy = roi_h - y;
             size_t x = 0, c = 0;
             for (; x + char_w <= roi_w; x += char_w, ++c) {
-                text(r, c) = matcher_->match(imgv.window(x, y, char_w, dy));
+                text(r, c) = matcher_->match(subimage_view(imgv, x, y, char_w, dy));
             }
             if (x < roi_w) {
                 size_t dx = roi_w - x;
-                text(r, c) = matcher_->match(imgv.window(x, y, dx, dy));
+                text(r, c) = matcher_->match(subimage_view(imgv, x, y, dx, dy));
             }
         }
     }

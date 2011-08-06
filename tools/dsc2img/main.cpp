@@ -18,10 +18,10 @@
 #include <algorithm>
 #include <iostream>
 #include <boost/filesystem.hpp>
+#include <boost/gil/gil_all.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <kgascii/font.hpp>
 #include <kgascii/font_io.hpp>
-#include <kgascii/surface_algorithm.hpp>
 #include <common/cmdline_tool.hpp>
 
 using namespace KG::Ascii;
@@ -75,7 +75,7 @@ bool Dsc2Img::processArgs()
 
 int Dsc2Img::doExecute()
 {
-    Font font;
+    Font<> font;
     if (!font.load(inputFile_)) {
         std::cout << "loading error\n";
         return -1;
@@ -90,15 +90,18 @@ int Dsc2Img::doExecute()
     size_t image_height = row_count * font.glyphHeight();
 
     cv::Mat output_image(image_height, image_width, CV_8UC1);
-    Surface8 output_surface(image_width, image_height, output_image.data, output_image.step[0]);
+    boost::gil::gray8_view_t output_surface = boost::gil::interleaved_view(
+            image_width, image_height,
+            reinterpret_cast<boost::gil::gray8_pixel_t*>(output_image.data),
+            output_image.step[0]);
 
     for (size_t ci = 0; ci < font.glyphCount(); ++ci) {
-        Surface8c glyph_surface = font.getGlyph(ci);
+        boost::gil::gray8c_view_t glyph_surface = font.getGlyph(ci);
         unsigned row = ci % max_chars_per_row;
         unsigned rowX = row * font.glyphWidth();
         unsigned col = ci / max_chars_per_row;
         unsigned colY = col * font.glyphHeight();
-        copyPixels(glyph_surface, output_surface.window(rowX, colY, 
+        copy_pixels(glyph_surface, subimage_view(output_surface, rowX, colY,
                 font.glyphWidth(), font.glyphHeight()));
     }
 

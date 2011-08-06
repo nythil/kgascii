@@ -27,12 +27,12 @@
 
 namespace KG { namespace Ascii { namespace Internal {
 
-template<class TPixel>
+template<class TFontImage>
 class GlyphMatcherRegistry
 {
 public:
     typedef boost::function<
-            DynamicGlyphMatcherContext<TPixel>* (const FontImage<TPixel>*, const std::map<std::string, std::string>&)
+            DynamicGlyphMatcherContext<TFontImage>* (const TFontImage*, const std::map<std::string, std::string>&)
             > CreatorFuncT;
 
     class Entry: public boost::intrusive::list_base_hook<>
@@ -82,24 +82,24 @@ private:
     }
 };
 
-template<class TPixel>
-GlyphMatcherRegistry<TPixel>::Entry::Entry(const std::string& n, const CreatorFuncT& f)
+template<class TFontImage>
+GlyphMatcherRegistry<TFontImage>::Entry::Entry(const std::string& n, const CreatorFuncT& f)
     :name(n), func(f)
 {
     addEntry(*this);
 }
 
-template<class TPixel>
-GlyphMatcherRegistry<TPixel>::Entry::~Entry()
+template<class TFontImage>
+GlyphMatcherRegistry<TFontImage>::Entry::~Entry()
 {
     removeEntry(*this);
 }
 
-template<class TPixel, template<class> class TFactory>
+template<class TFontImage, template<class> class TFactory>
 class GlyphMatcherRegistration
 {
 public:
-    typedef TFactory<TPixel> FactoryT;
+    typedef TFactory<TFontImage> FactoryT;
 
     explicit GlyphMatcherRegistration(const std::string& name, const FactoryT& f=FactoryT())
         :entry_(name, f)
@@ -107,7 +107,7 @@ public:
     }
 
 private:
-    typename GlyphMatcherRegistry<TPixel>::Entry entry_;
+    typename GlyphMatcherRegistry<TFontImage>::Entry entry_;
 };
 
 } } } // namespace KG::Ascii::Internal

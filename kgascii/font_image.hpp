@@ -20,45 +20,47 @@
 
 #include <string>
 #include <vector>
+#include <boost/gil/gil_all.hpp>
 #include <boost/noncopyable.hpp>
 #include <kgascii/symbol.hpp>
-#include <kgascii/font.hpp>
-#include <kgascii/surface.hpp>
-#include <kgascii/surface_container.hpp>
-#include <kgascii/surface_algorithm.hpp>
 
 namespace KG { namespace Ascii {
 
-template<typename TPixel>
+template<
+    class TFont,
+    class TImage=typename TFont::ImageT
+    >
 class FontImage: boost::noncopyable
 {
 public:
-    typedef typename boost::remove_cv<TPixel>::type PixelT;
-    typedef Surface<PixelT> SurfaceT;
-    typedef Surface<const PixelT> ConstSurfaceT;
-    typedef SurfaceContainer<PixelT> SurfaceContainerT;
+    typedef TFont FontT;
+    typedef TImage ImageT;
+    typedef typename ImageT::value_type PixelT;
+    typedef typename ImageT::view_t ViewT;
+    typedef typename ImageT::const_view_t ConstViewT;
 
 public:
-    explicit FontImage(const Font* f)
+    explicit FontImage(const FontT* f)
         :font_(f)
-        ,familyName_(font_->familyName())
-        ,styleName_(font_->styleName())
-        ,pixelSize_(font_->pixelSize())
-        ,glyphWidth_(font_->glyphWidth())
-        ,glyphHeight_(font_->glyphHeight())
-        ,data_(glyphWidth_, glyphHeight_ * font_->glyphCount())
     {
-        glyphs_.reserve(font_->glyphCount());
-        for (size_t i = 0; i < font_->glyphCount(); ++i) {
-            SurfaceT glyph_surface = data_.surface().window(0, glyphHeight_ * i, glyphWidth_, glyphHeight_);
+        familyName_ = font_->familyName();
+        styleName_ = font_->styleName();
+        pixelSize_ = font_->pixelSize();
+        glyphWidth_ = font_->glyphWidth();
+        glyphHeight_ = font_->glyphHeight();
+        size_t glyph_count = font_->glyphCount();
+        data_.recreate(glyphWidth_, glyphHeight_ * glyph_count);
+        glyphs_.reserve(glyph_count);
+        for (size_t i = 0; i < glyph_count; ++i) {
+            ViewT glyph_surface = subimage_view(view(data_), 0, glyphHeight_ * i, glyphWidth_, glyphHeight_);
             GlyphRecord gr = { font_->getSymbol(i), glyph_surface };
-            copyPixels(font_->getGlyph(i), glyph_surface);
+            copy_pixels(font_->getGlyph(i), glyph_surface);
             glyphs_.push_back(gr);
         }
     }
 
 public:
-    const Font* font() const
+    const FontT* font() const
     {
         return font_;
     }
@@ -103,7 +105,7 @@ public:
         return glyphs_.at(i).sym;
     }
 
-    const ConstSurfaceT& getGlyph(size_t i) const
+    const ConstViewT& getGlyph(size_t i) const
     {
         return glyphs_.at(i).surf;
     }
@@ -112,18 +114,18 @@ private:
     struct GlyphRecord
     {
         Symbol sym;
-        ConstSurfaceT surf;
+        ConstViewT surf;
     };
 
 private:
-    const Font* font_;
+    const FontT* font_;
     std::string familyName_;
     std::string styleName_;
     unsigned pixelSize_;
     unsigned glyphWidth_;
     unsigned glyphHeight_;
     std::vector<GlyphRecord> glyphs_;
-    SurfaceContainerT data_;
+    ImageT data_;
 };
 
 } } // namespace KG::Ascii

@@ -24,10 +24,8 @@
 #include <boost/bind.hpp>
 #include <boost/range/irange.hpp>
 #include <boost/range/algorithm/transform.hpp>
-#include <kgascii/surface_container.hpp>
 #include <kgascii/font_pca.hpp>
 #include <kgascii/font_image.hpp>
-#include <kgascii/surface_algorithm.hpp>
 
 namespace KG { namespace Ascii {
 

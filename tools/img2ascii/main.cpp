@@ -25,6 +25,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <common/cmdline_tool.hpp>
 #include <common/validate_optional.hpp>
+#include <common/cast_surface.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_io.hpp>
 #include <kgascii/dynamic_asciifier.hpp>
@@ -32,6 +33,11 @@
 #include <kgascii/glyph_matcher_context_factory.hpp>
 
 using namespace KG::Ascii;
+
+typedef FontImage< Font<> > FontImageT;
+typedef DynamicGlyphMatcherContext<FontImageT> DynamicGlyphMatcherContextT;
+typedef DynamicAsciifier<DynamicGlyphMatcherContextT> DynamicAsciifierT;
+
 
 class ImageToAscii: public CmdlineTool
 {
@@ -95,10 +101,10 @@ bool ImageToAscii::processArgs()
 int ImageToAscii::doExecute()
 {
     std::cerr << "loading font...\n";
-    Font font;
+    Font<> font;
     if (!font.load(fontFile_))
         return -1;
-    FontImage<PixelType8> font_image(&font);
+    FontImageT font_image(&font);
     unsigned char_width = font.glyphWidth();
     unsigned char_height = font.glyphHeight();
 
@@ -126,10 +132,10 @@ int ImageToAscii::doExecute()
 
     std::cerr << "creating glyph matcher...\n";
     TextSurface text(row_count, col_count);
-    registerGlyphMatcherFactories<PixelType8>();
-    DynamicGlyphMatcherContext<PixelType8>* matcher_ctx = GlyphMatcherContextFactory::create(&font_image, algorithm_);
+    registerGlyphMatcherFactories<FontImageT>();
+    DynamicGlyphMatcherContextT* matcher_ctx = GlyphMatcherContextFactory::create(&font_image, algorithm_);
     assert(matcher_ctx);
-    DynamicAsciifier< DynamicGlyphMatcherContext<PixelType8> > asciifier(matcher_ctx);
+    DynamicAsciifierT asciifier(matcher_ctx);
     if (threadCount_ == 1) {
         asciifier.setSequential();
     } else {
@@ -161,8 +167,8 @@ int ImageToAscii::doExecute()
     assert(static_cast<unsigned>(gray_frame.rows) == out_height);
     assert(gray_frame.type() == CV_8UC1);
 
-    Surface8c gray_surface(out_width, out_height, 
-            gray_frame.data, gray_frame.step[0]);
+    boost::gil::gray8c_view_t gray_surface =
+            castSurface<const boost::gil::gray8_pixel_t>(gray_frame);
 
     std::cerr << "converting...\n";
     text.clear();

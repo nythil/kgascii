@@ -26,6 +26,7 @@
 #include <common/validate_optional.hpp>
 #include <common/console.hpp>
 #include <common/video_player.hpp>
+#include <common/cast_surface.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_io.hpp>
 #include <kgascii/dynamic_asciifier.hpp>
@@ -33,6 +34,10 @@
 #include <kgascii/glyph_matcher_context_factory.hpp>
 
 using namespace KG::Ascii;
+
+typedef FontImage< Font<> > FontImageT;
+typedef DynamicGlyphMatcherContext<FontImageT> DynamicGlyphMatcherContextT;
+typedef DynamicAsciifier<DynamicGlyphMatcherContextT> DynamicAsciifierT;
 
 class VideoToAscii: public CmdlineTool
 {
@@ -117,9 +122,7 @@ bool VideoToAscii::processArgs()
 class MyVideoPlayer: public VideoPlayer
 {
 public:
-    typedef DynamicAsciifier< DynamicGlyphMatcherContext<PixelType8> > AsciifierT;
-
-    explicit MyVideoPlayer(const VideoToAscii* ctx, AsciifierT* asc, Console* con)
+    explicit MyVideoPlayer(const VideoToAscii* ctx, DynamicAsciifierT* asc, Console* con)
         :context_(ctx)
         ,asciifier_(asc)
         ,console_(con)
@@ -234,8 +237,8 @@ protected:
         assert(static_cast<unsigned>(grayFrame_.rows) == outHeight_);
         assert(grayFrame_.type() == CV_8UC1);
 
-        Surface8c gray_surface(outWidth_, outHeight_,
-                grayFrame_.data, grayFrame_.step[0]);
+        boost::gil::gray8c_view_t gray_surface =
+                castSurface<const boost::gil::gray8_pixel_t>(grayFrame_);
 
         text_.clear();
         asciifier_->generate(gray_surface, text_);
@@ -252,7 +255,7 @@ protected:
 
 private:
     const VideoToAscii* context_;
-    AsciifierT* asciifier_;
+    DynamicAsciifierT* asciifier_;
     Console* console_;
     TextSurface text_;
     unsigned outWidth_;
@@ -266,19 +269,19 @@ int VideoToAscii::doExecute()
 {
     try {
         std::cout << "loading font\n";
-        Font font;
+        Font<> font;
         if (!font.load(fontFile_)) {
             std::cerr << "problem loading font\n";
             return 1;
         }
-        FontImage<PixelType8> font_image(&font);
+        FontImageT font_image(&font);
         std::cout << "creating glyph matcher\n";
 
-        registerGlyphMatcherFactories<PixelType8>();
-        DynamicGlyphMatcherContext<PixelType8>* matcher_ctx = GlyphMatcherContextFactory::create(&font_image, algorithm_);
+        registerGlyphMatcherFactories<FontImageT>();
+        DynamicGlyphMatcherContextT* matcher_ctx = GlyphMatcherContextFactory::create(&font_image, algorithm_);
         assert(matcher_ctx);
 
-        DynamicAsciifier< DynamicGlyphMatcherContext<PixelType8> > asciifier(matcher_ctx);
+        DynamicAsciifierT asciifier(matcher_ctx);
         assert(asciifier.context() == matcher_ctx);
         if (threads_ == 1) {
             asciifier.setSequential();

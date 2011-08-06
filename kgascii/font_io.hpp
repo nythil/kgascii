@@ -20,6 +20,7 @@
 
 #include <fstream>
 #include <stdexcept>
+#include <vector>
 #include <boost/exception/exception.hpp>
 #include <boost/exception/info.hpp>
 #include <boost/exception/errinfo_api_function.hpp>
@@ -32,17 +33,60 @@
 #include <boost/range/algorithm/lower_bound.hpp>
 #include <boost/range/algorithm/upper_bound.hpp>
 #include <kgascii/font.hpp>
-#include <kgascii/surface.hpp>
-#include <kgascii/surface_algorithm.hpp>
 
+namespace boost { namespace serialization {
+
+template<class TArchive, class TPixel>
+inline void save(TArchive& ar, const boost::gil::image<TPixel>& img, const unsigned int)
+{
+    typedef boost::gil::image<TPixel> ImageT;
+    typedef typename boost::gil::channel_type<typename ImageT::value_type>::type ChannelT;
+    ptrdiff_t width = img.width(), height = img.height();
+    ar << make_nvp("width", width);
+    ar << make_nvp("height", height);
+    std::vector<typename ImageT::value_type> row_buffer(width);
+    const ChannelT* row_addr = reinterpret_cast<const ChannelT*>(&row_buffer[0]);
+    typename ImageT::const_view_t img_view = const_view(img);
+    for (ptrdiff_t y = 0; y < height; ++y) {
+        std::copy(img_view.row_begin(y), img_view.row_end(y), row_buffer.begin());
+        ar << make_array(row_addr, width);
+    }
+}
+
+template<class TArchive, class TPixel>
+inline void load(TArchive& ar, boost::gil::image<TPixel>& img, const unsigned int)
+{
+    typedef boost::gil::image<TPixel> ImageT;
+    typedef typename boost::gil::channel_type<typename ImageT::value_type>::type ChannelT;
+    ptrdiff_t width, height;
+    ar >> make_nvp("width", width);
+    ar >> make_nvp("height", height);
+    std::vector<typename ImageT::value_type> row_buffer(width);
+    ChannelT* row_addr = reinterpret_cast<ChannelT*>(&row_buffer[0]);
+    img.recreate(width, height);
+    typename ImageT::view_t img_view = view(img);
+    for (ptrdiff_t y = 0; y < height; ++y) {
+        ar >> make_array(row_addr, width);
+        std::copy(row_buffer.begin(), row_buffer.end(), img_view.row_begin(y));
+    }
+}
+
+template<class TArchive, class TPixel>
+inline void serialize(TArchive& ar, boost::gil::image<TPixel>& img, const unsigned int version)
+{
+    split_free(ar, img, version);
+}
+
+
+} } // namespace boost::serialization
 
 namespace KG { namespace Ascii {
 
 struct FontIOError: virtual std::exception, virtual boost::exception {};
 
-
+template<class TImage>
 template<typename TArchive>
-void Font::serialize(TArchive& ar, const unsigned int version)
+void Font<TImage>::serialize(TArchive& ar, const unsigned int version)
 {
     using namespace boost::serialization;
     (void)version;
@@ -54,18 +98,20 @@ void Font::serialize(TArchive& ar, const unsigned int version)
     ar & make_nvp("glyphs", glyphs_);
 }
 
+template<class TImage>
 template<typename TArchive>
-void Font::GlyphRecord::load(TArchive& ar, const unsigned int version)
+void Font<TImage>::GlyphRecord::load(TArchive& ar, const unsigned int version)
 {
     using namespace boost::serialization;
     (void)version;
     ar >> make_nvp("sym", sym);
     ar >> make_nvp("data", data);
-    surf = data.surface();
+    surf = view(data);
 }
 
+template<class TImage>
 template<typename TArchive>
-void Font::GlyphRecord::save(TArchive& ar, const unsigned int version) const
+void Font<TImage>::GlyphRecord::save(TArchive& ar, const unsigned int version) const
 {
     using namespace boost::serialization;
     (void)version;
@@ -73,7 +119,8 @@ void Font::GlyphRecord::save(TArchive& ar, const unsigned int version) const
     ar << make_nvp("data", data);
 }
 
-bool Font::save(const std::string& file_path) const
+template<class TImage>
+bool Font<TImage>::save(const std::string& file_path) const
 {
     std::ofstream ofs(file_path.c_str(), std::ios_base::out | std::ios_base::trunc);
     if (!ofs.good())
@@ -85,7 +132,8 @@ bool Font::save(const std::string& file_path) const
     return true;
 }
 
-bool Font::load(const std::string& file_path)
+template<class TImage>
+bool Font<TImage>::load(const std::string& file_path)
 {
     std::ifstream ifs(file_path.c_str(), std::ios_base::in);
     if (!ifs.good())
@@ -99,8 +147,8 @@ bool Font::load(const std::string& file_path)
 
 namespace Internal {
 
-template<typename TLoader, typename TSymbolIterator>
-void doLoad(Font& font, TLoader& loader, TSymbolIterator first, TSymbolIterator last)
+template<typename TFont, typename TLoader, typename TSymbolIterator>
+void doLoad(TFont& font, TLoader& loader, TSymbolIterator first, TSymbolIterator last)
 {
     font.setFamilyName(loader.familyName());
     font.setStyleName(loader.styleName());
@@ -111,14 +159,14 @@ void doLoad(Font& font, TLoader& loader, TSymbolIterator first, TSymbolIterator 
     for (TSymbolIterator sym = first; sym != last; ++sym) {
         if (!loader.loadGlyph(*sym))
             BOOST_THROW_EXCEPTION(FontIOError() << boost::errinfo_api_function("loadGlyph"));
-        copyPixels(loader.glyph(), font.addGlyph(*sym));
+        copy_pixels(loader.glyph(), font.addGlyph(*sym));
     }
 }
 
 } // namespace Internal
 
-template<typename TLoader>
-bool load(Font& font, TLoader& loader)
+template<class TImage, typename TLoader>
+bool load(Font<TImage>& font, TLoader& loader)
 {
     typename TLoader::SymbolCollectionT symbols = loader.symbols();
     Internal::doLoad(font, loader, symbols.begin(), symbols.end());
@@ -126,8 +174,8 @@ bool load(Font& font, TLoader& loader)
     return true;
 }
 
-template<typename TLoader>
-bool load(Font& font, TLoader& loader, Symbol ci_min, Symbol ci_max)
+template<class TImage, typename TLoader>
+bool load(Font<TImage>& font, TLoader& loader, Symbol ci_min, Symbol ci_max)
 {
     typename TLoader::SymbolCollectionT symbols = loader.symbols();
     Internal::doLoad(font, loader, boost::lower_bound(symbols, ci_min), boost::upper_bound(symbols, ci_max));

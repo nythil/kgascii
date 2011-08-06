@@ -19,6 +19,7 @@
 #define KGASCII_FONT_HPP
 
 #include <string>
+#include <boost/gil/gil_all.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/random_access_index.hpp>
 #include <boost/multi_index/ordered_index.hpp>
@@ -28,13 +29,18 @@
 #include <boost/noncopyable.hpp>
 #include <boost/type_traits.hpp>
 #include <kgascii/symbol.hpp>
-#include <kgascii/surface.hpp>
-#include <kgascii/surface_container.hpp>
 
 namespace KG { namespace Ascii {
 
+template<class TImage=boost::gil::gray8_image_t>
 class Font: boost::noncopyable
 {
+public:
+    typedef TImage ImageT;
+    typedef typename ImageT::value_type PixelT;
+    typedef typename ImageT::view_t ViewT;
+    typedef typename ImageT::const_view_t ConstViewT;
+
 public:
     Font()
     {
@@ -110,12 +116,12 @@ public:
         return glyphs_.at(i).sym;
     }
 
-    Surface8c getGlyph(size_t i) const
+    ConstViewT getGlyph(size_t i) const
     {
         return glyphs_.at(i).surf;
     }
 
-    Surface8 getGlyph(size_t i)
+    ViewT getGlyph(size_t i)
     {
         return glyphs_.at(i).surf;
     }
@@ -125,14 +131,14 @@ public:
         return (findGlyphRecord(sym) != 0);
     }
 
-    Surface8c getGlyph(Symbol sym) const
+    ConstViewT getGlyph(Symbol sym) const
     {
         if (const GlyphRecord* gr = findGlyphRecord(sym))
             return gr->surf;
         BOOST_THROW_EXCEPTION(std::out_of_range("Invalid symbol"));
     }
 
-    Surface8 getGlyph(Symbol sym)
+    ViewT getGlyph(Symbol sym)
     {
         if (const GlyphRecord* gr = findGlyphRecord(sym))
             return gr->surf;
@@ -144,10 +150,10 @@ public:
         glyphs_.clear();
     }
 
-    Surface8 addGlyph(Symbol sym)
+    ViewT addGlyph(Symbol sym)
     {
         GlyphRecord gr(sym, glyphWidth_, glyphHeight_);
-        std::pair<GlyphContainer::iterator, bool> result = glyphs_.push_back(gr);
+        std::pair<typename GlyphContainer::iterator, bool> result = glyphs_.push_back(gr);
         if (!result.second)
             BOOST_THROW_EXCEPTION(std::runtime_error("Insertion error"));
         return result.first->surf;
@@ -164,9 +170,9 @@ private:
 
     const GlyphRecord* findGlyphRecord(Symbol sym) const
     {
-        typedef GlyphContainer::nth_index<1>::type SymbolIndex;
-        const SymbolIndex& sym_index = glyphs_.get<1>();
-        SymbolIndex::const_iterator it = sym_index.find(sym);
+        typedef typename GlyphContainer::template nth_index<1>::type SymbolIndex;
+        const SymbolIndex& sym_index = glyphs_.template get<1>();
+        typename SymbolIndex::const_iterator it = sym_index.find(sym);
         if (it != sym_index.end())
             return &(*it);
         return 0;
@@ -179,8 +185,8 @@ private:
     struct GlyphRecord
     {
         Symbol sym;
-        SurfaceContainer8 data;
-        Surface8 surf;
+        ImageT data;
+        ViewT surf;
 
         GlyphRecord()
         {
@@ -189,14 +195,14 @@ private:
         GlyphRecord(Symbol s, unsigned w, unsigned h)
             :sym(s)
             ,data(w, h)
-            ,surf(data.surface())
+            ,surf(boost::gil::view(data))
         {
         }
 
         GlyphRecord(const GlyphRecord& t)
             :sym(t.sym)
             ,data(t.data)
-            ,surf(data.surface())
+            ,surf(boost::gil::view(data))
         {
         }
 

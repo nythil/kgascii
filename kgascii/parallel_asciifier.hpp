@@ -21,7 +21,6 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <kgascii/text_surface.hpp>
-#include <kgascii/surface.hpp>
 #include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
@@ -36,7 +35,7 @@ class ParallelAsciifier: boost::noncopyable
 public:
     typedef TGlyphMatcherContext GlyphMatcherContextT;
     typedef typename TGlyphMatcherContext::GlyphMatcherT GlyphMatcherT;
-    typedef typename TGlyphMatcherContext::ConstSurfaceT ConstSurfaceT;
+    typedef typename TGlyphMatcherContext::ConstViewT ConstViewT;
 
 public:
     ParallelAsciifier(const GlyphMatcherContextT* c, unsigned thr_cnt)
@@ -62,7 +61,7 @@ public:
     }
 
 public:
-    void generate(const ConstSurfaceT& imgv, TextSurface& text)
+    void generate(const ConstViewT& imgv, TextSurface& text)
     {
         //single character size
         size_t char_w = context_->cellWidth();
@@ -71,16 +70,16 @@ public:
         size_t text_w = text.cols() * char_w;
         size_t text_h = text.rows() * char_h;
         //processed image region size
-        size_t roi_w = std::min(imgv.width(), text_w);
-        size_t roi_h = std::min(imgv.height(), text_h);
+        size_t roi_w = std::min<size_t>(imgv.width(), text_w);
+        size_t roi_h = std::min<size_t>(imgv.height(), text_h);
 
         size_t y = 0, r = 0;
         for (; y + char_h <= roi_h; y += char_h, ++r) {
-            enqueue(imgv.window(0, y, roi_w, char_h), text.row(r));
+            enqueue(subimage_view(imgv, 0, y, roi_w, char_h), text.row(r));
         }
         if (y < roi_h) {
             size_t dy = roi_h - y;
-            enqueue(imgv.window(0, y, roi_w, dy), text.row(r));
+            enqueue(subimage_view(imgv, 0, y, roi_w, dy), text.row(r));
         }
         queue_.wait_empty();
     }
@@ -102,7 +101,7 @@ private:
         group_.join_all();
     }
 
-    void enqueue(const ConstSurfaceT& surf, Symbol* outp)
+    void enqueue(const ConstViewT& surf, Symbol* outp)
     {
         WorkItem wi = { surf, outp };
         queue_.push(wi);
@@ -122,11 +121,11 @@ private:
             size_t roi_h = wi.imgv.height();
             size_t x = 0, c = 0;
             for (; x + char_w <= roi_w; x += char_w, ++c) {
-                wi.outp[c] = matcher->match(wi.imgv.window(x, 0, char_w, roi_h));
+                wi.outp[c] = matcher->match(subimage_view(wi.imgv, x, 0, char_w, roi_h));
             }
             if (x < roi_w) {
                 size_t dx = roi_w - x;
-                wi.outp[c] = matcher->match(wi.imgv.window(x, 0, dx, roi_h));
+                wi.outp[c] = matcher->match(subimage_view(wi.imgv, x, 0, dx, roi_h));
             }
             queue_.done();
         }
@@ -137,7 +136,7 @@ private:
     boost::thread_group group_;
     struct WorkItem
     {
-        ConstSurfaceT imgv;
+        ConstViewT imgv;
         Symbol* outp;
     };
     TaskQueue<WorkItem> queue_;

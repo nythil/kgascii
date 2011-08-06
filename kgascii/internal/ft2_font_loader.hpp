@@ -20,12 +20,11 @@
 
 #include <string>
 #include <set>
+#include <boost/gil/gil_all.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/ref.hpp>
-#include <kgascii/surface.hpp>
-#include <kgascii/surface_container.hpp>
 #include <kgascii/ft2pp/library.hpp>
 #include <kgascii/ft2pp/face.hpp>
 
@@ -33,6 +32,11 @@ namespace KG { namespace Ascii { namespace Internal {
 
 class FT2FontLoaderBase: boost::noncopyable
 {
+public:
+    typedef boost::gil::gray8_view_t ViewT;
+    typedef boost::gil::gray8c_view_t ConstViewT;
+    typedef boost::gil::gray8_image_t ImageT;
+
 public:
     enum Hinting
     {
@@ -203,8 +207,8 @@ public:
         face_->renderChar(static_cast<FT_Render_Mode>(makeRenderFlags()));
 
         FT_Bitmap bmp = (*face_)->glyph->bitmap;
-        glyphData_.resize(bmp.width, bmp.rows);
-        glyph_ = glyphData_.surface();
+        glyphData_.recreate(bmp.width, bmp.rows);
+        glyph_ = view(glyphData_);
 
         unsigned char* pbmp = bmp.buffer;
         if (bmp.pixel_mode == FT_PIXEL_MODE_MONO) {
@@ -268,7 +272,7 @@ public:
         return (*face_)->glyph->bitmap.rows;
     }
 
-    Surface8c glyph() const
+    ConstViewT glyph() const
     {
         assert(isFontOk());
         assert(isGlyphOk());
@@ -308,8 +312,8 @@ private:
     boost::shared_ptr<FT2pp::Library> library_;
     boost::shared_ptr<FT2pp::Face> face_;
     bool glyph_loaded_;
-    Surface8 glyph_;
-    SurfaceContainer8 glyphData_;
+    ViewT glyph_;
+    ImageT glyphData_;
     Hinting hinting_;
     AutoHinter autohint_;
     RenderMode mode_;

@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
+#if 0
 #include <algorithm>
 #include <iostream>
 #include <iterator>
@@ -23,8 +24,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_io.hpp>
-#include <kgascii/surface_container.hpp>
-#include <kgascii/surface_algorithm.hpp>
 #include <kgascii/font_pca.hpp>
 #include <kgascii/pca_reconstruction_font_loader.hpp>
 #include <common/cmdline_tool.hpp>
@@ -144,3 +143,9 @@ void PcaDump::dumpDsc(const FontPCA<PixelType8>& pca)
     load(restored_font, pca_loader);
     restored_font.save(outputDsc_);
 }
+#else
+int main(int argc, char* argv[])
+{
+    return 0;
+}
+#endif

@@ -22,8 +22,6 @@
 #include <set>
 #include <boost/range/algorithm/transform.hpp>
 #include <boost/functional/value_factory.hpp>
-#include <kgascii/surface_container.hpp>
-#include <kgascii/surface_algorithm.hpp>
 #include <kgascii/internal/ft2_font_loader.hpp>
 
 namespace KG { namespace Ascii {
@@ -134,23 +132,23 @@ public:
         assert(img_off_x + common_width <= glyphWidth());
         assert(img_off_y + common_height <= glyphHeight());
 
-        glyphData_.resize(glyphWidth(), glyphHeight());
-        const Surface8& glyph_surf = glyphData_.surface();
-        fillPixels(glyph_surf, 0);
-        copyPixels(loader_.glyph().window(bmp_off_x, bmp_off_y, common_width, common_height),
-                glyph_surf.window(img_off_x, img_off_y, common_width, common_height));
+        glyphData_.recreate(glyphWidth(), glyphHeight());
+        ViewT glyph_surf = view(glyphData_);
+        fill_pixels(glyph_surf, 0);
+        copy_pixels(subimage_view(loader_.glyph(), bmp_off_x, bmp_off_y, common_width, common_height),
+                subimage_view(glyph_surf, img_off_x, img_off_y, common_width, common_height));
 
         return true;
     }
 
-    Surface8c glyph() const
+    ConstViewT glyph() const
     {
-        return glyphData_.surface();
+        return const_view(glyphData_);
     }
 
 private:
     Internal::FT2FontLoader loader_;
-    SurfaceContainer8 glyphData_;
+    ImageT glyphData_;
 };
 
 } } // namespace KG::Ascii

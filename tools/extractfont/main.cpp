@@ -127,7 +127,7 @@ int ExtractFont::doExecute()
     loader.setHinting(hint_);
     loader.setRenderMode(mode_);
 
-    Font font;
+    Font<> font;
     if (!load(font, loader, Symbol(minChar_), Symbol(maxChar_))) {
         std::cout << "loading error\n";
         return -1;

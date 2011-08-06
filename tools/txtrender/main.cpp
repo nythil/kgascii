@@ -22,8 +22,8 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_io.hpp>
-#include <kgascii/surface_algorithm.hpp>
 #include <common/cmdline_tool.hpp>
+#include <common/cast_surface.hpp>
 
 using namespace KG::Ascii;
 
@@ -78,7 +78,7 @@ bool RenderText::processArgs()
 
 int RenderText::doExecute()
 {
-    Font font;
+    Font<> font;
     if (!font.load(fontFile_)) {
         std::cerr << "font loading error\n";
         return -1;
@@ -112,16 +112,16 @@ int RenderText::doExecute()
     std::cerr << "image_height = " << image_height << "\n";
 
     cv::Mat output_image(image_height, image_width, CV_8UC1);
-    Surface8 output_surface(image_width, image_height, output_image.data, output_image.step[0]);
+    boost::gil::gray8_view_t output_surface = castSurface<boost::gil::gray8_pixel_t>(output_image);
 
     for (size_t rr = 0; rr < input_lines.size(); ++rr) {
         std::string line = input_lines[rr];
         for (size_t cc = 0; cc < line_length; ++cc) {
-            Surface8c glyph_surface = font.getGlyph(Symbol(line[cc]));
+            boost::gil::gray8c_view_t glyph_surface = font.getGlyph(Symbol(line[cc]));
             unsigned colX = cc * font.glyphWidth();
             unsigned rowY = rr * font.glyphHeight();
-            copyPixels(glyph_surface, output_surface.window(colX, rowY,
-                    font.glyphWidth(), font.glyphHeight()));
+            copy_pixels(glyph_surface, subimage_view(
+                    output_surface, colX, rowY, font.glyphWidth(), font.glyphHeight()));
         }
     }
 

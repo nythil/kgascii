@@ -22,7 +22,6 @@
 #include <map>
 #include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
-#include <kgascii/surface.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/policy_based_glyph_matcher.hpp>
 #include <kgascii/dynamic_glyph_matcher.hpp>
@@ -32,38 +31,34 @@ namespace KG { namespace Ascii {
 class MeansDistance
 {
 public:
-    int operator()(const Surface8c& img1, const Surface8c& img2) const
+    int operator()(const boost::gil::gray8c_view_t& view1, const boost::gil::gray8c_view_t& view2) const
     {
-        assert(img1.dimensions() == img2.dimensions());
+        assert(view1.dimensions() == view2.dimensions());
+        size_t width = view1.width();
+        size_t height = view1.height();
         int sum1 = 0, sum2 = 0;
-        for (size_t y = 0; y < img1.height(); ++y) {
-            Surface8c::pointer img1_it = img1.row(y);
-            Surface8c::pointer img2_it = img2.row(y);
-            for (size_t x = 0; x < img1.width(); ++x, ++img1_it, ++img2_it) {
-                sum1 += *img1_it;
-                sum2 += *img2_it;
+        for (size_t y = 0; y < height; ++y) {
+            boost::gil::gray8c_view_t::x_iterator it1 = view1.row_begin(y);
+            boost::gil::gray8c_view_t::x_iterator it2 = view2.row_begin(y);
+            for (size_t x = 0; x < width; ++x) {
+                sum1 += get_color(*it1++, boost::gil::gray_color_t());
+                sum2 += get_color(*it2++, boost::gil::gray_color_t());
             }
         }
         return abs(sum1 - sum2);
     }
 };
 
-template<typename TPixel>
+template<typename TFontImage>
 class MeansDistanceGlyphMatcherContextFactory
 {
-};
-
-template<>
-class MeansDistanceGlyphMatcherContextFactory<PixelType8>
-{
 public:
-    typedef PolicyBasedGlyphMatcherContext<MeansDistance> GlyphMatcherContextT;
+    typedef PolicyBasedGlyphMatcherContext<TFontImage, MeansDistance> GlyphMatcherContextT;
 
-    DynamicGlyphMatcherContext<PixelType8>* operator()(const FontImage<PixelType8>* font, const std::map<std::string, std::string>& options)
+    DynamicGlyphMatcherContext<TFontImage>* operator()(const TFontImage* font, const std::map<std::string, std::string>&)
     {
-        (void)options;
         boost::scoped_ptr<GlyphMatcherContextT> impl_holder(new GlyphMatcherContextT(font));
-        return new DynamicGlyphMatcherContext<PixelType8>(impl_holder);
+        return new DynamicGlyphMatcherContext<TFontImage>(impl_holder);
     }
 };
 

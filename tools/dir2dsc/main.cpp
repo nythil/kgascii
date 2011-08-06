@@ -24,6 +24,8 @@
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_io.hpp>
 #include <common/cmdline_tool.hpp>
+#include <common/cast_surface.hpp>
+
 
 using namespace KG::Ascii;
 
@@ -128,9 +130,9 @@ public:
         return true;
     }
 
-    Surface8c glyph() const
+    boost::gil::gray8c_view_t glyph() const
     {
-        return glyphs_[loadedIndex_].surface();
+        return const_view(glyphs_[loadedIndex_]);
     }
 
 public:
@@ -167,11 +169,10 @@ public:
                     BOOST_THROW_EXCEPTION(std::runtime_error("rows != font_height"));
             }
 
-            Surface8c glyph_image_surface(font_width, font_height,
-                    gray_glyph_image.data, gray_glyph_image.step[0]);
+            boost::gil::gray8c_view_t glyph_image_surface = castSurface<const boost::gil::gray8_pixel_t>(gray_glyph_image);
 
-            SurfaceContainer8 glyph_container(font_width, font_height);
-            copyPixels(glyph_image_surface, glyph_container.surface());
+            boost::gil::gray8_image_t glyph_container(font_width, font_height);
+            copy_pixels(glyph_image_surface, view(glyph_container));
 
             glyphs_.push_back(glyph_container);
             charcodes_.push_back(Symbol(32 + img_cnt));
@@ -190,7 +191,7 @@ private:
     boost::filesystem::path imageDir_;
     unsigned glyphWidth_;
     unsigned glyphHeight_;
-    std::vector<SurfaceContainer8> glyphs_;
+    std::vector<boost::gil::gray8_image_t> glyphs_;
     std::vector<Symbol> charcodes_;
     size_t loadedIndex_;
 };
@@ -212,7 +213,7 @@ int GenerateFont::doExecute()
         return -1;
     }
 
-    Font font;
+    Font<> font;
     if (!load(font, loader)) {
         std::cout << "loading error\n";
         return -1;
@@ -222,4 +223,3 @@ int GenerateFont::doExecute()
 
     return 0;
 }
-

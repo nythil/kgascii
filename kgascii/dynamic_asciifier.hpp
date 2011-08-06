@@ -34,7 +34,7 @@ class DynamicAsciifier: boost::noncopyable
 public:
     typedef TGlyphMatcherContext GlyphMatcherContextT;
     typedef typename TGlyphMatcherContext::GlyphMatcherT GlyphMatcherT;
-    typedef typename TGlyphMatcherContext::ConstSurfaceT ConstSurfaceT;
+    typedef typename TGlyphMatcherContext::ConstViewT ConstViewT;
 
 public:
     explicit DynamicAsciifier(const GlyphMatcherContextT* ctx)
@@ -59,7 +59,7 @@ public:
     }
 
 public:
-    void generate(const ConstSurfaceT& imgv, TextSurface& text)
+    void generate(const ConstViewT& imgv, TextSurface& text)
     {
         strategy_->generate(imgv, text);
     }
@@ -112,7 +112,7 @@ private:
 
         virtual unsigned threadCount() const = 0;
 
-        virtual void generate(const ConstSurfaceT& imgv, TextSurface& text) = 0;
+        virtual void generate(const ConstViewT& imgv, TextSurface& text) = 0;
     };
 
     template<typename TAsciifier>
@@ -134,7 +134,7 @@ private:
             return impl_->threadCount();
         }
 
-        virtual void generate(const ConstSurfaceT& imgv, TextSurface& text)
+        virtual void generate(const ConstViewT& imgv, TextSurface& text)
         {
             impl_->generate(imgv, text);
         }

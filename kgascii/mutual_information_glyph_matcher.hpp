@@ -25,9 +25,6 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 #include <Eigen/Dense>
-#include <kgascii/surface.hpp>
-#include <kgascii/surface_container.hpp>
-#include <kgascii/surface_algorithm.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/dynamic_glyph_matcher.hpp>
 

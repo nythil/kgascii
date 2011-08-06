@@ -27,19 +27,19 @@
 
 namespace KG { namespace Ascii {
 
-template<typename TPixel>
+template<class TFontImage>
 class DynamicGlyphMatcherContext;
-template<typename TPixel>
+template<class TFontImage>
 class DynamicGlyphMatcher;
 
-template<typename TPixel>
+template<class TFontImage>
 class DynamicGlyphMatcherContext: boost::noncopyable
 {
 public:
-    typedef DynamicGlyphMatcher<TPixel> GlyphMatcherT;
-    typedef FontImage<TPixel> FontImageT;
-    typedef Surface<TPixel> SurfaceT;
-    typedef Surface<const TPixel> ConstSurfaceT;
+    typedef TFontImage FontImageT;
+    typedef DynamicGlyphMatcher<FontImageT> GlyphMatcherT;
+    typedef typename FontImageT::PixelT PixelT;
+    typedef typename FontImageT::ConstViewT ConstViewT;
 
 public:
     template<typename TGlyphMatcherContext>
@@ -141,13 +141,14 @@ private:
 };
 
 
-template<typename TPixel>
+template<class TFontImage>
 class DynamicGlyphMatcher: boost::noncopyable
 {
 public:
-    typedef DynamicGlyphMatcherContext<TPixel> GlyphMatcherContextT;
-    typedef Surface<TPixel> SurfaceT;
-    typedef Surface<const TPixel> ConstSurfaceT;
+    typedef TFontImage FontImageT;
+    typedef DynamicGlyphMatcherContext<FontImageT> GlyphMatcherContextT;
+    typedef typename FontImageT::PixelT PixelT;
+    typedef typename FontImageT::ConstViewT ConstViewT;
 
 public:
     template<typename TGlyphMatcher>
@@ -170,7 +171,7 @@ public:
         return context_;
     }
 
-    Symbol match(const ConstSurfaceT& imgv)
+    Symbol match(const ConstViewT& imgv)
     {
         return strategy_->match(imgv);
     }
@@ -197,7 +198,7 @@ private:
         {
         }
 
-        virtual Symbol match(const ConstSurfaceT& imgv) = 0;
+        virtual Symbol match(const ConstViewT& imgv) = 0;
     };
 
     template<typename TGlyphMatcher>
@@ -209,7 +210,7 @@ private:
             impl_.swap(impl);
         }
 
-        virtual Symbol match(const ConstSurfaceT& imgv)
+        virtual Symbol match(const ConstViewT& imgv)
         {
             return impl_->match(imgv);
         }
@@ -223,13 +224,13 @@ private:
     boost::scoped_ptr<StrategyBase> strategy_;
 };
 
-template<typename TPixel>
-template<typename TGlyphMatcherContext>
-inline DynamicGlyphMatcher<TPixel>* DynamicGlyphMatcherContext<TPixel>::Strategy<TGlyphMatcherContext>::createMatcher(const DynamicGlyphMatcherContext* ctx) const
+template<class TFontImage>
+template<class TGlyphMatcherContext>
+inline DynamicGlyphMatcher<TFontImage>* DynamicGlyphMatcherContext<TFontImage>::Strategy<TGlyphMatcherContext>::createMatcher(const DynamicGlyphMatcherContext* ctx) const
 {
     typedef typename TGlyphMatcherContext::GlyphMatcherT RealGlyphMatcherT;
     boost::scoped_ptr<RealGlyphMatcherT> matcher_holder(impl_->createMatcher());
-    return new DynamicGlyphMatcher<TPixel>(ctx, matcher_holder);
+    return new DynamicGlyphMatcher<TFontImage>(ctx, matcher_holder);
 }
 
 

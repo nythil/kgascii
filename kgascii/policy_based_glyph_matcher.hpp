@@ -19,33 +19,32 @@
 #define KGASCII_POLICYBASEDGLYPHMATCHER_HPP
 
 #include <limits>
-#include <kgascii/font_image.hpp>
-#include <kgascii/surface_container.hpp>
-#include <kgascii/surface_algorithm.hpp>
+#include <boost/gil/gil_all.hpp>
+#include <kgascii/symbol.hpp>
 
 namespace KG { namespace Ascii {
 
-template<typename TDistance>
+template<typename TFontImage, typename TDistance>
 class PolicyBasedGlyphMatcherContext;
-template<typename TDistance>
+template<typename TFontImage, typename TDistance>
 class PolicyBasedGlyphMatcher;
 
-template<typename TDistance>
+template<typename TFontImage, typename TDistance>
 class PolicyBasedGlyphMatcher: boost::noncopyable
 {
 public:
-    typedef PolicyBasedGlyphMatcherContext<TDistance> GlyphMatcherContextT;
-    typedef FontImage<PixelType8> FontImageT;
-    typedef Surface8 SurfaceT;
-    typedef Surface8c ConstSurfaceT;
-    typedef SurfaceContainer8 SurfaceContainerT;
+    typedef PolicyBasedGlyphMatcherContext<TFontImage, TDistance> GlyphMatcherContextT;
+    typedef TFontImage FontImageT;
+    typedef typename FontImageT::PixelT PixelT;
+    typedef typename FontImageT::ImageT ImageT;
+    typedef typename FontImageT::ViewT ViewT;
+    typedef typename FontImageT::ConstViewT ConstViewT;
 
 public:
     explicit PolicyBasedGlyphMatcher(const GlyphMatcherContextT* c)
         :context_(c)
-        ,container_(context_->cellWidth(), context_->cellHeight())
-        ,surface_(container_.surface())
     {
+        image_.recreate(context_->cellWidth(), context_->cellHeight());
     }
 
 public:
@@ -54,25 +53,25 @@ public:
         return context_;
     }
 
-    Symbol match(const ConstSurfaceT& imgv);
+    template<typename TSomeConstView>
+    Symbol match(const TSomeConstView& imgv);
 
 private:
     const GlyphMatcherContextT* context_;
-    SurfaceContainerT container_;
-    SurfaceT surface_;
+    ImageT image_;
 };
 
 
-template<typename TDistance>
+template<typename TFontImage, typename TDistance>
 class PolicyBasedGlyphMatcherContext: boost::noncopyable
 {
-    friend class PolicyBasedGlyphMatcher<TDistance>;
 public:
-    typedef PolicyBasedGlyphMatcher<TDistance> GlyphMatcherT;
-    typedef FontImage<PixelType8> FontImageT;
-    typedef Surface8 SurfaceT;
-    typedef Surface8c ConstSurfaceT;
-    typedef SurfaceContainer8 SurfaceContainerT;
+    typedef PolicyBasedGlyphMatcher<TFontImage, TDistance> GlyphMatcherT;
+    typedef TFontImage FontImageT;
+    typedef typename FontImageT::PixelT PixelT;
+    typedef typename FontImageT::ImageT ImageT;
+    typedef typename FontImageT::ViewT ViewT;
+    typedef typename FontImageT::ConstViewT ConstViewT;
 
 public:
     explicit PolicyBasedGlyphMatcherContext(const FontImageT* f,
@@ -102,24 +101,34 @@ public:
         return new GlyphMatcherT(this);
     }
 
+    int calculateDistance(const ConstViewT& view1, const ConstViewT& view2) const
+    {
+        return distance_(view1, view2);
+    }
+
 private:
     const FontImageT* font_;
     TDistance distance_;
 };
 
-template<typename TDistance>
-Symbol PolicyBasedGlyphMatcher<TDistance>::match(const ConstSurfaceT& imgv)
-{
-    assert(imgv.width() <= surface_.width());
-    assert(imgv.height() <= surface_.height());
+template<typename TConstView>
+Symbol match(const TConstView& imgv);
 
-    fillPixels(surface_, 0);
-    copyPixels(imgv, surface_.window(0, 0, imgv.width(), imgv.height()));
+template<typename TFontImage, typename TDistance>
+template<typename TSomeConstView>
+Symbol PolicyBasedGlyphMatcher<TFontImage, TDistance>::match(const TSomeConstView& imgv)
+{
+    assert(imgv.width() <= image_.width());
+    assert(imgv.height() <= image_.height());
+
+    ViewT image_view = view(image_);
+    fill_pixels(image_view, PixelT());
+    copy_pixels(imgv, subimage_view(image_view, 0, 0, imgv.width(), imgv.height()));
 
     int d2_min = std::numeric_limits<int>::max();
     Symbol cc_min;
     for (size_t ci = 0; ci < context_->font()->glyphCount(); ++ci) {
-        int d2 = context_->distance_(surface_, context_->font()->getGlyph(ci));
+        int d2 = context_->calculateDistance(image_view, context_->font()->getGlyph(ci));
         if (d2 < d2_min) {
             d2_min = d2;
             cc_min = context_->font()->getSymbol(ci);

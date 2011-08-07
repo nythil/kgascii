@@ -22,10 +22,17 @@
 #include <boost/serialization/nvp.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
+#include <boost/gil/gil_all.hpp>
 #include <Eigen/Dense>
 
 
 namespace KG { namespace Ascii {
+
+template<typename TPixel>
+struct float_channel_type
+{
+    typedef boost::gil::bits32f type;
+};
 
 template<class TFontImage>
 class FontPCA;
@@ -138,7 +145,8 @@ public:
                 typename boost::gil::color_space_type<ConstViewT>::type,
                 typename boost::gil::channel_mapping_type<ConstViewT>::type
                 > LayoutT;
-        typedef typename boost::gil::pixel_value_type<boost::gil::bits32f, LayoutT>::type FloatPixelT;
+        typedef typename float_channel_type<typename boost::gil::channel_type<ConstViewT>::type>::type FloatChannelT;
+        typedef typename boost::gil::pixel_value_type<FloatChannelT, LayoutT>::type FloatPixelT;
         typedef typename boost::gil::type_from_x_iterator<FloatPixelT*>::view_t FloatViewT;
 
         Eigen::VectorXf tmp_glyph_data(glyph_size * boost::gil::num_channels<FloatPixelT>::value);

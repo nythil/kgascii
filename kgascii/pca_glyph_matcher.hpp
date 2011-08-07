@@ -108,6 +108,14 @@ public:
     template<typename TSomeView>
     Symbol match(const TSomeView& imgv)
     {
+        boost::gil::gil_function_requires<boost::gil::ImageViewConcept<TSomeView> >();
+        boost::gil::gil_function_requires<boost::gil::ColorSpacesCompatibleConcept<
+                                    typename boost::gil::color_space_type<TSomeView>::type,
+                                    typename boost::gil::color_space_type<ConstViewT>::type> >();
+        boost::gil::gil_function_requires<boost::gil::ChannelsCompatibleConcept<
+                                    typename boost::gil::channel_type<TSomeView>::type,
+                                    typename boost::gil::channel_type<ConstViewT>::type> >();
+
         assert(static_cast<size_t>(imgv.width()) <= context_->cellWidth());
         assert(static_cast<size_t>(imgv.height()) <= context_->cellHeight());
 
@@ -115,7 +123,8 @@ public:
                 typename boost::gil::color_space_type<ConstViewT>::type,
                 typename boost::gil::channel_mapping_type<TSomeView>::type
                 > LayoutT;
-        typedef typename boost::gil::pixel_value_type<boost::gil::bits32f, LayoutT>::type FloatPixelT;
+        typedef typename float_channel_type<typename boost::gil::channel_type<ConstViewT>::type>::type FloatChannelT;
+        typedef typename boost::gil::pixel_value_type<FloatChannelT, LayoutT>::type FloatPixelT;
         typedef typename boost::gil::type_from_x_iterator<FloatPixelT*>::view_t FloatViewT;
 
         FloatViewT tmp_glyph_view = boost::gil::interleaved_view(

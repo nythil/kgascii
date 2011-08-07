@@ -79,7 +79,7 @@ SRGB_DEFINE_BASE_TYPEDEFS(16,  gray)
 SRGB_DEFINE_BASE_TYPEDEFS(16s, gray)
 SRGB_DEFINE_BASE_TYPEDEFS(32 , gray)
 SRGB_DEFINE_BASE_TYPEDEFS(32s, gray)
-//SRGB_DEFINE_BASE_TYPEDEFS(32f, gray)
+SRGB_DEFINE_BASE_TYPEDEFS(32f, gray)
 
 template<typename BaseChannel>
 struct channel_converter_unsigned<srgb_channel_value<BaseChannel>, bits32f>
@@ -87,9 +87,9 @@ struct channel_converter_unsigned<srgb_channel_value<BaseChannel>, bits32f>
 {
     bits32f operator()(srgb_channel_value<BaseChannel> x) const
     {
-        bits32f fx = channel_convert<bits32f, BaseChannel>(x);
-        bits32f fy;
-        if (fx < 0.0031308f) {
+        float fx = channel_convert<bits32f, BaseChannel>(x);
+        float fy;
+        if (fx <= 0.00304f) {
             fy = 12.92f * fx;
         } else {
             fy = 1.055f * ::powf(fx, 1.0f / 2.4f) - 0.055f;
@@ -102,10 +102,11 @@ template <typename BaseChannel>
 struct channel_converter_unsigned<bits32f, srgb_channel_value<BaseChannel> >
     : public std::unary_function<bits32f, srgb_channel_value<BaseChannel> >
 {
-    srgb_channel_value<BaseChannel> operator()(bits32f fx) const
+    srgb_channel_value<BaseChannel> operator()(bits32f x) const
     {
-        bits32f fy;
-        if (fx < 0.04045f) {
+        float fx = x;
+        float fy;
+        if (fx <= 0.03928f) {
             fy = fx / 12.92f;
         } else {
             fy = ::powf((fx + 0.055f) / 1.055f, 2.4f);
@@ -131,6 +132,16 @@ struct channel_converter_unsigned<SrcChannelV, srgb_channel_value<BaseChannel> >
     srgb_channel_value<BaseChannel> operator()(SrcChannelV x) const
     {
         return channel_convert<srgb_channel_value<BaseChannel>, bits32f>(channel_convert<bits32f, SrcChannelV>(x));
+    }
+};
+
+template<typename SrcBaseChannel, typename DstBaseChannel>
+struct channel_converter_unsigned<srgb_channel_value<SrcBaseChannel>, srgb_channel_value<DstBaseChannel> >
+    : public std::unary_function<srgb_channel_value<SrcBaseChannel>, srgb_channel_value<DstBaseChannel> >
+{
+    srgb_channel_value<DstBaseChannel> operator()(srgb_channel_value<SrcBaseChannel> x) const
+    {
+        return channel_convert<DstBaseChannel, SrcBaseChannel>(x);
     }
 };
 
@@ -170,5 +181,14 @@ struct is_integral<gil::srgb_channel_value<BaseChannelValue> > : public is_integ
 
 } // namespace boost
 
+namespace KG { namespace Ascii {
+
+template<typename BaseChannelValue>
+struct float_channel_type<boost::gil::srgb_channel_value<BaseChannelValue> >
+{
+    typedef boost::gil::srgb32f type;
+};
+
+} } // namespace KG::Ascii
 
 #endif // KGASCII_SRGB_HPP

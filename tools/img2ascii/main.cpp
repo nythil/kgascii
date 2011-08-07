@@ -35,8 +35,8 @@
 
 using namespace KG::Ascii;
 
-//typedef boost::gil::graysrgb16_image_t ImageT;
-typedef boost::gil::gray16_image_t ImageT;
+typedef boost::gil::graysrgb16_image_t ImageT;
+//typedef boost::gil::gray16_image_t ImageT;
 //typedef boost::gil::gray8_image_t ImageT;
 
 typedef FontImage< Font<>, ImageT > FontImageT;

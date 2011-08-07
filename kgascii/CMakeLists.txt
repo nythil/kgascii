@@ -25,12 +25,8 @@ SET(kgascii_SRCS
     pca_reconstruction_font_loader.hpp
     policy_based_glyph_matcher.hpp
     sequential_asciifier.hpp
+    srgb.hpp
     squared_euclidean_distance.hpp
-    surface.hpp
-    surface_algorithm.hpp
-    surface_container.hpp
-    surface_fwd.hpp
-    surface_pixel.hpp
     symbol.hpp
     task_queue.hpp
     text_surface.hpp

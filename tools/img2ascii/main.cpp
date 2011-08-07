@@ -35,14 +35,6 @@
 
 using namespace KG::Ascii;
 
-typedef boost::gil::graysrgb16_image_t ImageT;
-//typedef boost::gil::gray16_image_t ImageT;
-//typedef boost::gil::gray8_image_t ImageT;
-
-typedef FontImage< Font<>, ImageT > FontImageT;
-typedef DynamicGlyphMatcherContext<FontImageT> DynamicGlyphMatcherContextT;
-typedef DynamicAsciifier<DynamicGlyphMatcherContextT> DynamicAsciifierT;
-
 
 class ImageToAscii: public CmdlineTool
 {
@@ -60,9 +52,9 @@ private:
     std::string fontFile_;
     unsigned maxCols_;
     unsigned maxRows_;
-    unsigned nfeatures_;
     std::string algorithm_;
     unsigned threadCount_;
+    bool gamma_;
 };
 
 int main(int argc, char* argv[])
@@ -78,12 +70,12 @@ ImageToAscii::ImageToAscii()
     desc_.add_options()
         ("input-file,i", value(&inputFile_), "input image file")
         ("font-file,f", value(&fontFile_), "font file")
-        ("cols", value(&maxCols_)->default_value(79), "suggested number of text columns")
-        ("rows", value(&maxRows_)->default_value(49), "suggested number of text rows")
-        ("nfeatures", value(&nfeatures_)->default_value(15), "number of pca features to extract")
+        ("cols,c", value(&maxCols_)->default_value(79), "suggested number of text columns")
+        ("rows,r", value(&maxRows_)->default_value(49), "suggested number of text rows")
         ("output-file,o", value(&outputFile_), "output text file")
         ("algorithm,a", value(&algorithm_)->default_value("pca"), "glyph matching algorithm")
         ("threads", value(&threadCount_)->default_value(0), "worker thread count")
+        ("gamma", value<bool>()->zero_tokens(), "use gamma correction")
     ;
     posDesc_.add("input-file", 1);
 }
@@ -99,9 +91,46 @@ bool ImageToAscii::processArgs()
         outputFile_ = input_path.stem().string() + ".txt";
     }
 
+    gamma_ = vm_.count("gamma") > 0;
+
     return true;
 }
 
+template<class ImageT>
+class ConverterImpl
+{
+    typedef Font<> FontT;
+    typedef FontImage< FontT, ImageT > FontImageT;
+    typedef DynamicGlyphMatcherContext<FontImageT> DynamicGlyphMatcherContextT;
+    typedef DynamicAsciifier<DynamicGlyphMatcherContextT> DynamicAsciifierT;
+
+public:
+    explicit ConverterImpl(const FontT* font, const std::string& algo, size_t threads)
+    {
+        registerGlyphMatcherFactories<FontImageT>();
+        fontImage_ = new FontImageT(font);
+        context_ = GlyphMatcherContextFactory::create(fontImage_, algo);
+        asciifier_ = new DynamicAsciifierT(context_);
+        if (threads == 1) {
+            asciifier_->setSequential();
+        } else {
+            asciifier_->setParallel(threads);
+        }
+    }
+
+    template<class TView>
+    void generate(const TView& view, TextSurface& text)
+    {
+        ImageT temp_image(view.width(), view.height());
+        boost::gil::copy_and_convert_pixels(view, boost::gil::view(temp_image));
+        asciifier_->generate(boost::gil::const_view(temp_image), text);
+    }
+
+private:
+    FontImageT* fontImage_;
+    DynamicGlyphMatcherContextT* context_;
+    DynamicAsciifierT* asciifier_;
+};
 
 int ImageToAscii::doExecute()
 {
@@ -109,7 +138,6 @@ int ImageToAscii::doExecute()
     Font<> font;
     if (!font.load(fontFile_))
         return -1;
-    FontImageT font_image(&font);
     unsigned char_width = font.glyphWidth();
     unsigned char_height = font.glyphHeight();
 
@@ -134,18 +162,6 @@ int ImageToAscii::doExecute()
 
     unsigned col_count = (out_width + char_width - 1) / char_width;
     unsigned row_count = (out_height + char_height - 1) / char_height;
-
-    std::cerr << "creating glyph matcher...\n";
-    TextSurface text(row_count, col_count);
-    registerGlyphMatcherFactories<FontImageT>();
-    DynamicGlyphMatcherContextT* matcher_ctx = GlyphMatcherContextFactory::create(&font_image, algorithm_);
-    assert(matcher_ctx);
-    DynamicAsciifierT asciifier(matcher_ctx);
-    if (threadCount_ == 1) {
-        asciifier.setSequential();
-    } else {
-        asciifier.setParallel(threadCount_);
-    }
 
     std::cout << "image width " << frame_width << "\n";
     std::cout << "image height " << frame_height << "\n";
@@ -172,15 +188,14 @@ int ImageToAscii::doExecute()
     assert(static_cast<unsigned>(gray_frame.rows) == out_height);
     assert(gray_frame.type() == CV_8UC1);
 
-    ImageT gray_image(out_width, out_height);
-    boost::gil::copy_and_convert_pixels(
-            castSurface<const boost::gil::gray8_pixel_t>(gray_frame),
-            boost::gil::view(gray_image)
-            );
-
-    std::cerr << "converting...\n";
-    text.clear();
-    asciifier.generate(boost::gil::view(gray_image), text);
+    TextSurface text(row_count, col_count);
+    if (gamma_) {
+        ConverterImpl<boost::gil::graysrgb16_image_t> converter(&font, algorithm_, threadCount_);
+        converter.generate(castSurface<const boost::gil::gray8_pixel_t>(gray_frame), text);
+    } else {
+        ConverterImpl<boost::gil::gray8_image_t> converter(&font, algorithm_, threadCount_);
+        converter.generate(castSurface<const boost::gil::gray8_pixel_t>(gray_frame), text);
+    }
 
     std::ofstream fout(outputFile_.c_str());
     for (size_t r = 0; r < text.rows(); ++r) {

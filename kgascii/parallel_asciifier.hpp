@@ -29,17 +29,17 @@
 
 namespace KG { namespace Ascii {
 
-template<class TGlyphMatcherContext, class TView=typename TGlyphMatcherContext::ViewT>
+template<class TGlyphMatcher, class TView=typename TGlyphMatcher::ViewT>
 class ParallelAsciifier: boost::noncopyable
 {
 public:
-    typedef TGlyphMatcherContext GlyphMatcherContextT;
+    typedef TGlyphMatcher GlyphMatcherT;
     typedef TView ViewT;
-    typedef typename TGlyphMatcherContext::GlyphMatcherT GlyphMatcherT;
+    typedef typename TGlyphMatcher::ContextT ContextT;
 
 public:
-    ParallelAsciifier(const GlyphMatcherContextT* c, unsigned thr_cnt)
-        :context_(c)
+    ParallelAsciifier(const GlyphMatcherT* c, unsigned thr_cnt)
+        :matcher_(c)
     {
         setupThreads(thr_cnt);
     }
@@ -50,9 +50,9 @@ public:
     }
     
 public:
-    const GlyphMatcherContextT* context() const
+    const GlyphMatcherT* matcher() const
     {
-        return context_;
+        return matcher_;
     }
 
     unsigned threadCount() const
@@ -64,8 +64,8 @@ public:
     void generate(const ViewT& imgv, TextSurface& text)
     {
         //single character size
-        size_t char_w = context_->cellWidth();
-        size_t char_h = context_->cellHeight();
+        size_t char_w = matcher_->cellWidth();
+        size_t char_h = matcher_->cellHeight();
         //text surface size
         size_t text_w = text.cols() * char_w;
         size_t text_h = text.rows() * char_h;
@@ -110,9 +110,9 @@ private:
 private:
     void threadFunc()
     {
-        boost::scoped_ptr<GlyphMatcherT> matcher(context_->createMatcher());
+        boost::scoped_ptr<ContextT> context(matcher_->createContext());
         //single character size
-        size_t char_w = context_->cellWidth();
+        size_t char_w = matcher_->cellWidth();
 
         WorkItem wi = WorkItem();
         while (queue_.wait_pop(wi)) {
@@ -121,18 +121,18 @@ private:
             size_t roi_h = wi.imgv.height();
             size_t x = 0, c = 0;
             for (; x + char_w <= roi_w; x += char_w, ++c) {
-                wi.outp[c] = matcher->match(subimage_view(wi.imgv, x, 0, char_w, roi_h));
+                wi.outp[c] = context->match(subimage_view(wi.imgv, x, 0, char_w, roi_h));
             }
             if (x < roi_w) {
                 size_t dx = roi_w - x;
-                wi.outp[c] = matcher->match(subimage_view(wi.imgv, x, 0, dx, roi_h));
+                wi.outp[c] = context->match(subimage_view(wi.imgv, x, 0, dx, roi_h));
             }
             queue_.done();
         }
     }
 
 private:
-    const GlyphMatcherContextT* context_;
+    const GlyphMatcherT* matcher_;
     boost::thread_group group_;
     struct WorkItem
     {

@@ -50,15 +50,15 @@ public:
 };
 
 template<class TFontImage>
-class MeansDistanceGlyphMatcherContextFactory
+class MeansDistanceGlyphMatcherFactory
 {
 public:
-    typedef PolicyBasedGlyphMatcherContext<TFontImage, MeansDistance> GlyphMatcherContextT;
+    typedef PolicyBasedGlyphMatcher<TFontImage, MeansDistance> GlyphMatcherT;
 
-    DynamicGlyphMatcherContext<TFontImage>* operator()(const TFontImage* font, const std::map<std::string, std::string>&)
+    DynamicGlyphMatcher<TFontImage>* operator()(const TFontImage* font, const std::map<std::string, std::string>&)
     {
-        boost::scoped_ptr<GlyphMatcherContextT> impl_holder(new GlyphMatcherContextT(font));
-        return new DynamicGlyphMatcherContext<TFontImage>(impl_holder);
+        boost::scoped_ptr<GlyphMatcherT> impl_holder(new GlyphMatcherT(font));
+        return new DynamicGlyphMatcher<TFontImage>(impl_holder);
     }
 };
 

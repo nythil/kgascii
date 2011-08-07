@@ -28,29 +28,29 @@
 
 namespace KG { namespace Ascii {
 
-template<class TGlyphMatcherContext, class TView=typename TGlyphMatcherContext::ViewT>
+template<class TGlyphMatcher, class TView=typename TGlyphMatcher::ViewT>
 class DynamicAsciifier: boost::noncopyable
 {
 public:
-    typedef TGlyphMatcherContext GlyphMatcherContextT;
+    typedef TGlyphMatcher GlyphMatcherT;
     typedef TView ViewT;
-    typedef typename TGlyphMatcherContext::GlyphMatcherT GlyphMatcherT;
+    typedef typename TGlyphMatcher::ContextT ContextT;
 
 public:
-    explicit DynamicAsciifier(const GlyphMatcherContextT* ctx)
+    explicit DynamicAsciifier(const GlyphMatcherT* ctx)
     {
         setSequential(ctx);
     }
 
-    explicit DynamicAsciifier(const GlyphMatcherContextT* ctx, unsigned thr_cnt)
+    explicit DynamicAsciifier(const GlyphMatcherT* ctx, unsigned thr_cnt)
     {
         setParallel(ctx, thr_cnt);
     }
 
 public:
-    const GlyphMatcherContextT* context() const
+    const GlyphMatcherT* matcher() const
     {
-        return strategy_->context();
+        return strategy_->matcher();
     }
 
     unsigned threadCount() const
@@ -66,23 +66,23 @@ public:
 
     void setSequential()
     {
-        setSequential(context());
+        setSequential(matcher());
     }
 
-    void setSequential(const GlyphMatcherContextT* ctx)
+    void setSequential(const GlyphMatcherT* ctx)
     {
-        typedef SequentialAsciifier<TGlyphMatcherContext> SequentialAsciifierT;
+        typedef SequentialAsciifier<GlyphMatcherT> SequentialAsciifierT;
         setStrategy(new SequentialAsciifierT(ctx));
     }
 
     void setParallel(unsigned thr_cnt)
     {
-        setParallel(context(), thr_cnt);
+        setParallel(matcher(), thr_cnt);
     }
 
-    void setParallel(const GlyphMatcherContextT* ctx, unsigned thr_cnt)
+    void setParallel(const GlyphMatcherT* ctx, unsigned thr_cnt)
     {
-        typedef ParallelAsciifier<TGlyphMatcherContext> ParallelAsciifierT;
+        typedef ParallelAsciifier<GlyphMatcherT, ViewT> ParallelAsciifierT;
         setStrategy(new ParallelAsciifierT(ctx, thr_cnt));
     }
 
@@ -108,7 +108,7 @@ private:
         {
         }
 
-        virtual const GlyphMatcherContextT* context() const = 0;
+        virtual const GlyphMatcherT* matcher() const = 0;
 
         virtual unsigned threadCount() const = 0;
 
@@ -124,9 +124,9 @@ private:
             impl_.swap(impl);
         }
 
-        virtual const GlyphMatcherContextT* context() const
+        virtual const GlyphMatcherT* matcher() const
         {
-            return impl_->context();
+            return impl_->matcher();
         }
 
         virtual unsigned threadCount() const

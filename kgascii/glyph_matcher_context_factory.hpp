@@ -37,17 +37,17 @@ namespace KG { namespace Ascii {
 template<class TFontImage>
 inline void registerGlyphMatcherFactories()
 {
-    static Internal::GlyphMatcherRegistration<TFontImage, SquaredEuclideanDistanceGlyphMatcherContextFactory> reg_sed("sed");
-    static Internal::GlyphMatcherRegistration<TFontImage, MeansDistanceGlyphMatcherContextFactory> reg_md("md");
-    static Internal::GlyphMatcherRegistration<TFontImage, MutualInformationGlyphMatcherContextFactory> reg_mi("mi");
-    static Internal::GlyphMatcherRegistration<TFontImage, PcaGlyphMatcherContextFactory> reg_pca("pca");
+    static Internal::GlyphMatcherRegistration<TFontImage, SquaredEuclideanDistanceGlyphMatcherFactory> reg_sed("sed");
+    static Internal::GlyphMatcherRegistration<TFontImage, MeansDistanceGlyphMatcherFactory> reg_md("md");
+    static Internal::GlyphMatcherRegistration<TFontImage, MutualInformationGlyphMatcherFactory> reg_mi("mi");
+    static Internal::GlyphMatcherRegistration<TFontImage, PcaGlyphMatcherFactory> reg_pca("pca");
 }
 
-class GlyphMatcherContextFactory
+class GlyphMatcherFactory
 {
 public:
     template<class TFontImage>
-    static DynamicGlyphMatcherContext<TFontImage>* create(const TFontImage* font, const std::string& options)
+    static DynamicGlyphMatcher<TFontImage>* create(const TFontImage* font, const std::string& options)
     {
         std::string algo_name = "pca";
         std::map<std::string, std::string> options_map;

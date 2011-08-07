@@ -32,7 +32,7 @@ class GlyphMatcherRegistry
 {
 public:
     typedef boost::function<
-            DynamicGlyphMatcherContext<TFontImage>* (const TFontImage*, const std::map<std::string, std::string>&)
+            DynamicGlyphMatcher<TFontImage>* (const TFontImage*, const std::map<std::string, std::string>&)
             > CreatorFuncT;
 
     class Entry: public boost::intrusive::list_base_hook<>

@@ -25,7 +25,7 @@
 namespace KG { namespace Ascii {
 
 template<class TFontImage, class TDistance>
-class PolicyBasedGlyphMatcherContext: boost::noncopyable
+class PolicyBasedGlyphMatcher: boost::noncopyable
 {
 public:
     typedef TFontImage FontImageT;
@@ -33,21 +33,21 @@ public:
     typedef typename FontImageT::ViewT ViewT;
     typedef typename FontImageT::ConstViewT ConstViewT;
 
-    class PolicyBasedGlyphMatcher: boost::noncopyable
+    class PolicyBasedContext: boost::noncopyable
     {
-        friend class PolicyBasedGlyphMatcherContext;
+        friend class PolicyBasedGlyphMatcher;
     public:
-        typedef PolicyBasedGlyphMatcherContext GlyphMatcherContextT;
-        typedef typename GlyphMatcherContextT::FontImageT FontImageT;
+        typedef PolicyBasedGlyphMatcher GlyphMatcherT;
+        typedef typename GlyphMatcherT::FontImageT FontImageT;
         typedef typename FontImageT::PixelT PixelT;
         typedef typename FontImageT::ImageT ImageT;
         typedef typename FontImageT::ViewT ViewT;
         typedef typename FontImageT::ConstViewT ConstViewT;
 
     public:
-        const PolicyBasedGlyphMatcherContext* context() const
+        const PolicyBasedGlyphMatcher* matcher() const
         {
-            return context_;
+            return matcher_;
         }
 
         template<class TSomeView>
@@ -62,31 +62,31 @@ public:
 
             int d2_min = std::numeric_limits<int>::max();
             Symbol cc_min;
-            for (size_t ci = 0; ci < context_->font()->glyphCount(); ++ci) {
-                int d2 = context_->calculateDistance(image_view, context_->font()->getGlyph(ci));
+            for (size_t ci = 0; ci < matcher_->font()->glyphCount(); ++ci) {
+                int d2 = matcher_->calculateDistance(image_view, matcher_->font()->getGlyph(ci));
                 if (d2 < d2_min) {
                     d2_min = d2;
-                    cc_min = context_->font()->getSymbol(ci);
+                    cc_min = matcher_->font()->getSymbol(ci);
                 }
             }
             return cc_min;
         }
 
     private:
-        explicit PolicyBasedGlyphMatcher(const PolicyBasedGlyphMatcherContext* c)
-            :context_(c)
+        explicit PolicyBasedContext(const PolicyBasedGlyphMatcher* c)
+            :matcher_(c)
         {
-            image_.recreate(context_->cellWidth(), context_->cellHeight());
+            image_.recreate(matcher_->cellWidth(), matcher_->cellHeight());
         }
 
     private:
-        const PolicyBasedGlyphMatcherContext* context_;
+        const PolicyBasedGlyphMatcher* matcher_;
         ImageT image_;
     };
-    typedef PolicyBasedGlyphMatcher GlyphMatcherT;
+    typedef PolicyBasedContext ContextT;
 
 public:
-    explicit PolicyBasedGlyphMatcherContext(const FontImageT* f,
+    explicit PolicyBasedGlyphMatcher(const FontImageT* f,
             const TDistance& dist=TDistance())
         :font_(f)
         ,distance_(dist)
@@ -108,9 +108,9 @@ public:
         return font_->glyphHeight();
     }
 
-    PolicyBasedGlyphMatcher* createMatcher() const
+    PolicyBasedContext* createContext() const
     {
-        return new PolicyBasedGlyphMatcher(this);
+        return new PolicyBasedContext(this);
     }
 
     int calculateDistance(const ConstViewT& view1, const ConstViewT& view2) const

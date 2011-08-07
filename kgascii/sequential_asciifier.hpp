@@ -24,24 +24,24 @@
 
 namespace KG { namespace Ascii {
 
-template<class TGlyphMatcherContext>
+template<class TGlyphMatcher>
 class SequentialAsciifier: boost::noncopyable
 {
 public:
-    typedef TGlyphMatcherContext GlyphMatcherContextT;
-    typedef typename TGlyphMatcherContext::GlyphMatcherT GlyphMatcherT;
+    typedef TGlyphMatcher GlyphMatcherT;
+    typedef typename TGlyphMatcher::ContextT ContextT;
 
 public:
-    SequentialAsciifier(const GlyphMatcherContextT* c)
-        :context_(c)
-        ,matcher_(context_->createMatcher())
+    SequentialAsciifier(const GlyphMatcherT* c)
+        :matcher_(c)
+        ,context_(matcher_->createContext())
     {
     }
 
 public:
-    const GlyphMatcherContextT* context() const
+    const GlyphMatcherT* matcher() const
     {
-        return context_;
+        return matcher_;
     }
 
     unsigned threadCount() const
@@ -54,8 +54,8 @@ public:
     void generate(const TView& imgv, TextSurface& text)
     {
         //single character size
-        size_t char_w = context_->cellWidth();
-        size_t char_h = context_->cellHeight();
+        size_t char_w = matcher_->cellWidth();
+        size_t char_h = matcher_->cellHeight();
         //text surface size
         size_t text_w = text.cols() * char_w;
         size_t text_h = text.rows() * char_h;
@@ -67,29 +67,29 @@ public:
         for (; y + char_h <= roi_h; y += char_h, ++r) {
             size_t x = 0, c = 0;
             for (; x + char_w <= roi_w; x += char_w, ++c) {
-                text(r, c) = matcher_->match(subimage_view(imgv, x, y, char_w, char_h));
+                text(r, c) = context_->match(subimage_view(imgv, x, y, char_w, char_h));
             }
             if (x < roi_w) {
                 size_t dx = roi_w - x;
-                text(r, c) = matcher_->match(subimage_view(imgv, x, y, dx, char_h));
+                text(r, c) = context_->match(subimage_view(imgv, x, y, dx, char_h));
             }
         }
         if (y < roi_h) {
             size_t dy = roi_h - y;
             size_t x = 0, c = 0;
             for (; x + char_w <= roi_w; x += char_w, ++c) {
-                text(r, c) = matcher_->match(subimage_view(imgv, x, y, char_w, dy));
+                text(r, c) = context_->match(subimage_view(imgv, x, y, char_w, dy));
             }
             if (x < roi_w) {
                 size_t dx = roi_w - x;
-                text(r, c) = matcher_->match(subimage_view(imgv, x, y, dx, dy));
+                text(r, c) = context_->match(subimage_view(imgv, x, y, dx, dy));
             }
         }
     }
 
 private:
-    const GlyphMatcherContextT* context_;
-    boost::scoped_ptr<GlyphMatcherT> matcher_;
+    const GlyphMatcherT* matcher_;
+    boost::scoped_ptr<ContextT> context_;
 };
 
 } } // namespace KG::Ascii

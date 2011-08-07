@@ -36,8 +36,8 @@
 using namespace KG::Ascii;
 
 typedef FontImage< Font<> > FontImageT;
-typedef DynamicGlyphMatcherContext<FontImageT> DynamicGlyphMatcherContextT;
-typedef DynamicAsciifier<DynamicGlyphMatcherContextT> DynamicAsciifierT;
+typedef DynamicGlyphMatcher<FontImageT> DynamicGlyphMatcherT;
+typedef DynamicAsciifier<DynamicGlyphMatcherT> DynamicAsciifierT;
 
 class VideoToAscii: public CmdlineTool
 {
@@ -123,7 +123,7 @@ class MyVideoPlayer: public VideoPlayer
 {
 public:
     explicit MyVideoPlayer(const VideoToAscii* ctx, DynamicAsciifierT* asc, Console* con)
-        :context_(ctx)
+        :matcher_(ctx)
         ,asciifier_(asc)
         ,console_(con)
     {
@@ -134,11 +134,11 @@ protected:
     {
         std::cout << "initializing...\n";
 
-        unsigned char_width = asciifier_->context()->cellWidth();
-        unsigned char_height = asciifier_->context()->cellHeight();
+        unsigned char_width = asciifier_->matcher()->cellWidth();
+        unsigned char_height = asciifier_->matcher()->cellHeight();
 
-        unsigned hint_width = context_->maxCols_ * char_width;
-        unsigned hint_height = context_->maxRows_ * char_height;
+        unsigned hint_width = matcher_->maxCols_ * char_width;
+        unsigned hint_height = matcher_->maxRows_ * char_height;
         if (hint_width * frameHeight() / frameWidth() < hint_height) {
             outWidth_ = hint_width;
             outHeight_ = outWidth_ * frameHeight() / frameWidth();
@@ -159,23 +159,23 @@ protected:
         std::cout << "output rows " << rows_ << "\n";
         std::cout << "worker threads " << asciifier_->threadCount() << "\n";
 
-        if (context_->startFrame_) {
+        if (matcher_->startFrame_) {
             std::cout << "positioning...\n";
-            seekToFrame(context_->startFrame_.get());
-        } else if (context_->startTime_) {
+            seekToFrame(matcher_->startFrame_.get());
+        } else if (matcher_->startTime_) {
             std::cout << "positioning...\n";
-            seekToTime(context_->startTime_.get());
+            seekToTime(matcher_->startTime_.get());
         }
     }
 
     virtual void onPlaybackStart()
     {
         std::cout << "playback start\n";
-        if (context_->renderAll_) {
+        if (matcher_->renderAll_) {
             setCanDropFrames(false);
             setCanWaitForFrame(false);
         }
-        if (context_->showVideo_) {
+        if (matcher_->showVideo_) {
             cv::namedWindow("test", 1);
         }
         text_.resize(rows_, cols_);
@@ -185,32 +185,32 @@ protected:
     virtual void onPlaybackEnd()
     {
         std::cout << "playback end\n";
-        if (context_->showVideo_) {
+        if (matcher_->showVideo_) {
             cv::destroyWindow("test");
         }
     }
 
     virtual bool onBeforeReadFrame(double tm_left)
     {
-        if (context_->maxFrames_) {
+        if (matcher_->maxFrames_) {
             unsigned frm_cnt = currentFrameNo() - startFrameNo();
-            if (frm_cnt >= context_->maxFrames_.get())
+            if (frm_cnt >= matcher_->maxFrames_.get())
                 return false;
         }
-        if (context_->endFrame_) {
-            if (currentFrameNo() >= context_->endFrame_.get())
+        if (matcher_->endFrame_) {
+            if (currentFrameNo() >= matcher_->endFrame_.get())
                 return false;
         }
-        if (context_->maxTime_) {
+        if (matcher_->maxTime_) {
             double tm_span = currentFrameTime() - startFrameTime();
-            if (tm_span >= context_->maxTime_.get())
+            if (tm_span >= matcher_->maxTime_.get())
                 return false;
         }
-        if (context_->endTime_) {
-            if (currentFrameTime() >= context_->endTime_.get())
+        if (matcher_->endTime_) {
+            if (currentFrameTime() >= matcher_->endTime_.get())
                 return false;
         }
-        if (tm_left > 0 && context_->showVideo_) {
+        if (tm_left > 0 && matcher_->showVideo_) {
             if (cv::waitKey(1) >= 0)
                 return false;
         }
@@ -247,14 +247,14 @@ protected:
     virtual void onFrameDisplay(cv::Mat frm)
     {
         (void)frm;
-        if (context_->showVideo_) {
+        if (matcher_->showVideo_) {
             cv::imshow("test", grayFrame_);
         }
         console_->display(text_);
     }
 
 private:
-    const VideoToAscii* context_;
+    const VideoToAscii* matcher_;
     DynamicAsciifierT* asciifier_;
     Console* console_;
     TextSurface text_;
@@ -278,11 +278,11 @@ int VideoToAscii::doExecute()
         std::cout << "creating glyph matcher\n";
 
         registerGlyphMatcherFactories<FontImageT>();
-        DynamicGlyphMatcherContextT* matcher_ctx = GlyphMatcherContextFactory::create(&font_image, algorithm_);
+        DynamicGlyphMatcherT* matcher_ctx = GlyphMatcherFactory::create(&font_image, algorithm_);
         assert(matcher_ctx);
 
         DynamicAsciifierT asciifier(matcher_ctx);
-        assert(asciifier.context() == matcher_ctx);
+        assert(asciifier.matcher() == matcher_ctx);
         if (threads_ == 1) {
             asciifier.setSequential();
         } else {

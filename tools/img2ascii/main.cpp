@@ -101,16 +101,16 @@ class ConverterImpl
 {
     typedef Font<> FontT;
     typedef FontImage< FontT, ImageT > FontImageT;
-    typedef DynamicGlyphMatcherContext<FontImageT> DynamicGlyphMatcherContextT;
-    typedef DynamicAsciifier<DynamicGlyphMatcherContextT> DynamicAsciifierT;
+    typedef DynamicGlyphMatcher<FontImageT> DynamicGlyphMatcherT;
+    typedef DynamicAsciifier<DynamicGlyphMatcherT> DynamicAsciifierT;
 
 public:
     explicit ConverterImpl(const FontT* font, const std::string& algo, size_t threads)
     {
         registerGlyphMatcherFactories<FontImageT>();
         fontImage_ = new FontImageT(font);
-        context_ = GlyphMatcherContextFactory::create(fontImage_, algo);
-        asciifier_ = new DynamicAsciifierT(context_);
+        matcher_ = GlyphMatcherFactory::create(fontImage_, algo);
+        asciifier_ = new DynamicAsciifierT(matcher_);
         if (threads == 1) {
             asciifier_->setSequential();
         } else {
@@ -128,7 +128,7 @@ public:
 
 private:
     FontImageT* fontImage_;
-    DynamicGlyphMatcherContextT* context_;
+    DynamicGlyphMatcherT* matcher_;
     DynamicAsciifierT* asciifier_;
 };
 

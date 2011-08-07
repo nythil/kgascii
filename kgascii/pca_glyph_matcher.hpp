@@ -29,7 +29,7 @@
 namespace KG { namespace Ascii {
 
 template<class TFontImage>
-class PcaGlyphMatcherContext: boost::noncopyable
+class PcaGlyphMatcher: boost::noncopyable
 {
 public:
     typedef TFontImage FontImageT;
@@ -38,21 +38,21 @@ public:
     typedef typename FontImageT::ViewT ViewT;
     typedef typename FontImageT::ConstViewT ConstViewT;
 
-    class PcaGlyphMatcher: boost::noncopyable
+    class PcaContext: boost::noncopyable
     {
-        friend class PcaGlyphMatcherContext;
+        friend class PcaGlyphMatcher;
     public:
-        typedef PcaGlyphMatcherContext GlyphMatcherContextT;
-        typedef typename GlyphMatcherContextT::FontImageT FontImageT;
+        typedef PcaGlyphMatcher GlyphMatcherT;
+        typedef typename GlyphMatcherT::FontImageT FontImageT;
         typedef typename FontImageT::PixelT PixelT;
         typedef typename FontImageT::ImageT ImageT;
         typedef typename FontImageT::ViewT ViewT;
         typedef typename FontImageT::ConstViewT ConstViewT;
 
     public:
-        const PcaGlyphMatcherContext* context() const
+        const PcaGlyphMatcher* matcher() const
         {
-            return context_;
+            return matcher_;
         }
 
         template<typename TSomeView>
@@ -66,8 +66,8 @@ public:
                                         typename boost::gil::channel_type<TSomeView>::type,
                                         typename boost::gil::channel_type<ConstViewT>::type> >();
 
-            assert(static_cast<size_t>(imgv.width()) <= context_->cellWidth());
-            assert(static_cast<size_t>(imgv.height()) <= context_->cellHeight());
+            assert(static_cast<size_t>(imgv.width()) <= matcher_->cellWidth());
+            assert(static_cast<size_t>(imgv.height()) <= matcher_->cellHeight());
 
             typedef boost::gil::layout<
                     typename boost::gil::color_space_type<ConstViewT>::type,
@@ -78,35 +78,35 @@ public:
             typedef typename boost::gil::type_from_x_iterator<FloatPixelT*>::view_t FloatViewT;
 
             FloatViewT tmp_glyph_view = boost::gil::interleaved_view(
-                    context_->cellWidth(), context_->cellHeight(),
+                    matcher_->cellWidth(), matcher_->cellHeight(),
                     reinterpret_cast<FloatPixelT*>(imageData_.data()),
-                    context_->cellWidth() * sizeof(FloatPixelT));
+                    matcher_->cellWidth() * sizeof(FloatPixelT));
 
             boost::gil::fill_pixels(tmp_glyph_view, FloatPixelT());
             boost::gil::copy_and_convert_pixels(imgv, subimage_view(
                     tmp_glyph_view, 0, 0, imgv.width(), imgv.height()));
 
-            context_->pca()->project(imageData_, components_);
-            return context_->font()->getSymbol(context_->pca()->findClosestGlyph(components_));
+            matcher_->pca()->project(imageData_, components_);
+            return matcher_->font()->getSymbol(matcher_->pca()->findClosestGlyph(components_));
         }
 
     private:
-        explicit PcaGlyphMatcher(const PcaGlyphMatcherContext* c)
-            :context_(c)
-            ,components_(context_->pca()->featureCount())
-            ,imageData_(context_->font()->glyphSize() * boost::gil::num_channels<ViewT>::value)
+        explicit PcaContext(const PcaGlyphMatcher* c)
+            :matcher_(c)
+            ,components_(matcher_->pca()->featureCount())
+            ,imageData_(matcher_->font()->glyphSize() * boost::gil::num_channels<ViewT>::value)
         {
         }
 
     private:
-        const PcaGlyphMatcherContext* context_;
+        const PcaGlyphMatcher* matcher_;
         Eigen::VectorXf components_;
         Eigen::VectorXf imageData_;
     };
-    typedef PcaGlyphMatcher GlyphMatcherT;
+    typedef PcaContext ContextT;
 
 public:
-    explicit PcaGlyphMatcherContext(const FontPCA<FontImageT>* pca)
+    explicit PcaGlyphMatcher(const FontPCA<FontImageT>* pca)
         :font_(pca->font())
         ,pca_(pca)
     {
@@ -128,9 +128,9 @@ public:
         return font_->glyphHeight();
     }
 
-    PcaGlyphMatcher* createMatcher() const
+    PcaContext* createContext() const
     {
-        return new PcaGlyphMatcher(this);
+        return new PcaContext(this);
     }
 
     const FontPCA<FontImageT>* pca() const
@@ -144,12 +144,12 @@ private:
 };
 
 template<class TFontImage>
-class PcaGlyphMatcherContextFactory
+class PcaGlyphMatcherFactory
 {
 public:
-    typedef PcaGlyphMatcherContext<TFontImage> GlyphMatcherContextT;
+    typedef PcaGlyphMatcher<TFontImage> GlyphMatcherT;
 
-    DynamicGlyphMatcherContext<TFontImage>* operator()(const TFontImage* font, const std::map<std::string, std::string>& options)
+    DynamicGlyphMatcher<TFontImage>* operator()(const TFontImage* font, const std::map<std::string, std::string>& options)
     {
         size_t nfeatures = 10;
         if (options.count("nf")) {
@@ -170,8 +170,8 @@ public:
 
         FontPCA<TFontImage>* pca = new FontPCA<TFontImage>(pcanalyzer, nfeatures);
 
-        boost::scoped_ptr<GlyphMatcherContextT> impl_holder(new GlyphMatcherContextT(pca));
-        return new DynamicGlyphMatcherContext<TFontImage>(impl_holder);
+        boost::scoped_ptr<GlyphMatcherT> impl_holder(new GlyphMatcherT(pca));
+        return new DynamicGlyphMatcher<TFontImage>(impl_holder);
     }
 };
 

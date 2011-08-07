@@ -30,7 +30,7 @@
 namespace KG { namespace Ascii {
 
 template<class TFontImage>
-class MutualInformationGlyphMatcherContext: boost::noncopyable
+class MutualInformationGlyphMatcher: boost::noncopyable
 {
 public:
     typedef TFontImage FontImageT;
@@ -39,21 +39,21 @@ public:
     typedef typename FontImageT::ViewT ViewT;
     typedef typename FontImageT::ConstViewT ConstViewT;
 
-    class MutualInformationGlyphMatcher: boost::noncopyable
+    class MutualInformationContext: boost::noncopyable
     {
-        friend class MutualInformationGlyphMatcherContext;
+        friend class MutualInformationGlyphMatcher;
     public:
-        typedef MutualInformationGlyphMatcherContext GlyphMatcherContextT;
-        typedef typename GlyphMatcherContextT::FontImageT FontImageT;
+        typedef MutualInformationGlyphMatcher GlyphMatcherT;
+        typedef typename GlyphMatcherT::FontImageT FontImageT;
         typedef typename FontImageT::PixelT PixelT;
         typedef typename FontImageT::ImageT ImageT;
         typedef typename FontImageT::ViewT ViewT;
         typedef typename FontImageT::ConstViewT ConstViewT;
 
     public:
-        const MutualInformationGlyphMatcherContext* context() const
+        const MutualInformationGlyphMatcher* matcher() const
         {
-            return context_;
+            return matcher_;
         }
 
         template<class TSomeView>
@@ -64,49 +64,49 @@ public:
             fill_pixels(tmp_view, PixelT());
             copy_pixels(imgv, subimage_view(tmp_view, 0, 0, imgv.width(), imgv.height()));
 
-            context_->makeHistogram(tmp_view, histogram_);
-            double imgv_ent = context_->entropy(histogram_);
+            matcher_->makeHistogram(tmp_view, histogram_);
+            double imgv_ent = matcher_->entropy(histogram_);
 
             double nmi_max = std::numeric_limits<double>::min();
             Symbol cc_max;
-            for (size_t ci = 0; ci < context_->font()->glyphCount(); ++ci) {
-                const Eigen::VectorXi& glyph_histogram = context_->histogram(ci);
-                double glyph_ent = context_->entropy(glyph_histogram);
+            for (size_t ci = 0; ci < matcher_->font()->glyphCount(); ++ci) {
+                const Eigen::VectorXi& glyph_histogram = matcher_->histogram(ci);
+                double glyph_ent = matcher_->entropy(glyph_histogram);
 
-                context_->makeJointHistogram(tmp_view, context_->font()->getGlyph(ci), jointHistogram_);
+                matcher_->makeJointHistogram(tmp_view, matcher_->font()->getGlyph(ci), jointHistogram_);
                 assert(jointHistogram_.rowwise().sum() == histogram_);
                 assert(jointHistogram_.colwise().sum().transpose() == glyph_histogram);
-                double joint_ent = context_->entropy(jointHistogram_);
+                double joint_ent = matcher_->entropy(jointHistogram_);
 
                 //normalized mutual information
                 double nmi = (imgv_ent + glyph_ent) / joint_ent;
                 if (nmi > nmi_max) {
                     nmi_max = nmi;
-                    cc_max = context_->font()->getSymbol(ci);
+                    cc_max = matcher_->font()->getSymbol(ci);
                 }
             }
             return cc_max;
         }
 
     private:
-        explicit MutualInformationGlyphMatcher(const MutualInformationGlyphMatcherContext* c)
-            :context_(c)
-            ,histogram_(context_->colorBins())
-            ,jointHistogram_(context_->colorBins(), context_->colorBins())
-            ,surfaceData_(context_->cellWidth(), context_->cellHeight())
+        explicit MutualInformationContext(const MutualInformationGlyphMatcher* c)
+            :matcher_(c)
+            ,histogram_(matcher_->colorBins())
+            ,jointHistogram_(matcher_->colorBins(), matcher_->colorBins())
+            ,surfaceData_(matcher_->cellWidth(), matcher_->cellHeight())
         {
         }
 
     private:
-        const MutualInformationGlyphMatcherContext* context_;
+        const MutualInformationGlyphMatcher* matcher_;
         Eigen::VectorXi histogram_;
         Eigen::MatrixXi jointHistogram_;
         ImageT surfaceData_;
     };
-    typedef MutualInformationGlyphMatcher GlyphMatcherT;
+    typedef MutualInformationContext ContextT;
 
 public:
-    explicit MutualInformationGlyphMatcherContext(const FontImageT* f, size_t bins)
+    explicit MutualInformationGlyphMatcher(const FontImageT* f, size_t bins)
         :font_(f)
         ,histograms_(font()->glyphCount())
         ,colorBins_(bins)
@@ -134,9 +134,9 @@ public:
         return font_->glyphHeight();
     }
 
-    GlyphMatcherT* createMatcher() const
+    ContextT* createContext() const
     {
-        return new GlyphMatcherT(this);
+        return new ContextT(this);
     }
 
     size_t colorBins() const
@@ -214,12 +214,12 @@ private:
 };
 
 template<class TFontImage>
-class MutualInformationGlyphMatcherContextFactory
+class MutualInformationGlyphMatcherFactory
 {
 public:
-    typedef MutualInformationGlyphMatcherContext<TFontImage> GlyphMatcherContextT;
+    typedef MutualInformationGlyphMatcher<TFontImage> GlyphMatcherT;
 
-    DynamicGlyphMatcherContext<TFontImage>* operator()(const TFontImage* font, const std::map<std::string, std::string>& options)
+    DynamicGlyphMatcher<TFontImage>* operator()(const TFontImage* font, const std::map<std::string, std::string>& options)
     {
         size_t bins = 16;
         if (options.count("bins")) {
@@ -228,8 +228,8 @@ public:
             } catch (boost::bad_lexical_cast&) { }
         }
 
-        boost::scoped_ptr<GlyphMatcherContextT> impl_holder(new GlyphMatcherContextT(font, bins));
-        return new DynamicGlyphMatcherContext<TFontImage>(impl_holder);
+        boost::scoped_ptr<GlyphMatcherT> impl_holder(new GlyphMatcherT(font, bins));
+        return new DynamicGlyphMatcher<TFontImage>(impl_holder);
     }
 };
 

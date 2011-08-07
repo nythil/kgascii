@@ -23,7 +23,6 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <Eigen/Dense>
-#include <kgascii/font_image.hpp>
 
 
 namespace KG { namespace Ascii {

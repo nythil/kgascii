@@ -22,7 +22,6 @@
 #include <map>
 #include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
-#include <kgascii/font_image.hpp>
 #include <kgascii/policy_based_glyph_matcher.hpp>
 #include <kgascii/dynamic_glyph_matcher.hpp>
 

@@ -25,7 +25,6 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 #include <Eigen/Dense>
-#include <kgascii/font_image.hpp>
 #include <kgascii/dynamic_glyph_matcher.hpp>
 
 
@@ -127,7 +126,8 @@ public:
         for (size_t y = 0; y < cellHeight(); ++y) {
             typename ConstViewT::x_iterator ptr = surf.row_begin(y);
             for (size_t x = 0; x < cellWidth(); ++x) {
-                hist[(*ptr++) / colorBinSize_]++;
+                int value = boost::gil::get_color(*ptr++, boost::gil::gray_color_t());
+                hist[value / colorBinSize_]++;
             }
         }
 
@@ -147,7 +147,9 @@ public:
             typename ConstViewT::x_iterator ptr1 = surf1.row_begin(y);
             typename ConstViewT::x_iterator ptr2 = surf2.row_begin(y);
             for (size_t x = 0; x < cellWidth(); ++x) {
-                hist((*ptr1++) / colorBinSize_, (*ptr2++) / colorBinSize_)++;
+                int value1 = boost::gil::get_color(*ptr1++, boost::gil::gray_color_t());
+                int value2 = boost::gil::get_color(*ptr2++, boost::gil::gray_color_t());
+                hist(value1 / colorBinSize_, value2 / colorBinSize_)++;
             }
         }
 

@@ -31,10 +31,15 @@
 #include <kgascii/dynamic_asciifier.hpp>
 #include <kgascii/text_surface.hpp>
 #include <kgascii/glyph_matcher_context_factory.hpp>
+#include <kgascii/srgb.hpp>
 
 using namespace KG::Ascii;
 
-typedef FontImage< Font<>, boost::gil::gray16_image_t > FontImageT;
+//typedef boost::gil::graysrgb16_image_t ImageT;
+typedef boost::gil::gray16_image_t ImageT;
+//typedef boost::gil::gray8_image_t ImageT;
+
+typedef FontImage< Font<>, ImageT > FontImageT;
 typedef DynamicGlyphMatcherContext<FontImageT> DynamicGlyphMatcherContextT;
 typedef DynamicAsciifier<DynamicGlyphMatcherContextT> DynamicAsciifierT;
 
@@ -167,15 +172,15 @@ int ImageToAscii::doExecute()
     assert(static_cast<unsigned>(gray_frame.rows) == out_height);
     assert(gray_frame.type() == CV_8UC1);
 
-    boost::gil::gray16_image_t gray16_image(out_width, out_height);
+    ImageT gray_image(out_width, out_height);
     boost::gil::copy_and_convert_pixels(
             castSurface<const boost::gil::gray8_pixel_t>(gray_frame),
-            boost::gil::view(gray16_image)
+            boost::gil::view(gray_image)
             );
 
     std::cerr << "converting...\n";
     text.clear();
-    asciifier.generate(boost::gil::view(gray16_image), text);
+    asciifier.generate(boost::gil::view(gray_image), text);
 
     std::ofstream fout(outputFile_.c_str());
     for (size_t r = 0; r < text.rows(); ++r) {

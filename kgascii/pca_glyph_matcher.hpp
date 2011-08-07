@@ -23,7 +23,6 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
 #include <Eigen/Dense>
-#include <kgascii/font_image.hpp>
 #include <kgascii/font_pca.hpp>
 #include <kgascii/dynamic_glyph_matcher.hpp>
 

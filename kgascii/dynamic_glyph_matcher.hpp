@@ -23,7 +23,6 @@
 #include <boost/pointee.hpp>
 #include <boost/bind.hpp>
 #include <boost/functional/factory.hpp>
-#include <kgascii/font_image.hpp>
 
 namespace KG { namespace Ascii {
 

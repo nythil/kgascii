@@ -23,9 +23,9 @@
 namespace boost { namespace gil {
 
 template<typename BaseChannelValue>
-struct srgb_channel_value
+struct linear_channel_value
 {
-    typedef srgb_channel_value          value_type;
+    typedef linear_channel_value        value_type;
     typedef value_type&                 reference;
     typedef value_type*                 pointer;
     typedef const value_type&           const_reference;
@@ -35,57 +35,92 @@ struct srgb_channel_value
     static value_type min_value() { return (std::numeric_limits<BaseChannelValue>::min)(); }
     static value_type max_value() { return (std::numeric_limits<BaseChannelValue>::max)(); }
 
-    srgb_channel_value() {}
-    srgb_channel_value(const srgb_channel_value& c) : value_(c.value_) {}
-    srgb_channel_value(BaseChannelValue val) : value_(val) {}
-    template<typename Scalar> srgb_channel_value(Scalar v) : value_(v) {}
+    linear_channel_value() {}
+    linear_channel_value(const linear_channel_value& c) : value_(c.value_) {}
+    linear_channel_value(BaseChannelValue val) : value_(val) {}
+    template<typename Scalar> linear_channel_value(Scalar v) : value_(v) {}
 
-    srgb_channel_value& operator=(BaseChannelValue v) { value_ = v; return *this; }
+    linear_channel_value& operator=(BaseChannelValue v) { value_ = v; return *this; }
     operator BaseChannelValue() const { return value_; }
 
 private:
     BaseChannelValue value_;
 };
 
-typedef srgb_channel_value<boost::gil::bits16>  srgb16;
-typedef srgb_channel_value<boost::gil::bits16s> srgb16s;
-typedef srgb_channel_value<boost::gil::bits32>  srgb32;
-typedef srgb_channel_value<boost::gil::bits32s> srgb32s;
-typedef srgb_channel_value<boost::gil::bits32f> srgb32f;
+typedef linear_channel_value<boost::gil::bits16>  lin16;
+typedef linear_channel_value<boost::gil::bits16s> lin16s;
+typedef linear_channel_value<boost::gil::bits32>  lin32;
+typedef linear_channel_value<boost::gil::bits32s> lin32s;
+typedef linear_channel_value<boost::gil::bits32f> lin32f;
 
-#define SRGB_DEFINE_BASE_TYPEDEFS_INTERNAL(T, CS, LAYOUT)                                                       \
-    typedef boost::gil::pixel<T, LAYOUT >                                               CS##T##_pixel_t;        \
-    typedef const boost::gil::pixel<T, LAYOUT >                                         CS##T##c_pixel_t;       \
-    typedef CS##T##_pixel_t&                                                            CS##T##_ref_t;          \
-    typedef CS##T##c_pixel_t&                                                           CS##T##c_ref_t;         \
-    typedef CS##T##_pixel_t*                                                            CS##T##_ptr_t;          \
-    typedef CS##T##c_pixel_t*                                                           CS##T##c_ptr_t;         \
-    typedef boost::gil::memory_based_step_iterator<CS##T##_ptr_t>                       CS##T##_step_ptr_t;     \
-    typedef boost::gil::memory_based_step_iterator<CS##T##c_ptr_t>                      CS##T##c_step_ptr_t;    \
-    typedef boost::gil::memory_based_2d_locator<CS##T##_step_ptr_t >                    CS##T##_loc_t;          \
-    typedef boost::gil::memory_based_2d_locator<CS##T##c_step_ptr_t >                   CS##T##c_loc_t;         \
-    typedef boost::gil::memory_based_2d_locator<boost::gil::memory_based_step_iterator<CS##T##_step_ptr_t> >  CS##T##_step_loc_t;       \
-    typedef boost::gil::memory_based_2d_locator<boost::gil::memory_based_step_iterator<CS##T##c_step_ptr_t> > CS##T##c_step_loc_t;      \
-    typedef boost::gil::image_view<CS##T##_loc_t>                                       CS##T##_view_t;         \
-    typedef boost::gil::image_view<CS##T##c_loc_t>                                      CS##T##c_view_t;        \
-    typedef boost::gil::image_view<CS##T##_step_loc_t>                                  CS##T##_step_view_t;    \
-    typedef boost::gil::image_view<CS##T##c_step_loc_t>                                 CS##T##c_step_view_t;   \
-    typedef boost::gil::image<CS##T##_pixel_t, false, std::allocator<unsigned char> >   CS##T##_image_t;
+#define LINEAR_DEFINE_BASE_TYPEDEFS_INTERNAL(T, TPRE, LAYOUT)                                                   \
+    typedef boost::gil::pixel<T, LAYOUT >                                               TPRE##_pixel_t;         \
+    typedef const boost::gil::pixel<T, LAYOUT >                                         TPRE##c_pixel_t;        \
+    typedef TPRE##_pixel_t&                                                             TPRE##_ref_t;           \
+    typedef TPRE##c_pixel_t&                                                            TPRE##c_ref_t;          \
+    typedef TPRE##_pixel_t*                                                             TPRE##_ptr_t;           \
+    typedef TPRE##c_pixel_t*                                                            TPRE##c_ptr_t;          \
+    typedef boost::gil::memory_based_step_iterator<TPRE##_ptr_t>                        TPRE##_step_ptr_t;      \
+    typedef boost::gil::memory_based_step_iterator<TPRE##c_ptr_t>                       TPRE##c_step_ptr_t;     \
+    typedef boost::gil::memory_based_2d_locator<TPRE##_step_ptr_t >                     TPRE##_loc_t;           \
+    typedef boost::gil::memory_based_2d_locator<TPRE##c_step_ptr_t >                    TPRE##c_loc_t;          \
+    typedef boost::gil::memory_based_2d_locator<boost::gil::memory_based_step_iterator<TPRE##_step_ptr_t> >     TPRE##_step_loc_t;      \
+    typedef boost::gil::memory_based_2d_locator<boost::gil::memory_based_step_iterator<TPRE##c_step_ptr_t> >    TPRE##c_step_loc_t;     \
+    typedef boost::gil::image_view<TPRE##_loc_t>                                        TPRE##_view_t;          \
+    typedef boost::gil::image_view<TPRE##c_loc_t>                                       TPRE##c_view_t;         \
+    typedef boost::gil::image_view<TPRE##_step_loc_t>                                   TPRE##_step_view_t;     \
+    typedef boost::gil::image_view<TPRE##c_step_loc_t>                                  TPRE##c_step_view_t;    \
+    typedef boost::gil::image<TPRE##_pixel_t, false, std::allocator<unsigned char> >    TPRE##_image_t;
 
-#define SRGB_DEFINE_BASE_TYPEDEFS(T, CS)        \
-        SRGB_DEFINE_BASE_TYPEDEFS_INTERNAL(srgb##T, CS, boost::gil::CS##_layout_t)
+#define LINEAR_DEFINE_BASE_TYPEDEFS(T, CS)        \
+        LINEAR_DEFINE_BASE_TYPEDEFS_INTERNAL(lin##T, CS##_lin##T, boost::gil::CS##_layout_t)
 
-SRGB_DEFINE_BASE_TYPEDEFS(16,  gray)
-SRGB_DEFINE_BASE_TYPEDEFS(16s, gray)
-SRGB_DEFINE_BASE_TYPEDEFS(32 , gray)
-SRGB_DEFINE_BASE_TYPEDEFS(32s, gray)
-SRGB_DEFINE_BASE_TYPEDEFS(32f, gray)
+LINEAR_DEFINE_BASE_TYPEDEFS(16,  gray)
+LINEAR_DEFINE_BASE_TYPEDEFS(16s, gray)
+LINEAR_DEFINE_BASE_TYPEDEFS(32,  gray)
+LINEAR_DEFINE_BASE_TYPEDEFS(32s, gray)
+LINEAR_DEFINE_BASE_TYPEDEFS(32f, gray)
+LINEAR_DEFINE_BASE_TYPEDEFS(16,  bgr)
+LINEAR_DEFINE_BASE_TYPEDEFS(16s, bgr)
+LINEAR_DEFINE_BASE_TYPEDEFS(32 , bgr)
+LINEAR_DEFINE_BASE_TYPEDEFS(32s, bgr)
+LINEAR_DEFINE_BASE_TYPEDEFS(32f, bgr)
+LINEAR_DEFINE_BASE_TYPEDEFS(16,  argb)
+LINEAR_DEFINE_BASE_TYPEDEFS(16s, argb)
+LINEAR_DEFINE_BASE_TYPEDEFS(32,  argb)
+LINEAR_DEFINE_BASE_TYPEDEFS(32s, argb)
+LINEAR_DEFINE_BASE_TYPEDEFS(32f, argb)
+LINEAR_DEFINE_BASE_TYPEDEFS(16,  abgr)
+LINEAR_DEFINE_BASE_TYPEDEFS(16s, abgr)
+LINEAR_DEFINE_BASE_TYPEDEFS(32 , abgr)
+LINEAR_DEFINE_BASE_TYPEDEFS(32s, abgr)
+LINEAR_DEFINE_BASE_TYPEDEFS(32f, abgr)
+LINEAR_DEFINE_BASE_TYPEDEFS(16,  bgra)
+LINEAR_DEFINE_BASE_TYPEDEFS(16s, bgra)
+LINEAR_DEFINE_BASE_TYPEDEFS(32 , bgra)
+LINEAR_DEFINE_BASE_TYPEDEFS(32s, bgra)
+LINEAR_DEFINE_BASE_TYPEDEFS(32f, bgra)
+LINEAR_DEFINE_BASE_TYPEDEFS(16,  rgb)
+LINEAR_DEFINE_BASE_TYPEDEFS(16s, rgb)
+LINEAR_DEFINE_BASE_TYPEDEFS(32 , rgb)
+LINEAR_DEFINE_BASE_TYPEDEFS(32s, rgb)
+LINEAR_DEFINE_BASE_TYPEDEFS(32f, rgb)
+LINEAR_DEFINE_BASE_TYPEDEFS(16,  rgba)
+LINEAR_DEFINE_BASE_TYPEDEFS(16s, rgba)
+LINEAR_DEFINE_BASE_TYPEDEFS(32 , rgba)
+LINEAR_DEFINE_BASE_TYPEDEFS(32s, rgba)
+LINEAR_DEFINE_BASE_TYPEDEFS(32f, rgba)
+LINEAR_DEFINE_BASE_TYPEDEFS(16,  cmyk)
+LINEAR_DEFINE_BASE_TYPEDEFS(16s, cmyk)
+LINEAR_DEFINE_BASE_TYPEDEFS(32 , cmyk)
+LINEAR_DEFINE_BASE_TYPEDEFS(32s, cmyk)
+LINEAR_DEFINE_BASE_TYPEDEFS(32f, cmyk)
 
 template<typename BaseChannel>
-struct channel_converter_unsigned<srgb_channel_value<BaseChannel>, bits32f>
-        : public std::unary_function<srgb_channel_value<BaseChannel>, bits32f>
+struct channel_converter_unsigned<linear_channel_value<BaseChannel>, bits32f>
+        : public std::unary_function<linear_channel_value<BaseChannel>, bits32f>
 {
-    bits32f operator()(srgb_channel_value<BaseChannel> x) const
+    bits32f operator()(linear_channel_value<BaseChannel> x) const
     {
         float fx = channel_convert<bits32f, BaseChannel>(x);
         float fy;
@@ -99,10 +134,10 @@ struct channel_converter_unsigned<srgb_channel_value<BaseChannel>, bits32f>
 };
 
 template <typename BaseChannel>
-struct channel_converter_unsigned<bits32f, srgb_channel_value<BaseChannel> >
-    : public std::unary_function<bits32f, srgb_channel_value<BaseChannel> >
+struct channel_converter_unsigned<bits32f, linear_channel_value<BaseChannel> >
+    : public std::unary_function<bits32f, linear_channel_value<BaseChannel> >
 {
-    srgb_channel_value<BaseChannel> operator()(bits32f x) const
+    linear_channel_value<BaseChannel> operator()(bits32f x) const
     {
         float fx = x;
         float fy;
@@ -116,77 +151,85 @@ struct channel_converter_unsigned<bits32f, srgb_channel_value<BaseChannel> >
 };
 
 template<typename BaseChannel, typename DstChannelV>
-struct channel_converter_unsigned<srgb_channel_value<BaseChannel>, DstChannelV>
-        : public std::unary_function<srgb_channel_value<BaseChannel>, DstChannelV>
+struct channel_converter_unsigned<linear_channel_value<BaseChannel>, DstChannelV>
+        : public std::unary_function<linear_channel_value<BaseChannel>, DstChannelV>
 {
-    DstChannelV operator()(srgb_channel_value<BaseChannel> x) const
+    DstChannelV operator()(linear_channel_value<BaseChannel> x) const
     {
-        return channel_convert<DstChannelV, bits32f>(channel_convert<bits32f, srgb_channel_value<BaseChannel> >(x));
+        return channel_convert<DstChannelV, bits32f>(channel_convert<bits32f, linear_channel_value<BaseChannel> >(x));
     }
 };
 
 template <typename SrcChannelV, typename BaseChannel>
-struct channel_converter_unsigned<SrcChannelV, srgb_channel_value<BaseChannel> >
-    : public std::unary_function<SrcChannelV, srgb_channel_value<BaseChannel> >
+struct channel_converter_unsigned<SrcChannelV, linear_channel_value<BaseChannel> >
+    : public std::unary_function<SrcChannelV, linear_channel_value<BaseChannel> >
 {
-    srgb_channel_value<BaseChannel> operator()(SrcChannelV x) const
+    linear_channel_value<BaseChannel> operator()(SrcChannelV x) const
     {
-        return channel_convert<srgb_channel_value<BaseChannel>, bits32f>(channel_convert<bits32f, SrcChannelV>(x));
+        return channel_convert<linear_channel_value<BaseChannel>, bits32f>(channel_convert<bits32f, SrcChannelV>(x));
     }
 };
 
 template<typename SrcBaseChannel, typename DstBaseChannel>
-struct channel_converter_unsigned<srgb_channel_value<SrcBaseChannel>, srgb_channel_value<DstBaseChannel> >
-    : public std::unary_function<srgb_channel_value<SrcBaseChannel>, srgb_channel_value<DstBaseChannel> >
+struct channel_converter_unsigned<linear_channel_value<SrcBaseChannel>, linear_channel_value<DstBaseChannel> >
+    : public std::unary_function<linear_channel_value<SrcBaseChannel>, linear_channel_value<DstBaseChannel> >
 {
-    srgb_channel_value<DstBaseChannel> operator()(srgb_channel_value<SrcBaseChannel> x) const
+    linear_channel_value<DstBaseChannel> operator()(linear_channel_value<SrcBaseChannel> x) const
     {
         return channel_convert<DstBaseChannel, SrcBaseChannel>(x);
     }
 };
 
 template<typename BaseChannel>
-struct channel_converter_unsigned<srgb_channel_value<BaseChannel>, srgb_channel_value<BaseChannel> >
-    : public std::unary_function<srgb_channel_value<BaseChannel>, srgb_channel_value<BaseChannel> >
+struct channel_converter_unsigned<linear_channel_value<BaseChannel>, linear_channel_value<BaseChannel> >
+    : public std::unary_function<linear_channel_value<BaseChannel>, linear_channel_value<BaseChannel> >
 {
-    srgb_channel_value<BaseChannel> operator()(srgb_channel_value<BaseChannel> x) const { return x; }
+    linear_channel_value<BaseChannel> operator()(linear_channel_value<BaseChannel> x) const { return x; }
 };
 
 namespace detail {
 
-template <> struct channel_convert_to_unsigned<srgb16s> : public std::unary_function<srgb16s,srgb16> {
-    typedef srgb16 type;
-    type operator()(srgb16s  val) const { return val+32768; }
+template<typename BaseChannel>
+struct channel_convert_to_unsigned<linear_channel_value<BaseChannel> >
+    : public std::unary_function<
+          linear_channel_value<BaseChannel>,
+          linear_channel_value<typename channel_convert_to_unsigned<BaseChannel>::type>
+          >
+{
+    typedef linear_channel_value<typename channel_convert_to_unsigned<BaseChannel>::type> type;
+    type operator()(linear_channel_value<BaseChannel> val) const
+    {
+        return channel_convert_to_unsigned<BaseChannel>()(val);
+    }
 };
 
-template <> struct channel_convert_to_unsigned<srgb32s> : public std::unary_function<srgb32s,srgb32> {
-    typedef srgb32 type;
-    type operator()(srgb32s  val) const { return static_cast<bits32>(val+(1<<31)); }
-};
-
-template <> struct channel_convert_from_unsigned<srgb16s> : public std::unary_function<srgb16,srgb16s> {
-    typedef srgb16s type;
-    type operator()(srgb16 val) const { return val-32768; }
-};
-
-template <> struct channel_convert_from_unsigned<srgb32s> : public std::unary_function<srgb32,srgb32s> {
-    typedef srgb32s type;
-    type operator()(srgb32 x) const { return static_cast<bits32s>(x-(1<<31)); }
+template<typename BaseChannel>
+struct channel_convert_from_unsigned<linear_channel_value<BaseChannel> >
+    : public std::unary_function<
+          linear_channel_value<BaseChannel>,
+          linear_channel_value<typename channel_convert_from_unsigned<BaseChannel>::type>
+          >
+{
+    typedef linear_channel_value<typename channel_convert_from_unsigned<BaseChannel>::type> type;
+    type operator()(linear_channel_value<BaseChannel> val) const
+    {
+        return channel_convert_from_unsigned<BaseChannel>()(val);
+    }
 };
 
 } } // namespace gil::detail
 
 template<typename BaseChannelValue>
-struct is_integral<gil::srgb_channel_value<BaseChannelValue> > : public is_integral<BaseChannelValue> {};
+struct is_integral<gil::linear_channel_value<BaseChannelValue> > : public is_integral<BaseChannelValue> {};
 
 } // namespace boost
 
 namespace KG { namespace Ascii {
 
 template<typename BaseChannelValue>
-struct float_channel_type<boost::gil::srgb_channel_value<BaseChannelValue> >
+struct float_channel_type<boost::gil::linear_channel_value<BaseChannelValue> >
 {
-    typedef boost::gil::srgb32f type;
+    typedef boost::gil::lin32f type;
 };
 
 } } // namespace KG::Ascii

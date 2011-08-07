@@ -190,7 +190,7 @@ int ImageToAscii::doExecute()
 
     TextSurface text(row_count, col_count);
     if (gamma_) {
-        ConverterImpl<boost::gil::graysrgb16_image_t> converter(&font, algorithm_, threadCount_);
+        ConverterImpl<boost::gil::gray_lin16_image_t> converter(&font, algorithm_, threadCount_);
         converter.generate(castSurface<const boost::gil::gray8_pixel_t>(gray_frame), text);
     } else {
         ConverterImpl<boost::gil::gray8_image_t> converter(&font, algorithm_, threadCount_);

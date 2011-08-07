@@ -39,66 +39,21 @@ public:
     typedef typename FontImageT::ViewT ViewT;
     typedef typename FontImageT::ConstViewT ConstViewT;
 
-    class MutualInformationContext: boost::noncopyable
+    class MutualInformationContext
     {
         friend class MutualInformationGlyphMatcher;
     public:
         typedef MutualInformationGlyphMatcher GlyphMatcherT;
-        typedef typename GlyphMatcherT::FontImageT FontImageT;
-        typedef typename FontImageT::PixelT PixelT;
-        typedef typename FontImageT::ImageT ImageT;
-        typedef typename FontImageT::ViewT ViewT;
-        typedef typename FontImageT::ConstViewT ConstViewT;
-
-    public:
-        const MutualInformationGlyphMatcher* matcher() const
-        {
-            return matcher_;
-        }
-
-        template<class TSomeView>
-        Symbol match(const TSomeView& imgv)
-        {
-            //copy imgv to tmp_surf padding with black pixels
-            ViewT tmp_view = view(surfaceData_);
-            fill_pixels(tmp_view, PixelT());
-            copy_pixels(imgv, subimage_view(tmp_view, 0, 0, imgv.width(), imgv.height()));
-
-            matcher_->makeHistogram(tmp_view, histogram_);
-            double imgv_ent = matcher_->entropy(histogram_);
-
-            double nmi_max = std::numeric_limits<double>::min();
-            Symbol cc_max;
-            for (size_t ci = 0; ci < matcher_->font()->glyphCount(); ++ci) {
-                const Eigen::VectorXi& glyph_histogram = matcher_->histogram(ci);
-                double glyph_ent = matcher_->entropy(glyph_histogram);
-
-                matcher_->makeJointHistogram(tmp_view, matcher_->font()->getGlyph(ci), jointHistogram_);
-                assert(jointHistogram_.rowwise().sum() == histogram_);
-                assert(jointHistogram_.colwise().sum().transpose() == glyph_histogram);
-                double joint_ent = matcher_->entropy(jointHistogram_);
-
-                //normalized mutual information
-                double nmi = (imgv_ent + glyph_ent) / joint_ent;
-                if (nmi > nmi_max) {
-                    nmi_max = nmi;
-                    cc_max = matcher_->font()->getSymbol(ci);
-                }
-            }
-            return cc_max;
-        }
 
     private:
-        explicit MutualInformationContext(const MutualInformationGlyphMatcher* c)
-            :matcher_(c)
-            ,histogram_(matcher_->colorBins())
-            ,jointHistogram_(matcher_->colorBins(), matcher_->colorBins())
-            ,surfaceData_(matcher_->cellWidth(), matcher_->cellHeight())
+        explicit MutualInformationContext(const MutualInformationGlyphMatcher* matcher)
+            :histogram_(matcher->colorBins())
+            ,jointHistogram_(matcher->colorBins(), matcher->colorBins())
+            ,surfaceData_(matcher->cellWidth(), matcher->cellHeight())
         {
         }
 
     private:
-        const MutualInformationGlyphMatcher* matcher_;
         Eigen::VectorXi histogram_;
         Eigen::MatrixXi jointHistogram_;
         ImageT surfaceData_;
@@ -134,9 +89,41 @@ public:
         return font_->glyphHeight();
     }
 
-    ContextT* createContext() const
+    MutualInformationContext createContext() const
     {
-        return new ContextT(this);
+        return MutualInformationContext(this);
+    }
+
+    template<class TSomeView>
+    Symbol match(MutualInformationContext& ctx, const TSomeView& imgv) const
+    {
+        //copy imgv to tmp_surf padding with black pixels
+        ViewT tmp_view = view(ctx.surfaceData_);
+        fill_pixels(tmp_view, PixelT());
+        copy_pixels(imgv, subimage_view(tmp_view, 0, 0, imgv.width(), imgv.height()));
+
+        makeHistogram(tmp_view, ctx.histogram_);
+        double imgv_ent = entropy(ctx.histogram_);
+
+        double nmi_max = std::numeric_limits<double>::min();
+        Symbol cc_max;
+        for (size_t ci = 0; ci < font()->glyphCount(); ++ci) {
+            const Eigen::VectorXi& glyph_histogram = histogram(ci);
+            double glyph_ent = entropy(glyph_histogram);
+
+            makeJointHistogram(tmp_view, font()->getGlyph(ci), ctx.jointHistogram_);
+            assert(ctx.jointHistogram_.rowwise().sum() == ctx.histogram_);
+            assert(ctx.jointHistogram_.colwise().sum().transpose() == glyph_histogram);
+            double joint_ent = entropy(ctx.jointHistogram_);
+
+            //normalized mutual information
+            double nmi = (imgv_ent + glyph_ent) / joint_ent;
+            if (nmi > nmi_max) {
+                nmi_max = nmi;
+                cc_max = font()->getSymbol(ci);
+            }
+        }
+        return cc_max;
     }
 
     size_t colorBins() const

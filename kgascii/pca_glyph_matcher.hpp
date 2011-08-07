@@ -38,68 +38,20 @@ public:
     typedef typename FontImageT::ViewT ViewT;
     typedef typename FontImageT::ConstViewT ConstViewT;
 
-    class PcaContext: boost::noncopyable
+    class PcaContext
     {
         friend class PcaGlyphMatcher;
     public:
         typedef PcaGlyphMatcher GlyphMatcherT;
-        typedef typename GlyphMatcherT::FontImageT FontImageT;
-        typedef typename FontImageT::PixelT PixelT;
-        typedef typename FontImageT::ImageT ImageT;
-        typedef typename FontImageT::ViewT ViewT;
-        typedef typename FontImageT::ConstViewT ConstViewT;
-
-    public:
-        const PcaGlyphMatcher* matcher() const
-        {
-            return matcher_;
-        }
-
-        template<typename TSomeView>
-        Symbol match(const TSomeView& imgv)
-        {
-            boost::gil::gil_function_requires<boost::gil::ImageViewConcept<TSomeView> >();
-            boost::gil::gil_function_requires<boost::gil::ColorSpacesCompatibleConcept<
-                                        typename boost::gil::color_space_type<TSomeView>::type,
-                                        typename boost::gil::color_space_type<ConstViewT>::type> >();
-            boost::gil::gil_function_requires<boost::gil::ChannelsCompatibleConcept<
-                                        typename boost::gil::channel_type<TSomeView>::type,
-                                        typename boost::gil::channel_type<ConstViewT>::type> >();
-
-            assert(static_cast<size_t>(imgv.width()) <= matcher_->cellWidth());
-            assert(static_cast<size_t>(imgv.height()) <= matcher_->cellHeight());
-
-            typedef boost::gil::layout<
-                    typename boost::gil::color_space_type<ConstViewT>::type,
-                    typename boost::gil::channel_mapping_type<TSomeView>::type
-                    > LayoutT;
-            typedef typename float_channel_type<typename boost::gil::channel_type<ConstViewT>::type>::type FloatChannelT;
-            typedef typename boost::gil::pixel_value_type<FloatChannelT, LayoutT>::type FloatPixelT;
-            typedef typename boost::gil::type_from_x_iterator<FloatPixelT*>::view_t FloatViewT;
-
-            FloatViewT tmp_glyph_view = boost::gil::interleaved_view(
-                    matcher_->cellWidth(), matcher_->cellHeight(),
-                    reinterpret_cast<FloatPixelT*>(imageData_.data()),
-                    matcher_->cellWidth() * sizeof(FloatPixelT));
-
-            boost::gil::fill_pixels(tmp_glyph_view, FloatPixelT());
-            boost::gil::copy_and_convert_pixels(imgv, subimage_view(
-                    tmp_glyph_view, 0, 0, imgv.width(), imgv.height()));
-
-            matcher_->pca()->project(imageData_, components_);
-            return matcher_->font()->getSymbol(matcher_->pca()->findClosestGlyph(components_));
-        }
 
     private:
-        explicit PcaContext(const PcaGlyphMatcher* c)
-            :matcher_(c)
-            ,components_(matcher_->pca()->featureCount())
-            ,imageData_(matcher_->font()->glyphSize() * boost::gil::num_channels<ViewT>::value)
+        explicit PcaContext(const PcaGlyphMatcher* matcher)
+            :components_(matcher->pca()->featureCount())
+            ,imageData_(matcher->font()->glyphSize() * boost::gil::num_channels<ViewT>::value)
         {
         }
 
     private:
-        const PcaGlyphMatcher* matcher_;
         Eigen::VectorXf components_;
         Eigen::VectorXf imageData_;
     };
@@ -128,9 +80,44 @@ public:
         return font_->glyphHeight();
     }
 
-    PcaContext* createContext() const
+    PcaContext createContext() const
     {
-        return new PcaContext(this);
+        return PcaContext(this);
+    }
+
+    template<typename TSomeView>
+    Symbol match(PcaContext& ctx, const TSomeView& imgv) const
+    {
+        boost::gil::gil_function_requires<boost::gil::ImageViewConcept<TSomeView> >();
+        boost::gil::gil_function_requires<boost::gil::ColorSpacesCompatibleConcept<
+                                    typename boost::gil::color_space_type<TSomeView>::type,
+                                    typename boost::gil::color_space_type<ConstViewT>::type> >();
+        boost::gil::gil_function_requires<boost::gil::ChannelsCompatibleConcept<
+                                    typename boost::gil::channel_type<TSomeView>::type,
+                                    typename boost::gil::channel_type<ConstViewT>::type> >();
+
+        assert(static_cast<size_t>(imgv.width()) <= cellWidth());
+        assert(static_cast<size_t>(imgv.height()) <= cellHeight());
+
+        typedef boost::gil::layout<
+                typename boost::gil::color_space_type<ConstViewT>::type,
+                typename boost::gil::channel_mapping_type<TSomeView>::type
+                > LayoutT;
+        typedef typename float_channel_type<typename boost::gil::channel_type<ConstViewT>::type>::type FloatChannelT;
+        typedef typename boost::gil::pixel_value_type<FloatChannelT, LayoutT>::type FloatPixelT;
+        typedef typename boost::gil::type_from_x_iterator<FloatPixelT*>::view_t FloatViewT;
+
+        FloatViewT tmp_glyph_view = boost::gil::interleaved_view(
+                cellWidth(), cellHeight(),
+                reinterpret_cast<FloatPixelT*>(ctx.imageData_.data()),
+                cellWidth() * sizeof(FloatPixelT));
+
+        boost::gil::fill_pixels(tmp_glyph_view, FloatPixelT());
+        boost::gil::copy_and_convert_pixels(imgv, subimage_view(
+                tmp_glyph_view, 0, 0, imgv.width(), imgv.height()));
+
+        pca()->project(ctx.imageData_, ctx.components_);
+        return font()->getSymbol(pca()->findClosestGlyph(ctx.components_));
     }
 
     const FontPCA<FontImageT>* pca() const

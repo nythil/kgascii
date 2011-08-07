@@ -67,29 +67,29 @@ public:
         for (; y + char_h <= roi_h; y += char_h, ++r) {
             size_t x = 0, c = 0;
             for (; x + char_w <= roi_w; x += char_w, ++c) {
-                text(r, c) = context_->match(subimage_view(imgv, x, y, char_w, char_h));
+                text(r, c) = matcher_->match(context_, subimage_view(imgv, x, y, char_w, char_h));
             }
             if (x < roi_w) {
                 size_t dx = roi_w - x;
-                text(r, c) = context_->match(subimage_view(imgv, x, y, dx, char_h));
+                text(r, c) = matcher_->match(context_, subimage_view(imgv, x, y, dx, char_h));
             }
         }
         if (y < roi_h) {
             size_t dy = roi_h - y;
             size_t x = 0, c = 0;
             for (; x + char_w <= roi_w; x += char_w, ++c) {
-                text(r, c) = context_->match(subimage_view(imgv, x, y, char_w, dy));
+                text(r, c) = matcher_->match(context_, subimage_view(imgv, x, y, char_w, dy));
             }
             if (x < roi_w) {
                 size_t dx = roi_w - x;
-                text(r, c) = context_->match(subimage_view(imgv, x, y, dx, dy));
+                text(r, c) = matcher_->match(context_, subimage_view(imgv, x, y, dx, dy));
             }
         }
     }
 
 private:
     const GlyphMatcherT* matcher_;
-    boost::scoped_ptr<ContextT> context_;
+    ContextT context_;
 };
 
 } } // namespace KG::Ascii

@@ -110,7 +110,7 @@ private:
 private:
     void threadFunc()
     {
-        boost::scoped_ptr<ContextT> context(matcher_->createContext());
+        ContextT context(matcher_->createContext());
         //single character size
         size_t char_w = matcher_->cellWidth();
 
@@ -121,11 +121,11 @@ private:
             size_t roi_h = wi.imgv.height();
             size_t x = 0, c = 0;
             for (; x + char_w <= roi_w; x += char_w, ++c) {
-                wi.outp[c] = context->match(subimage_view(wi.imgv, x, 0, char_w, roi_h));
+                wi.outp[c] = matcher_->match(context, subimage_view(wi.imgv, x, 0, char_w, roi_h));
             }
             if (x < roi_w) {
                 size_t dx = roi_w - x;
-                wi.outp[c] = context->match(subimage_view(wi.imgv, x, 0, dx, roi_h));
+                wi.outp[c] = matcher_->match(context, subimage_view(wi.imgv, x, 0, dx, roi_h));
             }
             queue_.done();
         }

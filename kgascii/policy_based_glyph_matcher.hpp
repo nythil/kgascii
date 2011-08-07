@@ -25,53 +25,65 @@
 namespace KG { namespace Ascii {
 
 template<class TFontImage, class TDistance>
-class PolicyBasedGlyphMatcherContext;
-template<class TFontImage, class TDistance>
-class PolicyBasedGlyphMatcher;
-
-template<class TFontImage, class TDistance>
-class PolicyBasedGlyphMatcher: boost::noncopyable
-{
-public:
-    typedef PolicyBasedGlyphMatcherContext<TFontImage, TDistance> GlyphMatcherContextT;
-    typedef TFontImage FontImageT;
-    typedef typename FontImageT::PixelT PixelT;
-    typedef typename FontImageT::ImageT ImageT;
-    typedef typename FontImageT::ViewT ViewT;
-    typedef typename FontImageT::ConstViewT ConstViewT;
-
-public:
-    explicit PolicyBasedGlyphMatcher(const GlyphMatcherContextT* c)
-        :context_(c)
-    {
-        image_.recreate(context_->cellWidth(), context_->cellHeight());
-    }
-
-public:
-    const GlyphMatcherContextT* context() const
-    {
-        return context_;
-    }
-
-    template<class TSomeView>
-    Symbol match(const TSomeView& imgv);
-
-private:
-    const GlyphMatcherContextT* context_;
-    ImageT image_;
-};
-
-
-template<class TFontImage, class TDistance>
 class PolicyBasedGlyphMatcherContext: boost::noncopyable
 {
 public:
-    typedef PolicyBasedGlyphMatcher<TFontImage, TDistance> GlyphMatcherT;
     typedef TFontImage FontImageT;
-    typedef typename FontImageT::PixelT PixelT;
     typedef typename FontImageT::ImageT ImageT;
     typedef typename FontImageT::ViewT ViewT;
     typedef typename FontImageT::ConstViewT ConstViewT;
+
+    class PolicyBasedGlyphMatcher: boost::noncopyable
+    {
+        friend class PolicyBasedGlyphMatcherContext;
+    public:
+        typedef PolicyBasedGlyphMatcherContext GlyphMatcherContextT;
+        typedef typename GlyphMatcherContextT::FontImageT FontImageT;
+        typedef typename FontImageT::PixelT PixelT;
+        typedef typename FontImageT::ImageT ImageT;
+        typedef typename FontImageT::ViewT ViewT;
+        typedef typename FontImageT::ConstViewT ConstViewT;
+
+    public:
+        const PolicyBasedGlyphMatcherContext* context() const
+        {
+            return context_;
+        }
+
+        template<class TSomeView>
+        Symbol match(const TSomeView& imgv)
+        {
+            assert(imgv.width() <= image_.width());
+            assert(imgv.height() <= image_.height());
+
+            ViewT image_view = view(image_);
+            fill_pixels(image_view, PixelT());
+            copy_pixels(imgv, subimage_view(image_view, 0, 0, imgv.width(), imgv.height()));
+
+            int d2_min = std::numeric_limits<int>::max();
+            Symbol cc_min;
+            for (size_t ci = 0; ci < context_->font()->glyphCount(); ++ci) {
+                int d2 = context_->calculateDistance(image_view, context_->font()->getGlyph(ci));
+                if (d2 < d2_min) {
+                    d2_min = d2;
+                    cc_min = context_->font()->getSymbol(ci);
+                }
+            }
+            return cc_min;
+        }
+
+    private:
+        explicit PolicyBasedGlyphMatcher(const PolicyBasedGlyphMatcherContext* c)
+            :context_(c)
+        {
+            image_.recreate(context_->cellWidth(), context_->cellHeight());
+        }
+
+    private:
+        const PolicyBasedGlyphMatcherContext* context_;
+        ImageT image_;
+    };
+    typedef PolicyBasedGlyphMatcher GlyphMatcherT;
 
 public:
     explicit PolicyBasedGlyphMatcherContext(const FontImageT* f,
@@ -96,9 +108,9 @@ public:
         return font_->glyphHeight();
     }
 
-    GlyphMatcherT* createMatcher() const
+    PolicyBasedGlyphMatcher* createMatcher() const
     {
-        return new GlyphMatcherT(this);
+        return new PolicyBasedGlyphMatcher(this);
     }
 
     int calculateDistance(const ConstViewT& view1, const ConstViewT& view2) const
@@ -110,29 +122,6 @@ private:
     const FontImageT* font_;
     TDistance distance_;
 };
-
-template<class TFontImage, class TDistance>
-template<class TSomeView>
-Symbol PolicyBasedGlyphMatcher<TFontImage, TDistance>::match(const TSomeView& imgv)
-{
-    assert(imgv.width() <= image_.width());
-    assert(imgv.height() <= image_.height());
-
-    ViewT image_view = view(image_);
-    fill_pixels(image_view, PixelT());
-    copy_pixels(imgv, subimage_view(image_view, 0, 0, imgv.width(), imgv.height()));
-
-    int d2_min = std::numeric_limits<int>::max();
-    Symbol cc_min;
-    for (size_t ci = 0; ci < context_->font()->glyphCount(); ++ci) {
-        int d2 = context_->calculateDistance(image_view, context_->font()->getGlyph(ci));
-        if (d2 < d2_min) {
-            d2_min = d2;
-            cc_min = context_->font()->getSymbol(ci);
-        }
-    }
-    return cc_min;
-}
 
 } } // namespace KG::Ascii
 

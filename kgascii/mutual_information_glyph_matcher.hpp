@@ -27,55 +27,83 @@
 #include <Eigen/Dense>
 #include <kgascii/dynamic_glyph_matcher.hpp>
 
-
 namespace KG { namespace Ascii {
-
-template<class TFontImage>
-class MutualInformationGlyphMatcher;
-template<class TFontImage>
-class MutualInformationGlyphMatcherContext;
-
-template<class TFontImage>
-class MutualInformationGlyphMatcher
-{
-public:
-    typedef TFontImage FontImageT;
-    typedef MutualInformationGlyphMatcherContext<FontImageT> GlyphMatcherContextT;
-    typedef typename FontImageT::PixelT PixelT;
-    typedef typename FontImageT::ImageT ImageT;
-    typedef typename FontImageT::ViewT ViewT;
-    typedef typename FontImageT::ConstViewT ConstViewT;
-
-public:
-    explicit MutualInformationGlyphMatcher(const GlyphMatcherContextT* c);
-
-public:
-    const GlyphMatcherContextT* context() const
-    {
-        return context_;
-    }
-
-    template<class TSomeView>
-    Symbol match(const TSomeView& imgv);
-
-private:
-    const GlyphMatcherContextT* context_;
-    Eigen::VectorXi histogram_;
-    Eigen::MatrixXi jointHistogram_;
-    ImageT surfaceData_;
-};
-
 
 template<class TFontImage>
 class MutualInformationGlyphMatcherContext: boost::noncopyable
 {
 public:
     typedef TFontImage FontImageT;
-    typedef MutualInformationGlyphMatcher<FontImageT> GlyphMatcherT;
     typedef typename FontImageT::PixelT PixelT;
     typedef typename FontImageT::ImageT ImageT;
     typedef typename FontImageT::ViewT ViewT;
     typedef typename FontImageT::ConstViewT ConstViewT;
+
+    class MutualInformationGlyphMatcher: boost::noncopyable
+    {
+        friend class MutualInformationGlyphMatcherContext;
+    public:
+        typedef MutualInformationGlyphMatcherContext GlyphMatcherContextT;
+        typedef typename GlyphMatcherContextT::FontImageT FontImageT;
+        typedef typename FontImageT::PixelT PixelT;
+        typedef typename FontImageT::ImageT ImageT;
+        typedef typename FontImageT::ViewT ViewT;
+        typedef typename FontImageT::ConstViewT ConstViewT;
+
+    public:
+        const MutualInformationGlyphMatcherContext* context() const
+        {
+            return context_;
+        }
+
+        template<class TSomeView>
+        Symbol match(const TSomeView& imgv)
+        {
+            //copy imgv to tmp_surf padding with black pixels
+            ViewT tmp_view = view(surfaceData_);
+            fill_pixels(tmp_view, PixelT());
+            copy_pixels(imgv, subimage_view(tmp_view, 0, 0, imgv.width(), imgv.height()));
+
+            context_->makeHistogram(tmp_view, histogram_);
+            double imgv_ent = context_->entropy(histogram_);
+
+            double nmi_max = std::numeric_limits<double>::min();
+            Symbol cc_max;
+            for (size_t ci = 0; ci < context_->font()->glyphCount(); ++ci) {
+                const Eigen::VectorXi& glyph_histogram = context_->histogram(ci);
+                double glyph_ent = context_->entropy(glyph_histogram);
+
+                context_->makeJointHistogram(tmp_view, context_->font()->getGlyph(ci), jointHistogram_);
+                assert(jointHistogram_.rowwise().sum() == histogram_);
+                assert(jointHistogram_.colwise().sum().transpose() == glyph_histogram);
+                double joint_ent = context_->entropy(jointHistogram_);
+
+                //normalized mutual information
+                double nmi = (imgv_ent + glyph_ent) / joint_ent;
+                if (nmi > nmi_max) {
+                    nmi_max = nmi;
+                    cc_max = context_->font()->getSymbol(ci);
+                }
+            }
+            return cc_max;
+        }
+
+    private:
+        explicit MutualInformationGlyphMatcher(const MutualInformationGlyphMatcherContext* c)
+            :context_(c)
+            ,histogram_(context_->colorBins())
+            ,jointHistogram_(context_->colorBins(), context_->colorBins())
+            ,surfaceData_(context_->cellWidth(), context_->cellHeight())
+        {
+        }
+
+    private:
+        const MutualInformationGlyphMatcherContext* context_;
+        Eigen::VectorXi histogram_;
+        Eigen::MatrixXi jointHistogram_;
+        ImageT surfaceData_;
+    };
+    typedef MutualInformationGlyphMatcher GlyphMatcherT;
 
 public:
     explicit MutualInformationGlyphMatcherContext(const FontImageT* f, size_t bins)
@@ -184,48 +212,6 @@ private:
     size_t colorBins_;
     size_t colorBinSize_;
 };
-
-template<class TFontImage>
-MutualInformationGlyphMatcher<TFontImage>::MutualInformationGlyphMatcher(const MutualInformationGlyphMatcherContext<TFontImage>* c)
-    :context_(c)
-    ,histogram_(context_->colorBins())
-    ,jointHistogram_(context_->colorBins(), context_->colorBins())
-    ,surfaceData_(context_->cellWidth(), context_->cellHeight())
-{
-}
-
-template<class TFontImage>
-template<class TSomeView>
-Symbol MutualInformationGlyphMatcher<TFontImage>::match(const TSomeView& imgv)
-{
-    //copy imgv to tmp_surf padding with black pixels
-    ViewT tmp_view = view(surfaceData_);
-    fill_pixels(tmp_view, PixelT());
-    copy_pixels(imgv, subimage_view(tmp_view, 0, 0, imgv.width(), imgv.height()));
-
-    context_->makeHistogram(tmp_view, histogram_);
-    double imgv_ent = context_->entropy(histogram_);
-
-    double nmi_max = std::numeric_limits<double>::min();
-    Symbol cc_max;
-    for (size_t ci = 0; ci < context_->font()->glyphCount(); ++ci) {
-        const Eigen::VectorXi& glyph_histogram = context_->histogram(ci);
-        double glyph_ent = context_->entropy(glyph_histogram);
-
-        context_->makeJointHistogram(tmp_view, context_->font()->getGlyph(ci), jointHistogram_);
-        assert(jointHistogram_.rowwise().sum() == histogram_);
-        assert(jointHistogram_.colwise().sum().transpose() == glyph_histogram);
-        double joint_ent = context_->entropy(jointHistogram_);
-
-        //normalized mutual information
-        double nmi = (imgv_ent + glyph_ent) / joint_ent;
-        if (nmi > nmi_max) {
-            nmi_max = nmi;
-            cc_max = context_->font()->getSymbol(ci);
-        }
-    }
-    return cc_max;
-}
 
 template<class TFontImage>
 class MutualInformationGlyphMatcherContextFactory

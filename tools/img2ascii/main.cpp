@@ -35,6 +35,7 @@
 
 using namespace KG::Ascii;
 
+typedef Font<> FontT;
 
 class ImageToAscii: public CmdlineTool
 {
@@ -99,18 +100,17 @@ bool ImageToAscii::processArgs()
 template<class ImageT>
 class ConverterImpl
 {
-    typedef Font<> FontT;
-    typedef FontImage< FontT, ImageT > FontImageT;
+    typedef FontImage<FontT, ImageT> FontImageT;
     typedef DynamicGlyphMatcher<FontImageT> DynamicGlyphMatcherT;
     typedef DynamicAsciifier<DynamicGlyphMatcherT> DynamicAsciifierT;
 
 public:
-    explicit ConverterImpl(const FontT* font, const std::string& algo, size_t threads)
+    explicit ConverterImpl(boost::shared_ptr<const FontT> font, const std::string& algo, size_t threads)
     {
         registerGlyphMatcherFactories<FontImageT>();
-        fontImage_ = new FontImageT(font);
+        fontImage_.reset(new FontImageT(font));
         matcher_ = GlyphMatcherFactory::create(fontImage_, algo);
-        asciifier_ = new DynamicAsciifierT(matcher_);
+        asciifier_.reset(new DynamicAsciifierT(matcher_));
         if (threads == 1) {
             asciifier_->setSequential();
         } else {
@@ -127,19 +127,19 @@ public:
     }
 
 private:
-    FontImageT* fontImage_;
-    DynamicGlyphMatcherT* matcher_;
-    DynamicAsciifierT* asciifier_;
+    boost::shared_ptr<FontImageT> fontImage_;
+    boost::shared_ptr<DynamicGlyphMatcherT> matcher_;
+    boost::shared_ptr<DynamicAsciifierT> asciifier_;
 };
 
 int ImageToAscii::doExecute()
 {
     std::cerr << "loading font...\n";
-    Font<> font;
-    if (!font.load(fontFile_))
+    boost::shared_ptr<FontT> font(new FontT);
+    if (!font->load(fontFile_))
         return -1;
-    unsigned char_width = font.glyphWidth();
-    unsigned char_height = font.glyphHeight();
+    unsigned char_width = font->glyphWidth();
+    unsigned char_height = font->glyphHeight();
 
     std::cerr << "loading image...\n";
     cv::Mat capture_frame = cv::imread(inputFile_);
@@ -190,10 +190,10 @@ int ImageToAscii::doExecute()
 
     TextSurface text(row_count, col_count);
     if (gamma_) {
-        ConverterImpl<boost::gil::gray_lin16_image_t> converter(&font, algorithm_, threadCount_);
+        ConverterImpl<boost::gil::gray_lin16_image_t> converter(font, algorithm_, threadCount_);
         converter.generate(castSurface<const boost::gil::gray8_pixel_t>(gray_frame), text);
     } else {
-        ConverterImpl<boost::gil::gray8_image_t> converter(&font, algorithm_, threadCount_);
+        ConverterImpl<boost::gil::gray8_image_t> converter(font, algorithm_, threadCount_);
         converter.generate(castSurface<const boost::gil::gray8_pixel_t>(gray_frame), text);
     }
 

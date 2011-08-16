@@ -19,7 +19,7 @@
 #define KGASCII_SEQUENTIALASCIIFIER_HPP
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 #include <kgascii/text_surface.hpp>
 
 namespace KG { namespace Ascii {
@@ -32,14 +32,14 @@ public:
     typedef typename TGlyphMatcher::ContextT ContextT;
 
 public:
-    SequentialAsciifier(const GlyphMatcherT* c)
+    explicit SequentialAsciifier(boost::shared_ptr<const GlyphMatcherT> c)
         :matcher_(c)
         ,context_(matcher_->createContext())
     {
     }
 
 public:
-    const GlyphMatcherT* matcher() const
+    boost::shared_ptr<const GlyphMatcherT> matcher() const
     {
         return matcher_;
     }
@@ -88,7 +88,7 @@ public:
     }
 
 private:
-    const GlyphMatcherT* matcher_;
+    boost::shared_ptr<const GlyphMatcherT> matcher_;
     ContextT context_;
 };
 

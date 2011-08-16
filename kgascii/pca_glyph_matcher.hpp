@@ -19,20 +19,21 @@
 #define KGASCII_PCAGLYPHMATCHER_HPP
 
 #include <map>
-#include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/shared_ptr.hpp>
 #include <Eigen/Dense>
 #include <kgascii/font_pca.hpp>
 #include <kgascii/dynamic_glyph_matcher.hpp>
 
 namespace KG { namespace Ascii {
 
-template<class TFontImage>
+template<class TPrincipalComponents>
 class PcaGlyphMatcher: boost::noncopyable
 {
 public:
-    typedef TFontImage FontImageT;
+    typedef TPrincipalComponents PrincipalComponentsT;
+    typedef typename PrincipalComponentsT::FontImageT FontImageT;
     typedef typename FontImageT::PixelT PixelT;
     typedef typename FontImageT::ImageT ImageT;
     typedef typename FontImageT::ViewT ViewT;
@@ -46,7 +47,7 @@ public:
 
     private:
         explicit PcaContext(const PcaGlyphMatcher* matcher)
-            :components_(matcher->pca()->featureCount())
+            :components_(matcher->features()->featureCount())
             ,imageData_(matcher->font()->glyphSize() * boost::gil::num_channels<ViewT>::value)
         {
         }
@@ -58,26 +59,30 @@ public:
     typedef PcaContext ContextT;
 
 public:
-    explicit PcaGlyphMatcher(const FontPCA<FontImageT>* pca)
-        :font_(pca->font())
-        ,pca_(pca)
+    explicit PcaGlyphMatcher(boost::shared_ptr<const PrincipalComponentsT> feat)
+        :features_(feat)
     {
     }
 
 public:
-    const FontImageT* font() const
+    boost::shared_ptr<const PrincipalComponentsT> features() const
     {
-        return font_;
+        return features_;
+    }
+
+    boost::shared_ptr<const FontImageT> font() const
+    {
+        return features()->font();
     }
 
     unsigned cellWidth() const
     {
-        return font_->glyphWidth();
+        return font()->glyphWidth();
     }
 
     unsigned cellHeight() const
     {
-        return font_->glyphHeight();
+        return font()->glyphHeight();
     }
 
     PcaContext createContext() const
@@ -116,27 +121,24 @@ public:
         boost::gil::copy_and_convert_pixels(imgv, subimage_view(
                 tmp_glyph_view, 0, 0, imgv.width(), imgv.height()));
 
-        pca()->project(ctx.imageData_, ctx.components_);
-        return font()->getSymbol(pca()->findClosestGlyph(ctx.components_));
-    }
-
-    const FontPCA<FontImageT>* pca() const
-    {
-        return pca_;
+        features()->project(ctx.imageData_, ctx.components_);
+        return font()->getSymbol(features()->findClosestGlyph(ctx.components_));
     }
 
 private:
-    const FontImageT* font_;
-    const FontPCA<FontImageT>* pca_;
+    boost::shared_ptr<const PrincipalComponentsT> features_;
 };
 
 template<class TFontImage>
 class PcaGlyphMatcherFactory
 {
 public:
-    typedef PcaGlyphMatcher<TFontImage> GlyphMatcherT;
+    typedef FontEigendecomposition<TFontImage> EigendecompositionT;
+    typedef FontPrincipalComponents<EigendecompositionT> PrincipalComponentsT;
+    typedef PcaGlyphMatcher<PrincipalComponentsT> PcaGlyphMatcherT;
+    typedef DynamicGlyphMatcher<TFontImage> DynamicGlyphMatcherT;
 
-    DynamicGlyphMatcher<TFontImage>* operator()(const TFontImage* font, const std::map<std::string, std::string>& options)
+    boost::shared_ptr<DynamicGlyphMatcherT> operator()(boost::shared_ptr<const TFontImage> font, const std::map<std::string, std::string>& options) const
     {
         size_t nfeatures = 10;
         if (options.count("nf")) {
@@ -145,20 +147,20 @@ public:
             } catch (boost::bad_lexical_cast&) { }
         }
 
-        FontPCAnalyzer<TFontImage>* pcanalyzer = new FontPCAnalyzer<TFontImage>(font);
+        boost::shared_ptr<EigendecompositionT> decomposition(new EigendecompositionT(font));
         if (options.count("cache") && !options.find("cache")->second.empty()) {
-            pcanalyzer->loadFromCache(options.find("cache")->second);
+            decomposition->loadFromCache(options.find("cache")->second);
         } else {
-            pcanalyzer->analyze();
+            decomposition->analyze();
         }
         if (options.count("makecache") && !options.find("makecache")->second.empty()) {
-            pcanalyzer->saveToCache(options.find("makecache")->second);
+            decomposition->saveToCache(options.find("makecache")->second);
         }
 
-        FontPCA<TFontImage>* pca = new FontPCA<TFontImage>(pcanalyzer, nfeatures);
-
-        boost::scoped_ptr<GlyphMatcherT> impl_holder(new GlyphMatcherT(pca));
-        return new DynamicGlyphMatcher<TFontImage>(impl_holder);
+        boost::shared_ptr<PrincipalComponentsT> components(new PrincipalComponentsT(decomposition, nfeatures));
+        boost::shared_ptr<PcaGlyphMatcherT> matcher(new PcaGlyphMatcherT(components));
+        boost::shared_ptr<DynamicGlyphMatcherT> dynamic_matcher(new DynamicGlyphMatcherT(matcher));
+        return dynamic_matcher;
     }
 };
 

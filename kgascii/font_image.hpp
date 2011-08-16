@@ -20,6 +20,7 @@
 
 #include <string>
 #include <vector>
+#include <boost/shared_ptr.hpp>
 #include <boost/gil/gil_all.hpp>
 #include <boost/noncopyable.hpp>
 #include <kgascii/symbol.hpp>
@@ -40,7 +41,7 @@ public:
     typedef typename ImageT::const_view_t ConstViewT;
 
 public:
-    explicit FontImage(const FontT* f)
+    explicit FontImage(boost::shared_ptr<const FontT> f)
         :font_(f)
     {
         familyName_ = font_->familyName();
@@ -60,7 +61,7 @@ public:
     }
 
 public:
-    const FontT* font() const
+    boost::shared_ptr<const FontT> font() const
     {
         return font_;
     }
@@ -118,7 +119,7 @@ private:
     };
 
 private:
-    const FontT* font_;
+    boost::shared_ptr<const FontT> font_;
     std::string familyName_;
     std::string styleName_;
     unsigned pixelSize_;

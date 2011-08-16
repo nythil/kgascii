@@ -19,13 +19,11 @@
 #define KGASCII_PARALLELASCIIFIER_HPP
 
 #include <boost/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
-#include <kgascii/text_surface.hpp>
 #include <boost/bind.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/thread.hpp>
-#include <boost/make_shared.hpp>
+#include <boost/shared_ptr.hpp>
 #include <kgascii/task_queue.hpp>
+#include <kgascii/text_surface.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -38,7 +36,7 @@ public:
     typedef typename TGlyphMatcher::ContextT ContextT;
 
 public:
-    ParallelAsciifier(const GlyphMatcherT* c, unsigned thr_cnt)
+    ParallelAsciifier(boost::shared_ptr<const GlyphMatcherT> c, unsigned thr_cnt)
         :matcher_(c)
     {
         setupThreads(thr_cnt);
@@ -50,7 +48,7 @@ public:
     }
     
 public:
-    const GlyphMatcherT* matcher() const
+    boost::shared_ptr<const GlyphMatcherT> matcher() const
     {
         return matcher_;
     }
@@ -132,7 +130,7 @@ private:
     }
 
 private:
-    const GlyphMatcherT* matcher_;
+    boost::shared_ptr<const GlyphMatcherT> matcher_;
     boost::thread_group group_;
     struct WorkItem
     {

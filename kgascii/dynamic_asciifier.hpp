@@ -19,10 +19,7 @@
 #define KGASCII_DYNAMICASCIIFIER_HPP
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/pointee.hpp>
-#include <boost/bind.hpp>
-#include <boost/functional/factory.hpp>
+#include <boost/shared_ptr.hpp>
 #include <kgascii/sequential_asciifier.hpp>
 #include <kgascii/parallel_asciifier.hpp>
 
@@ -37,18 +34,18 @@ public:
     typedef typename TGlyphMatcher::ContextT ContextT;
 
 public:
-    explicit DynamicAsciifier(const GlyphMatcherT* ctx)
+    explicit DynamicAsciifier(boost::shared_ptr<const GlyphMatcherT> ctx)
     {
         setSequential(ctx);
     }
 
-    explicit DynamicAsciifier(const GlyphMatcherT* ctx, unsigned thr_cnt)
+    explicit DynamicAsciifier(boost::shared_ptr<const GlyphMatcherT> ctx, unsigned thr_cnt)
     {
         setParallel(ctx, thr_cnt);
     }
 
 public:
-    const GlyphMatcherT* matcher() const
+    boost::shared_ptr<const GlyphMatcherT> matcher() const
     {
         return strategy_->matcher();
     }
@@ -69,10 +66,11 @@ public:
         setSequential(matcher());
     }
 
-    void setSequential(const GlyphMatcherT* ctx)
+    void setSequential(boost::shared_ptr<const GlyphMatcherT> ctx)
     {
         typedef SequentialAsciifier<GlyphMatcherT> SequentialAsciifierT;
-        setStrategy(new SequentialAsciifierT(ctx));
+        boost::shared_ptr<SequentialAsciifierT> impl(new SequentialAsciifierT(ctx));
+        setStrategy(impl);
     }
 
     void setParallel(unsigned thr_cnt)
@@ -80,51 +78,48 @@ public:
         setParallel(matcher(), thr_cnt);
     }
 
-    void setParallel(const GlyphMatcherT* ctx, unsigned thr_cnt)
+    void setParallel(boost::shared_ptr<const GlyphMatcherT> ctx, unsigned thr_cnt)
     {
         typedef ParallelAsciifier<GlyphMatcherT, ViewT> ParallelAsciifierT;
-        setStrategy(new ParallelAsciifierT(ctx, thr_cnt));
+        boost::shared_ptr<ParallelAsciifierT> impl(new ParallelAsciifierT(ctx, thr_cnt));
+        setStrategy(impl);
     }
 
     template<class TAsciifier>
-    void setStrategy(TAsciifier* impl)
+    void setStrategy(boost::shared_ptr<TAsciifier> impl)
     {
-        boost::scoped_ptr<TAsciifier> impl_holder(impl);
-        setStrategy(impl_holder);
-    }
-
-    template<class TAsciifier>
-    void setStrategy(boost::scoped_ptr<TAsciifier>& impl)
-    {
-        boost::scoped_ptr<StrategyBase> new_strategy(new Strategy<TAsciifier>(impl));
-        strategy_.swap(new_strategy);
+        strategy_ = Strategy<TAsciifier>::create(impl);
     }
 
 private:
-    class StrategyBase
+    class StrategyBase: boost::noncopyable
     {
     public:
-        virtual ~StrategyBase()
-        {
-        }
+        virtual ~StrategyBase() { }
 
-        virtual const GlyphMatcherT* matcher() const = 0;
+        virtual boost::shared_ptr<const GlyphMatcherT> matcher() const = 0;
 
         virtual unsigned threadCount() const = 0;
 
-        virtual void generate(const ViewT& imgv, TextSurface& text) = 0;
+        virtual void generate(const ViewT& imgv, TextSurface& text) const = 0;
     };
 
     template<class TAsciifier>
     class Strategy: public StrategyBase
     {
-    public:
-        explicit Strategy(boost::scoped_ptr<TAsciifier>& impl)
+        explicit Strategy(boost::shared_ptr<TAsciifier> impl)
+            :impl_(impl)
         {
-            impl_.swap(impl);
         }
 
-        virtual const GlyphMatcherT* matcher() const
+    public:
+        static boost::shared_ptr<Strategy> create(boost::shared_ptr<TAsciifier> impl)
+        {
+            boost::shared_ptr<Strategy> ptr(new Strategy(impl));
+            return ptr;
+        }
+
+        virtual boost::shared_ptr<const GlyphMatcherT> matcher() const
         {
             return impl_->matcher();
         }
@@ -134,17 +129,17 @@ private:
             return impl_->threadCount();
         }
 
-        virtual void generate(const ViewT& imgv, TextSurface& text)
+        virtual void generate(const ViewT& imgv, TextSurface& text) const
         {
             impl_->generate(imgv, text);
         }
 
     private:
-        boost::scoped_ptr<TAsciifier> impl_;
+        boost::shared_ptr<TAsciifier> impl_;
     };
 
 private:
-    boost::scoped_ptr<StrategyBase> strategy_;
+    boost::shared_ptr<const StrategyBase> strategy_;
 };
 
 } } // namespace KG::Ascii

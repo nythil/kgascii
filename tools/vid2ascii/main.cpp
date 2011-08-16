@@ -35,7 +35,8 @@
 
 using namespace KG::Ascii;
 
-typedef FontImage< Font<> > FontImageT;
+typedef Font<> FontT;
+typedef FontImage<FontT> FontImageT;
 typedef DynamicGlyphMatcher<FontImageT> DynamicGlyphMatcherT;
 typedef DynamicAsciifier<DynamicGlyphMatcherT> DynamicAsciifierT;
 
@@ -269,16 +270,16 @@ int VideoToAscii::doExecute()
 {
     try {
         std::cout << "loading font\n";
-        Font<> font;
-        if (!font.load(fontFile_)) {
+        boost::shared_ptr<FontT> font(new FontT);
+        if (!font->load(fontFile_)) {
             std::cerr << "problem loading font\n";
             return 1;
         }
-        FontImageT font_image(&font);
+        boost::shared_ptr<FontImageT> font_image(new FontImageT(font));
         std::cout << "creating glyph matcher\n";
 
         registerGlyphMatcherFactories<FontImageT>();
-        DynamicGlyphMatcherT* matcher_ctx = GlyphMatcherFactory::create(&font_image, algorithm_);
+        boost::shared_ptr<DynamicGlyphMatcherT> matcher_ctx = GlyphMatcherFactory::create(font_image, algorithm_);
         assert(matcher_ctx);
 
         DynamicAsciifierT asciifier(matcher_ctx);

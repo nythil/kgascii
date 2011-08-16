@@ -19,11 +19,8 @@
 #define KGASCII_DYNAMIC_GLYPH_MATCHER_HPP
 
 #include <boost/noncopyable.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/pointee.hpp>
-#include <boost/bind.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/any.hpp>
-#include <boost/functional/factory.hpp>
 
 namespace KG { namespace Ascii {
 
@@ -61,19 +58,13 @@ public:
 
 public:
     template<class TGlyphMatcher>
-    explicit DynamicGlyphMatcher(boost::scoped_ptr<TGlyphMatcher>& impl)
-    {
-        setStrategy(impl);
-    }
-
-    template<class TGlyphMatcher>
-    explicit DynamicGlyphMatcher(TGlyphMatcher* impl)
+    explicit DynamicGlyphMatcher(boost::shared_ptr<TGlyphMatcher> impl)
     {
         setStrategy(impl);
     }
 
 public:
-    const FontImageT* font() const
+    boost::shared_ptr<const FontImageT> font() const
     {
         return strategy_->font();
     }
@@ -99,28 +90,18 @@ public:
     }
 
     template<class TGlyphMatcher>
-    void setStrategy(TGlyphMatcher* impl)
+    void setStrategy(boost::shared_ptr<TGlyphMatcher> impl)
     {
-        boost::scoped_ptr<TGlyphMatcher> impl_holder(impl);
-        setStrategy(impl_holder);
-    }
-
-    template<class TGlyphMatcher>
-    void setStrategy(boost::scoped_ptr<TGlyphMatcher>& impl)
-    {
-        boost::scoped_ptr<StrategyBase> new_strategy(new Strategy<TGlyphMatcher>(impl));
-        strategy_.swap(new_strategy);
+        strategy_ = Strategy<TGlyphMatcher>::create(impl);
     }
 
 private:
-    class StrategyBase
+    class StrategyBase: boost::noncopyable
     {
     public:
-        virtual ~StrategyBase()
-        {
-        }
+        virtual ~StrategyBase() { }
 
-        virtual const FontImageT* font() const = 0;
+        virtual boost::shared_ptr<const FontImageT> font() const = 0;
 
         virtual unsigned cellWidth() const = 0;
 
@@ -134,13 +115,19 @@ private:
     template<class TGlyphMatcher>
     class Strategy: public StrategyBase
     {
-    public:
-        explicit Strategy(boost::scoped_ptr<TGlyphMatcher>& impl)
+        explicit Strategy(boost::shared_ptr<const TGlyphMatcher> impl)
+            :impl_(impl)
         {
-            impl_.swap(impl);
         }
 
-        virtual const FontImageT* font() const
+    public:
+        static boost::shared_ptr<Strategy> create(boost::shared_ptr<const TGlyphMatcher> impl)
+        {
+            boost::shared_ptr<Strategy> ptr(new Strategy(impl));
+            return ptr;
+        }
+
+        virtual boost::shared_ptr<const FontImageT> font() const
         {
             return impl_->font();
         }
@@ -165,12 +152,13 @@ private:
             typedef typename TGlyphMatcher::ContextT RealContextT;
             return impl_->match(ctx.template cast<RealContextT>(), imgv);
         }
+
     private:
-        boost::scoped_ptr<TGlyphMatcher> impl_;
+        boost::shared_ptr<const TGlyphMatcher> impl_;
     };
 
 private:
-    boost::scoped_ptr<StrategyBase> strategy_;
+    boost::shared_ptr<const StrategyBase> strategy_;
 };
 
 

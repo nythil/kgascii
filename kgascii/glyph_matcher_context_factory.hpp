@@ -21,9 +21,9 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <boost/scoped_ptr.hpp>
 #include <boost/algorithm/string.hpp>
-#include <kgascii/font_image.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/type_traits/remove_cv.hpp>
 #include <kgascii/dynamic_glyph_matcher.hpp>
 #include <kgascii/policy_based_glyph_matcher.hpp>
 #include <kgascii/squared_euclidean_distance.hpp>
@@ -47,19 +47,22 @@ class GlyphMatcherFactory
 {
 public:
     template<class TFontImage>
-    static DynamicGlyphMatcher<TFontImage>* create(const TFontImage* font, const std::string& options)
+    static boost::shared_ptr<typename Internal::GlyphMatcherRegistry<TFontImage>::DynamicGlyphMatcherT> 
+    create(boost::shared_ptr<TFontImage> font, const std::string& options)
     {
         std::string algo_name = "pca";
         std::map<std::string, std::string> options_map;
         parseOptions(options, algo_name, options_map);
 
-        typedef typename Internal::GlyphMatcherRegistry<TFontImage>::CreatorFuncT CreatorFuncT;
-        if (const CreatorFuncT* func = Internal::GlyphMatcherRegistry<TFontImage>::findFactory(algo_name)) {
+        typedef Internal::GlyphMatcherRegistry<TFontImage> GlyphMatcherRegistryT;
+        typedef typename GlyphMatcherRegistryT::CreatorFuncT CreatorFuncT;
+        if (const CreatorFuncT* func = GlyphMatcherRegistryT::findFactory(algo_name)) {
             return (*func)(font, options_map);
         }
         throw std::runtime_error("unknown algo name");
     }
 
+private:
     static void parseOptions(const std::string& options, std::string& algo_name, std::map<std::string, std::string>& options_map)
     {
         using namespace boost::algorithm;

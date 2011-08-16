@@ -24,21 +24,22 @@
 #include <boost/bind.hpp>
 #include <boost/range/irange.hpp>
 #include <boost/range/algorithm/transform.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace KG { namespace Ascii {
 
-template<class TFontPCA, class TImage=typename TFontPCA::FontImageT::ImageT>
+template<class TPrincipalComponents, class TImage=typename TPrincipalComponents::FontImageT::ImageT>
 class PcaReconstructionFontLoader: boost::noncopyable
 {
 public:
     typedef TImage ImageT;
     typedef typename ImageT::view_t ViewT;
     typedef typename ImageT::const_view_t ConstViewT;
-    typedef typename TFontPCA::FontImageT FontImageT;
+    typedef typename TPrincipalComponents::FontImageT FontImageT;
     typedef std::set<Symbol> SymbolCollectionT;
 
 public:
-    explicit PcaReconstructionFontLoader(const TFontPCA* pca)
+    explicit PcaReconstructionFontLoader(boost::shared_ptr<const TPrincipalComponents> pca)
         :pca_(pca)
     {
         glyphData_.recreate(pca_->font()->glyphWidth(), pca_->font()->glyphHeight());
@@ -76,7 +77,7 @@ public:
         SymbolCollectionT result;
         transform(irange<size_t>(0, pca_->font()->glyphCount()),
             std::inserter(result, result.begin()),
-            bind(&FontImageT::getSymbol, pca_->font(), _1));
+            boost::bind(&FontImageT::getSymbol, pca_->font(), _1));
         return result;
     }
 
@@ -107,7 +108,7 @@ public:
     }
 
 private:
-    const TFontPCA* pca_;
+    boost::shared_ptr<const TPrincipalComponents> pca_;
     ImageT glyphData_;
 };
 

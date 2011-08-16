@@ -20,6 +20,8 @@
 
 #include <limits>
 #include <boost/gil/gil_all.hpp>
+#include <boost/noncopyable.hpp>
+#include <boost/shared_ptr.hpp>
 #include <kgascii/symbol.hpp>
 
 namespace KG { namespace Ascii {
@@ -52,13 +54,13 @@ public:
     typedef PolicyBasedContext ContextT;
 
 public:
-    explicit PolicyBasedGlyphMatcher(const FontImageT* f, const TDistance& dist=TDistance())
+    explicit PolicyBasedGlyphMatcher(boost::shared_ptr<const FontImageT> f, const TDistance& dist=TDistance())
         :font_(f)
         ,distance_(dist)
     {
     }
 
-    const FontImageT* font() const
+    boost::shared_ptr<const FontImageT> font() const
     {
         return font_;
     }
@@ -106,7 +108,7 @@ public:
     }
 
 private:
-    const FontImageT* font_;
+    boost::shared_ptr<const FontImageT> font_;
     TDistance distance_;
 };
 

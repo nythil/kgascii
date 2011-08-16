@@ -7,7 +7,6 @@ SET(kgascii_SRCS
     ft2pp/util.hpp 
     internal/ft2_font_loader.hpp 
     internal/glyph_matcher_registration.hpp 
-    internal/traits.hpp 
     dynamic_asciifier.hpp
     dynamic_glyph_matcher.hpp
     font.hpp

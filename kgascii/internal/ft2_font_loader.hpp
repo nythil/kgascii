@@ -61,7 +61,7 @@ class FT2FontLoader: public FT2FontLoaderBase
 {
 public:
     FT2FontLoader()
-        :library_(boost::make_shared<FT2pp::Library>())
+        :library_(new FT2pp::Library)
         ,glyph_loaded_(false)
         ,hinting_(HintingNormal)
         ,autohint_(AutoHinterOff)
@@ -75,8 +75,7 @@ public:
         int face_idx = 0;
         int num_faces = 1;
         while (face_idx < num_faces) {
-            boost::shared_ptr<FT2pp::Face> ft_face_ptr =
-                boost::make_shared<FT2pp::Face>(boost::ref(*library_), file_path, face_idx);
+            boost::shared_ptr<FT2pp::Face> ft_face_ptr(new FT2pp::Face(*library_, file_path, face_idx));
             FT2pp::Face& ft_face = *ft_face_ptr;
 
             if (face_idx == 0) {

@@ -19,8 +19,7 @@
 #define KGASCII_SQUAREDEUCLIDEANDISTANCE_HPP
 
 #include <map>
-#include <boost/scoped_ptr.hpp>
-#include <boost/lexical_cast.hpp>
+#include <boost/shared_ptr.hpp>
 #include <kgascii/policy_based_glyph_matcher.hpp>
 #include <kgascii/dynamic_glyph_matcher.hpp>
 
@@ -55,11 +54,13 @@ class SquaredEuclideanDistanceGlyphMatcherFactory
 {
 public:
     typedef PolicyBasedGlyphMatcher<TFontImage, SquaredEuclideanDistance> GlyphMatcherT;
+    typedef DynamicGlyphMatcher<TFontImage> DynamicGlyphMatcherT;
 
-    DynamicGlyphMatcher<TFontImage>* operator()(const TFontImage* font, const std::map<std::string, std::string>&)
+    boost::shared_ptr<DynamicGlyphMatcherT> operator()(boost::shared_ptr<const TFontImage> font, const std::map<std::string, std::string>&) const
     {
-        boost::scoped_ptr<GlyphMatcherT> impl_holder(new GlyphMatcherT(font));
-        return new DynamicGlyphMatcher<TFontImage>(impl_holder);
+        boost::shared_ptr<GlyphMatcherT> matcher(new GlyphMatcherT(font));
+        boost::shared_ptr<DynamicGlyphMatcherT> dynamic_matcher(new DynamicGlyphMatcherT(matcher));
+        return dynamic_matcher;
     }
 };
 

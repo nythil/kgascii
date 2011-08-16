@@ -19,6 +19,7 @@
 #define KGASCII_FONT_PCA_HPP
 
 #include <fstream>
+#include <boost/shared_ptr.hpp>
 #include <boost/serialization/nvp.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
@@ -35,95 +36,12 @@ struct float_channel_type
 };
 
 template<class TFontImage>
-class FontPCA;
-template<class TFontImage>
-class FontPCAnalyzer;
+class FontEigendecomposition;
+template<class TEigendecomposition>
+class FontPrincipalComponents;
 
 template<class TFontImage>
-class FontPCA
-{
-public:
-    typedef TFontImage FontImageT;
-
-public:
-    FontPCA(const FontPCAnalyzer<FontImageT>* analyzer, size_t feat_cnt);
-
-public:
-    Eigen::VectorXf combine(const Eigen::VectorXf& vec) const
-    {
-        Eigen::VectorXf out;
-        combine(vec, out);
-        return out;
-    }
-
-    Eigen::VectorXf& combine(const Eigen::VectorXf& vec, Eigen::VectorXf& out) const
-    {
-        out = features_ * energies_.asDiagonal().inverse() * vec + mean_;
-        return out;
-    }
-
-    Eigen::VectorXf project(const Eigen::VectorXf& vec) const
-    {
-        Eigen::VectorXf out;
-        project(vec, out);
-        return out;
-    }
-
-    Eigen::VectorXf& project(const Eigen::VectorXf& vec, Eigen::VectorXf& out) const
-    {
-        assert(vec.size() == features_.rows());
-        out = (features_.transpose() * (vec - mean_)).cwiseProduct(energies_);
-        return out;
-    }
-
-    size_t findClosestGlyph(const Eigen::VectorXf& vec) const
-    {
-        size_t min_index = 0;
-        (glyphs_.colwise() - vec).colwise().squaredNorm().minCoeff(&min_index);
-        return min_index;
-    }
-
-public:
-    size_t featureCount() const
-    {
-        return energies_.size();
-    }
-
-    const FontImageT* font() const
-    {
-        return font_;
-    }
-
-    const Eigen::VectorXf& mean() const
-    {
-        return mean_;
-    }
-
-    const Eigen::VectorXf& energies() const
-    {
-        return energies_;
-    }
-
-    const Eigen::MatrixXf& features() const
-    {
-        return features_;
-    }
-
-    const Eigen::MatrixXf& glyphs() const
-    {
-        return glyphs_;
-    }
-
-private:
-    const FontImageT* font_;
-    Eigen::VectorXf mean_;
-    Eigen::VectorXf energies_;
-    Eigen::MatrixXf features_;
-    Eigen::MatrixXf glyphs_;
-};
-
-template<class TFontImage>
-class FontPCAnalyzer
+class FontEigendecomposition
 {
 public:
     typedef TFontImage FontImageT;
@@ -131,7 +49,7 @@ public:
     typedef typename FontImageT::ConstViewT ConstViewT;
 
 public:
-    explicit FontPCAnalyzer(const FontImageT* f)
+    explicit FontEigendecomposition(boost::shared_ptr<const FontImageT> f)
         :font_(f)
     {
     }
@@ -184,11 +102,6 @@ public:
         features_ = eigen_solver.eigenvectors().rowwise().reverse();
         assert(static_cast<size_t>(features_.rows()) == glyph_size);
         assert(static_cast<size_t>(features_.cols()) == glyph_size);
-    }
-
-    FontPCA<FontImageT> extract(size_t cnt) const
-    {
-        return FontPCA<FontImageT>(this, cnt);
     }
 
     bool saveToCache(const std::string& filename) const
@@ -244,7 +157,7 @@ public:
     }
 
 public:
-    const FontImageT* font() const
+    boost::shared_ptr<const FontImageT> font() const
     {
         return font_;
     }
@@ -270,41 +183,126 @@ public:
     }
 
 private:
-    const FontImageT* font_;
+    boost::shared_ptr<const FontImageT> font_;
     Eigen::VectorXd mean_;
     Eigen::MatrixXd samples_;
     Eigen::VectorXd energies_;
     Eigen::MatrixXd features_;
 };
 
-template<class FontImageT>
-FontPCA<FontImageT>::FontPCA(const FontPCAnalyzer<FontImageT>* analyzer, size_t feat_cnt)
-    :font_(analyzer->font())
+template<class TEigendecomposition>
+class FontPrincipalComponents
 {
-    size_t glyph_size = font_->glyphWidth() * font_->glyphHeight();
-    size_t samples_cnt = font_->glyphCount();
+public:
+    typedef TEigendecomposition EigendecompositionT;
+    typedef typename EigendecompositionT::FontImageT FontImageT;
 
-    mean_ = analyzer->mean().template cast<float>();
-    assert(static_cast<size_t>(mean_.size()) == glyph_size);
+public:
+    FontPrincipalComponents(boost::shared_ptr<const EigendecompositionT> decomp, size_t feat_cnt)
+        :decomposition_(decomp)
+    {
+        size_t glyph_size = font()->glyphWidth() * font()->glyphHeight();
+        size_t samples_cnt = font()->glyphCount();
 
-    Eigen::VectorXd energies_dbl = analyzer->energies().head(feat_cnt);
-    energies_dbl /= energies_dbl.sum();
-    energies_dbl *= energies_dbl.size();
-    energies_ = energies_dbl.template cast<float>();
-    assert(static_cast<size_t>(energies_.size()) == feat_cnt);
+        mean_ = decomposition_->mean().template cast<float>();
+        assert(static_cast<size_t>(mean_.size()) == glyph_size);
 
-    Eigen::MatrixXd features_dbl = analyzer->features().leftCols(feat_cnt);
-    features_ = features_dbl.template cast<float>();
-    assert(static_cast<size_t>(features_.rows()) == glyph_size);
-    assert(static_cast<size_t>(features_.cols()) == feat_cnt);
+        Eigen::VectorXd energies_dbl = decomposition_->energies().head(feat_cnt);
+        energies_dbl /= energies_dbl.sum();
+        energies_dbl *= energies_dbl.size();
+        energies_ = energies_dbl.template cast<float>();
+        assert(static_cast<size_t>(energies_.size()) == feat_cnt);
 
-    Eigen::MatrixXd glyphs_dbl = (features_dbl * energies_dbl.asDiagonal()).transpose() * analyzer->samples();
-    glyphs_ = glyphs_dbl.template cast<float>();
-    assert(static_cast<size_t>(glyphs_.cols()) == samples_cnt);
-    assert(static_cast<size_t>(glyphs_.rows()) == feat_cnt);
-}
+        Eigen::MatrixXd features_dbl = decomposition_->features().leftCols(feat_cnt);
+        features_ = features_dbl.template cast<float>();
+        assert(static_cast<size_t>(features_.rows()) == glyph_size);
+        assert(static_cast<size_t>(features_.cols()) == feat_cnt);
+
+        Eigen::MatrixXd glyphs_dbl = (features_dbl * energies_dbl.asDiagonal()).transpose() * decomposition_->samples();
+        glyphs_ = glyphs_dbl.template cast<float>();
+        assert(static_cast<size_t>(glyphs_.cols()) == samples_cnt);
+        assert(static_cast<size_t>(glyphs_.rows()) == feat_cnt);
+    }
+
+public:
+    Eigen::VectorXf combine(const Eigen::VectorXf& vec) const
+    {
+        Eigen::VectorXf out;
+        combine(vec, out);
+        return out;
+    }
+
+    Eigen::VectorXf& combine(const Eigen::VectorXf& vec, Eigen::VectorXf& out) const
+    {
+        out = features_ * energies_.asDiagonal().inverse() * vec + mean_;
+        return out;
+    }
+
+    Eigen::VectorXf project(const Eigen::VectorXf& vec) const
+    {
+        Eigen::VectorXf out;
+        project(vec, out);
+        return out;
+    }
+
+    Eigen::VectorXf& project(const Eigen::VectorXf& vec, Eigen::VectorXf& out) const
+    {
+        assert(vec.size() == features_.rows());
+        out = (features_.transpose() * (vec - mean_)).cwiseProduct(energies_);
+        return out;
+    }
+
+    size_t findClosestGlyph(const Eigen::VectorXf& vec) const
+    {
+        size_t min_index = 0;
+        (glyphs_.colwise() - vec).colwise().squaredNorm().minCoeff(&min_index);
+        return min_index;
+    }
+
+public:
+    size_t featureCount() const
+    {
+        return energies_.size();
+    }
+
+    boost::shared_ptr<const EigendecompositionT> decomposition() const
+    {
+        return decomposition_;
+    }
+
+    boost::shared_ptr<const FontImageT> font() const
+    {
+        return decomposition_->font();
+    }
+
+    const Eigen::VectorXf& mean() const
+    {
+        return mean_;
+    }
+
+    const Eigen::VectorXf& energies() const
+    {
+        return energies_;
+    }
+
+    const Eigen::MatrixXf& features() const
+    {
+        return features_;
+    }
+
+    const Eigen::MatrixXf& glyphs() const
+    {
+        return glyphs_;
+    }
+
+private:
+    boost::shared_ptr<const EigendecompositionT> decomposition_;
+    Eigen::VectorXf mean_;
+    Eigen::VectorXf energies_;
+    Eigen::MatrixXf features_;
+    Eigen::MatrixXf glyphs_;
+};
 
 } } // namespace KG::Ascii
 
 #endif // KGASCII_FONT_PCA_HPP
-

@@ -30,7 +30,10 @@
 
 using namespace KG::Ascii;
 
-typedef FontImage< Font<> > FontImageT;
+typedef Font<> FontT;
+typedef FontImage<FontT> FontImageT;
+typedef FontEigendecomposition<FontImageT> FontEigendecompositionT;
+typedef FontPrincipalComponents<FontEigendecompositionT> FontPrincipalComponentsT;
 
 class PcaDump: public CmdlineTool
 {
@@ -43,8 +46,8 @@ protected:
     int doExecute();
     
 private:
-    void dumpFeatures(const FontPCA<FontImageT>& pca);
-    void dumpDsc(const FontPCA<FontImageT>& pca);
+    void dumpFeatures(boost::shared_ptr<const FontPrincipalComponentsT> pca);
+    void dumpDsc(boost::shared_ptr<const FontPrincipalComponentsT> pca);
 
 private:
     std::string inputFile_;
@@ -84,18 +87,18 @@ bool PcaDump::processArgs()
 
 int PcaDump::doExecute()
 {
-    Font<> font;
-    if (!font.load(inputFile_)) {
+    boost::shared_ptr<FontT> font(new FontT);
+    if (!font->load(inputFile_)) {
         std::cout << "loading error\n";
         return -1;
     }
-    FontImageT image(&font);
+    boost::shared_ptr<FontImageT> image(new FontImageT(font));
 
-    FontPCAnalyzer<FontImageT> pcanalyzer(&image);
-    FontPCA<FontImageT> pca(&pcanalyzer, featureCnt_);
+    boost::shared_ptr<FontEigendecompositionT> decomposition(new FontEigendecompositionT(image));
+    boost::shared_ptr<FontPrincipalComponentsT> pca(new FontPrincipalComponentsT(decomposition, featureCnt_));
 
     std::cout << "features: " << featureCnt_ << "\n";
-    std::cout << "energy: " << pca.energies().sum() / pcanalyzer.energies().sum() << "\n";
+    std::cout << "energy: " << pca->energies().sum() / decomposition->energies().sum() << "\n";
 
     dumpFeatures(pca);
     dumpDsc(pca);
@@ -103,16 +106,16 @@ int PcaDump::doExecute()
     return 0;
 }
 
-void PcaDump::dumpFeatures(const FontPCA<FontImageT>& pca)
+void PcaDump::dumpFeatures(boost::shared_ptr<const FontPrincipalComponentsT> pca)
 {
     if (outputFeatures_.empty())
         return;
 
-    size_t glyph_w = pca.font()->glyphWidth();
-    size_t glyph_h = pca.font()->glyphHeight();
+    size_t glyph_w = pca->font()->glyphWidth();
+    size_t glyph_h = pca->font()->glyphHeight();
 
     size_t image_width = glyph_w * 2;
-    size_t image_height = glyph_h * (pca.featureCount() + 1);
+    size_t image_height = glyph_h * (pca->featureCount() + 1);
 
     cv::Mat output_image(image_height, image_width, CV_8UC1);
     boost::gil::gray8_view_t output_surface =
@@ -123,12 +126,12 @@ void PcaDump::dumpFeatures(const FontPCA<FontImageT>& pca)
     boost::gil::copy_and_convert_pixels(
             boost::gil::interleaved_view(
                     glyph_w, glyph_h,
-                    reinterpret_cast<const boost::gil::gray32f_pixel_t*>(pca.mean().data()),
+                    reinterpret_cast<const boost::gil::gray32f_pixel_t*>(pca->mean().data()),
                     glyph_w * sizeof(float)),
             subimage_view(output_surface, 0, 0, glyph_w, glyph_h));
 
-    for (size_t i = 0; i < pca.featureCount(); ++i) {
-        Eigen::VectorXf feat = pca.features().col(i);
+    for (size_t i = 0; i < pca->featureCount(); ++i) {
+        Eigen::VectorXf feat = pca->features().col(i);
         float fc = 3.0f / sqrt(static_cast<float>(feat.size()));
         Eigen::VectorXf feat_plus = feat.cwiseMax(Eigen::VectorXf::Zero(feat.size())) / fc;
         feat_plus = feat_plus.cwiseMin(Eigen::VectorXf::Ones(feat.size()));
@@ -151,12 +154,12 @@ void PcaDump::dumpFeatures(const FontPCA<FontImageT>& pca)
     cv::imwrite(outputFeatures_, output_image);
 }
 
-void PcaDump::dumpDsc(const FontPCA<FontImageT>& pca)
+void PcaDump::dumpDsc(boost::shared_ptr<const FontPrincipalComponentsT> pca)
 {
     if (outputDsc_.empty())
         return;
 
-    PcaReconstructionFontLoader< FontPCA<FontImageT> > pca_loader(&pca);
+    PcaReconstructionFontLoader<FontPrincipalComponentsT> pca_loader(pca);
     Font<> restored_font;
     load(restored_font, pca_loader);
     restored_font.save(outputDsc_);

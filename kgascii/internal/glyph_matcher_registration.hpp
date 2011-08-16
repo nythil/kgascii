@@ -31,8 +31,10 @@ template<class TFontImage>
 class GlyphMatcherRegistry
 {
 public:
+    typedef TFontImage FontImageT;
+    typedef DynamicGlyphMatcher<FontImageT> DynamicGlyphMatcherT;
     typedef boost::function<
-            DynamicGlyphMatcher<TFontImage>* (const TFontImage*, const std::map<std::string, std::string>&)
+            boost::shared_ptr<DynamicGlyphMatcherT> (boost::shared_ptr<const FontImageT>, const std::map<std::string, std::string>&)
             > CreatorFuncT;
 
     class Entry: public boost::intrusive::list_base_hook<>
@@ -94,6 +96,11 @@ GlyphMatcherRegistry<TFontImage>::Entry::~Entry()
 {
     removeEntry(*this);
 }
+
+template<class TFontImage>
+class GlyphMatcherRegistry<const TFontImage>: public GlyphMatcherRegistry<TFontImage>
+{
+};
 
 template<class TFontImage, template<class> class TFactory>
 class GlyphMatcherRegistration

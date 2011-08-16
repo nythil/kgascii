@@ -22,8 +22,9 @@
 #include <limits>
 #include <cmath>
 #include <map>
-#include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
 #include <Eigen/Dense>
 #include <kgascii/dynamic_glyph_matcher.hpp>
 
@@ -61,7 +62,7 @@ public:
     typedef MutualInformationContext ContextT;
 
 public:
-    explicit MutualInformationGlyphMatcher(const FontImageT* f, size_t bins)
+    explicit MutualInformationGlyphMatcher(boost::shared_ptr<const FontImageT> f, size_t bins)
         :font_(f)
         ,histograms_(font()->glyphCount())
         ,colorBins_(bins)
@@ -74,7 +75,7 @@ public:
     }
 
 public:
-    const FontImageT* font() const
+    boost::shared_ptr<const FontImageT> font() const
     {
         return font_;
     }
@@ -194,7 +195,7 @@ public:
     }
 
 private:
-    const FontImageT* font_;
+    boost::shared_ptr<const FontImageT> font_;
     std::vector<Eigen::VectorXi> histograms_;
     size_t colorBins_;
     size_t colorBinSize_;
@@ -205,8 +206,9 @@ class MutualInformationGlyphMatcherFactory
 {
 public:
     typedef MutualInformationGlyphMatcher<TFontImage> GlyphMatcherT;
+    typedef DynamicGlyphMatcher<TFontImage> DynamicGlyphMatcherT;
 
-    DynamicGlyphMatcher<TFontImage>* operator()(const TFontImage* font, const std::map<std::string, std::string>& options)
+    boost::shared_ptr<DynamicGlyphMatcherT> operator()(boost::shared_ptr<const TFontImage> font, const std::map<std::string, std::string>& options) const
     {
         size_t bins = 16;
         if (options.count("bins")) {
@@ -215,8 +217,9 @@ public:
             } catch (boost::bad_lexical_cast&) { }
         }
 
-        boost::scoped_ptr<GlyphMatcherT> impl_holder(new GlyphMatcherT(font, bins));
-        return new DynamicGlyphMatcher<TFontImage>(impl_holder);
+        boost::shared_ptr<GlyphMatcherT> matcher(new GlyphMatcherT(font, bins));
+        boost::shared_ptr<DynamicGlyphMatcherT> dynamic_matcher(new DynamicGlyphMatcherT(matcher));
+        return dynamic_matcher;
     }
 };
 

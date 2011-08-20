@@ -15,44 +15,41 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
+#ifndef KGASCII_TOOLS_DUMP_FONT_COMMAND_HPP
+#define KGASCII_TOOLS_DUMP_FONT_COMMAND_HPP
+
 #include <string>
 #include <vector>
-#include <common/cmdline_tool.hpp>
-#include "dump_font_command.hpp"
+#include <iosfwd>
+#include <boost/noncopyable.hpp>
+#include <kgascii/ft2pp/library.hpp>
+#include <kgascii/ft2pp/face.hpp>
+#include <kgascii/ft2pp/util.hpp>
 
 
-class DumpFont: public CmdlineTool
+class DumpFontCommand: boost::noncopyable
 {
-    typedef std::vector<std::string> StringVectorT;
 public:
-    DumpFont();
+    struct Parameters
+    {
+        std::vector<std::string> files;
+    };
 
-protected:
-    int doExecute();
+public:
+    explicit DumpFontCommand();
+
+    void execute(const Parameters& params);
+    
+private:
+    void enumerateFaces(const std::string& fileName, std::ostream& out);
+
+    void enumerateFaceSizes(KG::Ascii::FT2pp::Face& ft_face, std::ostream& out);
+
+    void printSizeMetrics(const KG::Ascii::FT2pp::Face& ft_face, std::ostream& out);
+
+private:
+    KG::Ascii::FT2pp::Library ftLibrary_;
 };
 
-int main(int argc, char* argv[])
-{
-    return DumpFont().execute(argc, argv);
-}
 
-DumpFont::DumpFont()
-    :CmdlineTool("Options")
-{
-    using namespace boost::program_options;
-    desc_.add_options()
-        ("input-file,i", value<StringVectorT>()->required(), "input font file")
-    ;
-    posDesc_.add("input-file", -1);
-}
-
-int DumpFont::doExecute()
-{
-    DumpFontCommand::Parameters params;
-    params.files = vm_["input-file"].as<StringVectorT>();
-
-    DumpFontCommand cmd;
-    cmd.execute(params);
-
-    return 0;
-}
+#endif /* KGASCII_TOOLS_DUMP_FONT_COMMAND_HPP */

@@ -114,7 +114,7 @@ public:
         return result;
     }
 
-    bool loadGlyph(Symbol charcode)
+    bool loadGlyph(Symbol charcode, const ViewT& glyph_surf)
     {
         if (!loader_.loadGlyph(charcode.value()))
             return false;
@@ -132,8 +132,6 @@ public:
         assert(img_off_x + common_width <= glyphWidth());
         assert(img_off_y + common_height <= glyphHeight());
 
-        glyphData_.recreate(glyphWidth(), glyphHeight());
-        ViewT glyph_surf = view(glyphData_);
         fill_pixels(glyph_surf, 0);
         copy_pixels(subimage_view(loader_.glyph(), bmp_off_x, bmp_off_y, common_width, common_height),
                 subimage_view(glyph_surf, img_off_x, img_off_y, common_width, common_height));
@@ -141,14 +139,8 @@ public:
         return true;
     }
 
-    ConstViewT glyph() const
-    {
-        return const_view(glyphData_);
-    }
-
 private:
     Internal::FT2FontLoader loader_;
-    ImageT glyphData_;
 };
 
 } } // namespace KG::Ascii

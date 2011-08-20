@@ -157,9 +157,8 @@ void doLoad(TFont& font, TLoader& loader, TSymbolIterator first, TSymbolIterator
 
     font.clear();
     for (TSymbolIterator sym = first; sym != last; ++sym) {
-        if (!loader.loadGlyph(*sym))
+        if (!loader.loadGlyph(*sym, font.addGlyph(*sym)))
             BOOST_THROW_EXCEPTION(FontIOError() << boost::errinfo_api_function("loadGlyph"));
-        copy_pixels(loader.glyph(), font.addGlyph(*sym));
     }
 }
 

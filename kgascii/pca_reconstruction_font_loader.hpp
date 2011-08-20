@@ -42,7 +42,6 @@ public:
     explicit PcaReconstructionFontLoader(boost::shared_ptr<const TPrincipalComponents> pca)
         :pca_(pca)
     {
-        glyphData_.recreate(pca_->font()->glyphWidth(), pca_->font()->glyphHeight());
     }
 
 public:
@@ -81,7 +80,7 @@ public:
         return result;
     }
 
-    bool loadGlyph(Symbol charcode)
+    bool loadGlyph(Symbol charcode, const ViewT& glyph_surf) const
     {
         for (size_t i = 0; i < pca_->font()->glyphCount(); ++i) {
             if (pca_->font()->getSymbol(i) != charcode) continue;
@@ -95,21 +94,15 @@ public:
                             pca_->font()->glyphWidth(), pca_->font()->glyphHeight(),
                             reinterpret_cast<const boost::gil::gray32f_pixel_t*>(glyph_vec.data()),
                             pca_->font()->glyphWidth() * sizeof(float)),
-                    boost::gil::view(glyphData_));
+                    glyph_surf);
             return true;
         }
 
         return false;
     }
 
-    ConstViewT glyph() const
-    {
-        return boost::gil::const_view(glyphData_);
-    }
-
 private:
     boost::shared_ptr<const TPrincipalComponents> pca_;
-    ImageT glyphData_;
 };
 
 } } // namespace KG::Ascii

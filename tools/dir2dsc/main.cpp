@@ -118,21 +118,17 @@ public:
         return result;
     }
 
-    bool loadGlyph(Symbol charcode)
+    bool loadGlyph(Symbol charcode, const boost::gil::gray8_view_t& glyph_surf) const
     {
-        std::vector<Symbol>::iterator it = std::find(
+        std::vector<Symbol>::const_iterator it = std::find(
                 charcodes_.begin(), charcodes_.end(), charcode);
         if (it == charcodes_.end())
             return false;
 
-        loadedIndex_ = std::distance(charcodes_.begin(), it);
+        size_t index = std::distance(charcodes_.begin(), it);
+        copy_pixels(const_view(glyphs_[index]), glyph_surf);
 
         return true;
-    }
-
-    boost::gil::gray8c_view_t glyph() const
-    {
-        return const_view(glyphs_[loadedIndex_]);
     }
 
 public:
@@ -193,7 +189,6 @@ private:
     unsigned glyphHeight_;
     std::vector<boost::gil::gray8_image_t> glyphs_;
     std::vector<Symbol> charcodes_;
-    size_t loadedIndex_;
 };
 
 

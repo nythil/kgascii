@@ -15,16 +15,11 @@
 // You should have received a copy of the GNU Lesser General Public License 
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#include <algorithm>
 #include <iostream>
 #include <boost/filesystem.hpp>
-#include <boost/gil/gil_all.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <kgascii/font.hpp>
-#include <kgascii/font_io.hpp>
 #include <common/cmdline_tool.hpp>
+#include "render_font_command.hpp"
 
-using namespace KG::Ascii;
 
 class Dsc2Img: public CmdlineTool
 {
@@ -32,14 +27,7 @@ public:
     Dsc2Img();
 
 protected:
-    bool processArgs();
-
-    int doExecute();
-    
-private:
-    unsigned maxWidth_;
-    std::string inputFile_;
-    std::string outputFile_;
+    int doExecute();    
 };
 
 
@@ -54,59 +42,27 @@ Dsc2Img::Dsc2Img()
 {
     using namespace boost::program_options;
     desc_.add_options()
-        ("max-width,w", value(&maxWidth_)->default_value(1024), "max output image width")
-        ("input-file,i", value(&inputFile_), "input dsc file")
-        ("output-file,o", value(&outputFile_), "output file")
+        ("max-width,w", value<unsigned>()->default_value(1024), "max output image width")
+        ("font-file,f", value<std::string>()->required(), "input dsc file")
+        ("output-file,o", value<std::string>(), "output file")
     ;
-    posDesc_.add("input-file", 1);
-}
-
-bool Dsc2Img::processArgs()
-{
-    requireOption("input-file");
-
-    if (!vm_.count("output-file")) {
-        boost::filesystem::path input_path(inputFile_);
-        outputFile_ = input_path.stem().string() + ".png";
-    }
-
-    return true;
+    posDesc_.add("font-file", 1);
 }
 
 int Dsc2Img::doExecute()
 {
-    Font<> font;
-    if (!font.load(inputFile_)) {
-        std::cout << "loading error\n";
-        return -1;
+    RenderFontCommand::Parameters params;
+    params.font_file = vm_["font-file"].as<std::string>();
+    params.max_width = vm_["max-width"].as<unsigned>();
+    if (vm_["output-file"].empty()) {
+        boost::filesystem::path input_path(params.font_file);
+        params.output_file = input_path.replace_extension(".png").filename().string();
+    } else {
+        params.output_file = vm_["output-file"].as<std::string>();
     }
 
-    unsigned max_chars_per_row = maxWidth_ / font.glyphWidth();
-    assert(max_chars_per_row > 1);
-
-    size_t row_count = (font.glyphCount() + max_chars_per_row - 1) / max_chars_per_row;
-
-    size_t image_width = std::min<size_t>(max_chars_per_row, font.glyphCount()) * font.glyphWidth();
-    size_t image_height = row_count * font.glyphHeight();
-
-    cv::Mat output_image(image_height, image_width, CV_8UC1);
-    boost::gil::gray8_view_t output_surface = boost::gil::interleaved_view(
-            image_width, image_height,
-            reinterpret_cast<boost::gil::gray8_pixel_t*>(output_image.data),
-            output_image.step[0]);
-
-    for (size_t ci = 0; ci < font.glyphCount(); ++ci) {
-        boost::gil::gray8c_view_t glyph_surface = font.getGlyph(ci);
-        unsigned row = ci % max_chars_per_row;
-        unsigned rowX = row * font.glyphWidth();
-        unsigned col = ci / max_chars_per_row;
-        unsigned colY = col * font.glyphHeight();
-        copy_pixels(glyph_surface, subimage_view(output_surface, rowX, colY,
-                font.glyphWidth(), font.glyphHeight()));
-    }
-
-    cv::imwrite(outputFile_, output_image);
+    RenderFontCommand cmd;
+    cmd.execute(params);
 
     return 0;
 }
-

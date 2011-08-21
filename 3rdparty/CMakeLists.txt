@@ -1,4 +1,4 @@
-FIND_PATH(Boost_GIL_2_INCLUDE_DIRS
+FIND_PATH(Boost_GIL_2_INCLUDE_DIR
     NAMES
     boost/gil/extension/io_new/bmp_all.hpp
     PATHS

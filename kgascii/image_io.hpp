@@ -21,6 +21,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/gil/extension/io_new/bmp_all.hpp>
+#include <boost/gil/extension/io_new/jpeg_all.hpp>
 #include <boost/gil/extension/io_new/pnm_all.hpp>
 #include <boost/gil/extension/io_new/targa_all.hpp>
 #include <boost/mpl/bool.hpp>
@@ -72,6 +73,10 @@ bool saveImageView(const TString& filename, const TView& view)
 
     if (ext == ".bmp") {
         if (Internal::trySaveImageView(filename, view, boost::gil::bmp_tag()))
+            return true;
+    }
+    if (ext == ".jpg" || ext == ".jpeg") {
+        if (Internal::trySaveImageView(filename, view, boost::gil::jpeg_tag()))
             return true;
     }
     if (ext == ".pnm" || ext == ".pbm" || ext == ".pgm" || ext == ".ppm") {

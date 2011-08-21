@@ -22,8 +22,10 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/gil/extension/io_new/bmp_all.hpp>
 #include <boost/gil/extension/io_new/jpeg_all.hpp>
+#include <boost/gil/extension/io_new/png_all.hpp>
 #include <boost/gil/extension/io_new/pnm_all.hpp>
 #include <boost/gil/extension/io_new/targa_all.hpp>
+#include <boost/gil/extension/io_new/tiff_all.hpp>
 #include <boost/mpl/bool.hpp>
 
 namespace KG { namespace Ascii {
@@ -79,12 +81,20 @@ bool saveImageView(const TString& filename, const TView& view)
         if (Internal::trySaveImageView(filename, view, boost::gil::jpeg_tag()))
             return true;
     }
+    if (ext == ".png") {
+        if (Internal::trySaveImageView(filename, view, boost::gil::png_tag()))
+            return true;
+    }
     if (ext == ".pnm" || ext == ".pbm" || ext == ".pgm" || ext == ".ppm") {
         if (Internal::trySaveImageView(filename, view, boost::gil::pnm_tag()))
             return true;
     }
     if (ext == ".tga") {
         if (Internal::trySaveImageView(filename, view, boost::gil::targa_tag()))
+            return true;
+    }
+    if (ext == ".tif" || ext == ".tiff") {
+        if (Internal::trySaveImageView(filename, view, boost::gil::tiff_tag()))
             return true;
     }
     return false;

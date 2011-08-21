@@ -5,6 +5,7 @@ SET(kgascii_SRCS
     ft2pp/face.hpp 
     ft2pp/library.hpp 
     ft2pp/util.hpp 
+    internal/enum_wrapper.hpp 
     internal/ft2_font_loader.hpp 
     internal/glyph_matcher_registration.hpp 
     dynamic_asciifier.hpp

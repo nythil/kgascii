@@ -23,12 +23,12 @@
 #include <boost/gil/gil_all.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/ref.hpp>
 #include <kgascii/ft2pp/library.hpp>
 #include <kgascii/ft2pp/face.hpp>
+#include <kgascii/internal/enum_wrapper.hpp>
 
 namespace KG { namespace Ascii { namespace Internal {
+
 
 class FT2FontLoaderBase: boost::noncopyable
 {
@@ -38,24 +38,54 @@ public:
     typedef boost::gil::gray8_image_t ImageT;
 
 public:
-    enum Hinting
+    struct HintingValues
     {
-        HintingNormal,
-        HintingLight,
-        HintingOff
+        enum Value
+        {
+            Normal,
+            Light,
+            Off
+        };
+        template<class TValueNameMap>
+        static void fillValueNameMap(TValueNameMap map)
+        {
+            map(Normal, "normal")(Light, "light")(Off, "off");
+        }
     };
-    enum AutoHinter
+    typedef EnumWrapper<HintingValues> Hinting;
+
+    struct AutoHinterValues
     {
-        AutoHinterForce,
-        AutoHinterOn,
-        AutoHinterOff
+        enum Value
+        {
+            Force,
+            On,
+            Off
+        };
+        template<class TValueNameMap>
+        static void fillValueNameMap(TValueNameMap map)
+        {
+            map(Force, "force")(On, "on")(Off, "off");
+        }
     };
-    enum RenderMode
+    typedef EnumWrapper<AutoHinterValues> AutoHinter;
+
+    struct RenderModeValues
     {
-        RenderGrayscale,
-        RenderMonochrome
-    };    
+        enum Value
+        {
+            Grayscale,
+            Monochrome
+        };
+        template<class TValueNameMap>
+        static void fillValueNameMap(TValueNameMap map)
+        {
+            map(Grayscale, "gray")(Monochrome, "mono");
+        }
+    };
+    typedef EnumWrapper<RenderModeValues> RenderMode;
 };
+
 
 class FT2FontLoader: public FT2FontLoaderBase
 {
@@ -63,9 +93,9 @@ public:
     FT2FontLoader()
         :library_(new FT2pp::Library)
         ,glyph_loaded_(false)
-        ,hinting_(HintingNormal)
-        ,autohint_(AutoHinterOff)
-        ,mode_(RenderGrayscale)
+        ,hinting_(Hinting::Normal)
+        ,autohint_(AutoHinter::Off)
+        ,mode_(RenderMode::Grayscale)
     {
     }
 
@@ -283,16 +313,16 @@ private:
     {
         int loadf = FT_LOAD_DEFAULT;
 
-        switch (autohint_) {
-        case AutoHinterForce: loadf |= FT_LOAD_FORCE_AUTOHINT; break;
-        case AutoHinterOn: break;
-        case AutoHinterOff: loadf |= FT_LOAD_NO_AUTOHINT; break;
+        switch (autohint_.value()) {
+        case AutoHinter::Force: loadf |= FT_LOAD_FORCE_AUTOHINT; break;
+        case AutoHinter::On: break;
+        case AutoHinter::Off: loadf |= FT_LOAD_NO_AUTOHINT; break;
         }
 
-        switch (hinting_) {
-        case HintingNormal: loadf |= FT_LOAD_TARGET_NORMAL; break;
-        case HintingLight: loadf |= FT_LOAD_TARGET_LIGHT; break;
-        case HintingOff: loadf |= FT_LOAD_NO_HINTING; break;
+        switch (hinting_.value()) {
+        case Hinting::Normal: loadf |= FT_LOAD_TARGET_NORMAL; break;
+        case Hinting::Light: loadf |= FT_LOAD_TARGET_LIGHT; break;
+        case Hinting::Off: loadf |= FT_LOAD_NO_HINTING; break;
         }
 
         return loadf;
@@ -300,9 +330,9 @@ private:
 
     int makeRenderFlags() const
     {
-        switch (mode_) {
-        case RenderGrayscale: return FT_RENDER_MODE_NORMAL;
-        case RenderMonochrome: return FT_RENDER_MODE_MONO;
+        switch (mode_.value()) {
+        case RenderMode::Grayscale: return FT_RENDER_MODE_NORMAL;
+        case RenderMode::Monochrome: return FT_RENDER_MODE_MONO;
         }
         return 0;
     }

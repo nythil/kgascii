@@ -23,6 +23,7 @@
 #include <boost/range/algorithm/transform.hpp>
 #include <boost/functional/value_factory.hpp>
 #include <kgascii/internal/ft2_font_loader.hpp>
+#include <kgascii/symbol.hpp>
 
 namespace KG { namespace Ascii {
 

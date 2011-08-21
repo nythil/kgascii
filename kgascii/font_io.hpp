@@ -30,8 +30,12 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/range/iterator.hpp>
+#include <boost/range/iterator_range.hpp>
+#include <boost/range/begin.hpp>
+#include <boost/range/end.hpp>
 #include <boost/range/algorithm/lower_bound.hpp>
 #include <boost/range/algorithm/upper_bound.hpp>
+#include <boost/range/adaptor/filtered.hpp>
 #include <kgascii/font.hpp>
 
 namespace boost { namespace serialization {
@@ -147,8 +151,8 @@ bool Font<TImage>::load(const std::string& file_path)
 
 namespace Internal {
 
-template<class TFont, class TLoader, typename TSymbolIterator>
-void doLoad(TFont& font, TLoader& loader, TSymbolIterator first, TSymbolIterator last)
+template<class TFont, class TLoader, typename TSymbolsRange>
+void doLoad(TFont& font, TLoader& loader, const TSymbolsRange& symbols)
 {
     font.setFamilyName(loader.familyName());
     font.setStyleName(loader.styleName());
@@ -156,8 +160,12 @@ void doLoad(TFont& font, TLoader& loader, TSymbolIterator first, TSymbolIterator
     font.setGlyphSize(loader.glyphWidth(), loader.glyphHeight());
 
     font.clear();
-    for (TSymbolIterator sym = first; sym != last; ++sym) {
-        if (!loader.loadGlyph(*sym, font.addGlyph(*sym)))
+    for (typename boost::range_iterator<const TSymbolsRange>::type
+         sit = boost::const_begin(symbols), sit_end = boost::const_end(symbols); 
+         sit != sit_end; ++sit) 
+    {
+        Symbol sym = *sit;
+        if (!loader.loadGlyph(sym, font.addGlyph(sym)))
             BOOST_THROW_EXCEPTION(FontIOError() << boost::errinfo_api_function("loadGlyph"));
     }
 }
@@ -167,18 +175,25 @@ void doLoad(TFont& font, TLoader& loader, TSymbolIterator first, TSymbolIterator
 template<class TImage, class TLoader>
 bool load(Font<TImage>& font, TLoader& loader)
 {
-    typename TLoader::SymbolCollectionT symbols = loader.symbols();
-    Internal::doLoad(font, loader, symbols.begin(), symbols.end());
+    Internal::doLoad(font, loader, loader.symbols());
+    return true;
+}
 
+template<class TImage, class TLoader, class TPredicate>
+bool load(Font<TImage>& font, TLoader& loader, TPredicate pred)
+{
+    Internal::doLoad(font, loader, boost::adaptors::filter(loader.symbols(), pred));
     return true;
 }
 
 template<class TImage, class TLoader>
 bool load(Font<TImage>& font, TLoader& loader, Symbol ci_min, Symbol ci_max)
 {
-    typename TLoader::SymbolCollectionT symbols = loader.symbols();
-    Internal::doLoad(font, loader, boost::lower_bound(symbols, ci_min), boost::upper_bound(symbols, ci_max));
-
+    const typename TLoader::SymbolCollectionT& symbols = loader.symbols();
+    Internal::doLoad(font, loader, 
+        boost::make_iterator_range(
+            boost::lower_bound(symbols, ci_min), 
+            boost::upper_bound(symbols, ci_max)));
     return true;
 }
 

@@ -16,6 +16,7 @@ SET(kgascii_SRCS
     font_pca.hpp
     ft2_font_loader.hpp
     glyph_matcher_context_factory.hpp
+    image_io.hpp
     kgascii_api.hpp
     kgascii_config.hpp
     means_distance.hpp
@@ -49,6 +50,7 @@ CONFIGURE_FILE(
 
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${Boost_GIL_2_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${FREETYPE_INCLUDE_DIR_ft2build})
 INCLUDE_DIRECTORIES(${FREETYPE_INCLUDE_DIR_freetype2})
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})

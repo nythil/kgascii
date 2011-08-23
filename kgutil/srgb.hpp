@@ -224,7 +224,10 @@ struct is_integral<gil::linear_channel_value<BaseChannelValue> > : public is_int
 
 } // namespace boost
 
-namespace KG { namespace Util {
+namespace KG { namespace Ascii {
+
+template<typename BaseChannelValue>
+struct float_channel_type;
 
 template<typename BaseChannelValue>
 struct float_channel_type<boost::gil::linear_channel_value<BaseChannelValue> >
@@ -232,6 +235,6 @@ struct float_channel_type<boost::gil::linear_channel_value<BaseChannelValue> >
     typedef boost::gil::lin32f type;
 };
 
-} } // namespace KG::Util
+} } // namespace KG::Ascii
 
 #endif // KGUTIL_SRGB_HPP

@@ -5,7 +5,6 @@ SET(kgascii_SRCS
     ft2pp/face.hpp 
     ft2pp/library.hpp 
     ft2pp/util.hpp 
-    internal/enum_wrapper.hpp 
     internal/ft2_font_loader.hpp 
     internal/glyph_matcher_registration.hpp 
     dynamic_asciifier.hpp
@@ -16,7 +15,6 @@ SET(kgascii_SRCS
     font_pca.hpp
     ft2_font_loader.hpp
     glyph_matcher_context_factory.hpp
-    image_io.hpp
     kgascii_api.hpp
     kgascii_config.hpp
     means_distance.hpp
@@ -26,10 +24,8 @@ SET(kgascii_SRCS
     pca_reconstruction_font_loader.hpp
     policy_based_glyph_matcher.hpp
     sequential_asciifier.hpp
-    srgb.hpp
     squared_euclidean_distance.hpp
     symbol.hpp
-    task_queue.hpp
     text_surface.hpp
 )
 

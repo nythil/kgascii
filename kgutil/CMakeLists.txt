@@ -1,6 +1,13 @@
 PROJECT(LIBKGUTIL)
 
 SET(kgutil_SRCS
+    resample/filter/bell.hpp
+    resample/filter/box.hpp
+    resample/filter/bspline.hpp
+    resample/filter/lanczos.hpp
+    resample/filter/triangle.hpp
+    resample/resampler.hpp
+    resample.hpp
     enum_wrapper.hpp 
     image_io.hpp
     srgb.hpp

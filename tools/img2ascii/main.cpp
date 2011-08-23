@@ -28,8 +28,8 @@
 #include <kgascii/dynamic_asciifier.hpp>
 #include <kgascii/text_surface.hpp>
 #include <kgascii/glyph_matcher_context_factory.hpp>
-#include <kgascii/srgb.hpp>
-#include <kgascii/image_io.hpp>
+#include <kgutil/image_io.hpp>
+#include <kgutil/srgb.hpp>
 #include <kgutil/resample.hpp>
 #include <kgutil/resample/filter/bspline.hpp>
 

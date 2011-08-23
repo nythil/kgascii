@@ -17,13 +17,14 @@
 
 #include "render_pca_command.hpp"
 #include <boost/throw_exception.hpp>
-#include <kgascii/image_io.hpp>
+#include <kgutil/image_io.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_io.hpp>
 #include <kgascii/font_pca.hpp>
 #include <kgascii/pca_reconstruction_font_loader.hpp>
 
 using namespace KG::Ascii;
+using namespace KG::Util;
 
 
 RenderPcaCommand::RenderPcaCommand(std::ostream& ostr)

@@ -25,7 +25,7 @@
 #include <boost/shared_ptr.hpp>
 #include <kgascii/ft2pp/library.hpp>
 #include <kgascii/ft2pp/face.hpp>
-#include <kgascii/internal/enum_wrapper.hpp>
+#include <kgutil/enum_wrapper.hpp>
 
 namespace KG { namespace Ascii { namespace Internal {
 
@@ -52,7 +52,7 @@ public:
             map(Normal, "normal")(Light, "light")(Off, "off");
         }
     };
-    typedef EnumWrapper<HintingValues> Hinting;
+    typedef KG::Util::EnumWrapper<HintingValues> Hinting;
 
     struct AutoHinterValues
     {
@@ -68,7 +68,7 @@ public:
             map(Force, "force")(On, "on")(Off, "off");
         }
     };
-    typedef EnumWrapper<AutoHinterValues> AutoHinter;
+    typedef KG::Util::EnumWrapper<AutoHinterValues> AutoHinter;
 
     struct RenderModeValues
     {
@@ -83,7 +83,7 @@ public:
             map(Grayscale, "gray")(Monochrome, "mono");
         }
     };
-    typedef EnumWrapper<RenderModeValues> RenderMode;
+    typedef KG::Util::EnumWrapper<RenderModeValues> RenderMode;
 };
 
 

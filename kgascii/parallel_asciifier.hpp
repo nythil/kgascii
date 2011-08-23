@@ -22,7 +22,7 @@
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
-#include <kgascii/task_queue.hpp>
+#include <kgutil/task_queue.hpp>
 #include <kgascii/text_surface.hpp>
 
 namespace KG { namespace Ascii {
@@ -137,7 +137,7 @@ private:
         ViewT imgv;
         Symbol* outp;
     };
-    TaskQueue<WorkItem> queue_;
+    KG::Util::TaskQueue<WorkItem> queue_;
 };
 
 } } // namespace KG::Ascii

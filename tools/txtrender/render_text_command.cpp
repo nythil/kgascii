@@ -18,9 +18,10 @@
 #include "render_text_command.hpp"
 #include <boost/throw_exception.hpp>
 #include <kgascii/font_io.hpp>
-#include <kgascii/image_io.hpp>
+#include <kgutil/image_io.hpp>
 
 using namespace KG::Ascii;
+using namespace KG::Util;
 
 
 RenderTextCommand::RenderTextCommand(std::ostream& ostr)

@@ -19,10 +19,9 @@
 #include <sstream>
 #include <set>
 #include <boost/filesystem.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_io.hpp>
+#include <kgascii/image_io.hpp>
 #include <common/cmdline_tool.hpp>
 #include <common/cast_surface.hpp>
 
@@ -142,35 +141,23 @@ public:
         boost::filesystem::directory_iterator dir_it(imgdir_path);
         boost::filesystem::directory_iterator dir_end;
         for (; dir_it != dir_end; ++dir_it) {
-            cv::Mat glyph_image = cv::imread(dir_it->path().string(), 0);
-            if (glyph_image.empty())
-                BOOST_THROW_EXCEPTION(std::runtime_error("cv::imread"));
+            boost::gil::gray8_image_t glyph_image;
+            if (!loadAndConvertImage(dir_it->path().string(), glyph_image))
+                BOOST_THROW_EXCEPTION(std::runtime_error("loadAndConvertImage"));
 
-            cv::Mat gray_glyph_image;
-//            cv::cvtColor(glyph_image, gray_glyph_image, CV_BGR2GRAY);
-//            assert(gray_glyph_image.type() == CV_8UC1);
-            gray_glyph_image = glyph_image;
-
-            if (gray_glyph_image.dims != 2)
-                BOOST_THROW_EXCEPTION(std::runtime_error("dims != 2"));
-            if (gray_glyph_image.type() != CV_8UC1)
-                BOOST_THROW_EXCEPTION(std::runtime_error("type != CV_8UC1"));
+            unsigned image_w = glyph_image.width();
+            unsigned image_h = glyph_image.height();
             if (img_cnt == 0) {
-                font_width = gray_glyph_image.cols;
-                font_height = gray_glyph_image.rows;
+                font_width = image_w;
+                font_height = image_h;
             } else {
-                if (static_cast<unsigned>(gray_glyph_image.cols) != font_width)
-                    BOOST_THROW_EXCEPTION(std::runtime_error("cols != font_width"));
-                if (static_cast<unsigned>(gray_glyph_image.rows) != font_height)
-                    BOOST_THROW_EXCEPTION(std::runtime_error("rows != font_height"));
+                if (image_w != font_width)
+                    BOOST_THROW_EXCEPTION(std::runtime_error("width != font_width"));
+                if (image_h != font_height)
+                    BOOST_THROW_EXCEPTION(std::runtime_error("height != font_height"));
             }
 
-            boost::gil::gray8c_view_t glyph_image_surface = castSurface<const boost::gil::gray8_pixel_t>(gray_glyph_image);
-
-            boost::gil::gray8_image_t glyph_container(font_width, font_height);
-            copy_pixels(glyph_image_surface, view(glyph_container));
-
-            glyphs_.push_back(glyph_container);
+            glyphs_.push_back(glyph_image);
             charcodes_.push_back(Symbol(32 + img_cnt));
 
             img_cnt++;

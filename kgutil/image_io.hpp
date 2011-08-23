@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with KG::Ascii. If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef KGASCII_IMAGE_IO_HPP
-#define KGASCII_IMAGE_IO_HPP
+#ifndef KGUTIL_IMAGE_IO_HPP
+#define KGUTIL_IMAGE_IO_HPP
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -28,7 +28,7 @@
 #include <boost/gil/extension/io_new/tiff_all.hpp>
 #include <boost/mpl/bool.hpp>
 
-namespace KG { namespace Ascii {
+namespace KG { namespace Util {
 
 namespace Internal {
 
@@ -173,6 +173,6 @@ bool loadAndConvertImage(const TString& filename, TImage& image)
     return Internal::loadImage(filename, image, boost::mpl::true_());
 }
 
-} } // namespace KG::Ascii
+} } // namespace KG::Util
 
-#endif // KGASCII_IMAGE_IO_HPP
+#endif // KGUTIL_IMAGE_IO_HPP

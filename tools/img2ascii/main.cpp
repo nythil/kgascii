@@ -21,19 +21,20 @@
 #include <cmath>
 #include <boost/optional.hpp>
 #include <boost/filesystem.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 #include <common/cmdline_tool.hpp>
 #include <common/validate_optional.hpp>
-#include <common/cast_surface.hpp>
 #include <kgascii/font_image.hpp>
 #include <kgascii/font_io.hpp>
 #include <kgascii/dynamic_asciifier.hpp>
 #include <kgascii/text_surface.hpp>
 #include <kgascii/glyph_matcher_context_factory.hpp>
 #include <kgascii/srgb.hpp>
+#include <kgascii/image_io.hpp>
+#include <kgutil/resample.hpp>
+#include <kgutil/resample/filter/bspline.hpp>
 
 using namespace KG::Ascii;
+using namespace KG::Util;
 
 typedef Font<> FontT;
 
@@ -142,12 +143,20 @@ int ImageToAscii::doExecute()
     unsigned char_height = font->glyphHeight();
 
     std::cerr << "loading image...\n";
-    cv::Mat capture_frame = cv::imread(inputFile_);
-    if (capture_frame.empty())
+    typedef boost::mpl::vector<
+        boost::gil::gray8_image_t,
+        boost::gil::gray16_image_t,
+        boost::gil::rgb8_image_t,
+        boost::gil::rgb16_image_t,
+        boost::gil::rgba8_image_t,
+        boost::gil::rgba16_image_t
+    >::type input_image_types;
+    boost::gil::any_image<input_image_types> loaded_image;
+    if (!loadImage(inputFile_, loaded_image))
         return -1;
 
-    unsigned frame_width = static_cast<unsigned>(capture_frame.cols);
-    unsigned frame_height = static_cast<unsigned>(capture_frame.rows);
+    unsigned frame_width = loaded_image.width();
+    unsigned frame_height = loaded_image.height();
 
     unsigned hint_width = maxCols_ * char_width;
     unsigned hint_height = maxRows_ * char_height;
@@ -170,31 +179,22 @@ int ImageToAscii::doExecute()
     std::cout << "output columns " << col_count << "\n";
     std::cout << "output rows " << row_count << "\n";
 
-    cv::Mat scaled_frame;
-    if (frame_width == out_width && frame_height == out_height) {
-        scaled_frame = capture_frame;
-    } else {
-        cv::resize(capture_frame, scaled_frame, cv::Size(out_width, out_height));
-    }
+    boost::gil::rgb_lin16_image_t input_image(frame_width, frame_height);
+    boost::gil::copy_and_convert_pixels(const_view(loaded_image), view(input_image));
 
-    //cv::GaussianBlur(scaled_frame, scaled_frame, cv::Size(7,7), 1.5, 1.5);
+    boost::gil::rgb_lin16_image_t scaled_image(out_width, out_height);
+    resample(const_view(input_image), view(scaled_image), Filter::BSplineFilter<>());
 
-    cv::Mat gray_frame;
-    cv::cvtColor(scaled_frame, gray_frame, CV_BGR2GRAY);
-    //cv::equalizeHist(gray_frame, gray_frame);
-
-    assert(gray_frame.dims == 2);
-    assert(static_cast<unsigned>(gray_frame.cols) == out_width);
-    assert(static_cast<unsigned>(gray_frame.rows) == out_height);
-    assert(gray_frame.type() == CV_8UC1);
+    boost::gil::gray8_image_t grayscale_image(out_width, out_height);
+    boost::gil::copy_and_convert_pixels(const_view(scaled_image), view(grayscale_image));
 
     TextSurface text(row_count, col_count);
     if (gamma_) {
         ConverterImpl<boost::gil::gray_lin16_image_t> converter(font, algorithm_, threadCount_);
-        converter.generate(castSurface<const boost::gil::gray8_pixel_t>(gray_frame), text);
+        converter.generate(const_view(grayscale_image), text);
     } else {
         ConverterImpl<boost::gil::gray8_image_t> converter(font, algorithm_, threadCount_);
-        converter.generate(castSurface<const boost::gil::gray8_pixel_t>(gray_frame), text);
+        converter.generate(const_view(grayscale_image), text);
     }
 
     std::ofstream fout(outputFile_.c_str());

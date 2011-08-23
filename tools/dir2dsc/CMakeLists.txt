@@ -4,7 +4,13 @@ INCLUDE_DIRECTORIES(${TIFF_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${PNG_INCLUDE_DIR})
 INCLUDE_DIRECTORIES(${Boost_GIL_2_INCLUDE_DIR})
 
-ADD_EXECUTABLE(dir2dsc main.cpp)
+SET(dir2dsc_SRCS
+    generate_font_command.hpp
+    generate_font_command.cpp
+    main.cpp
+)
+
+ADD_EXECUTABLE(dir2dsc ${dir2dsc_SRCS})
 TARGET_LINK_LIBRARIES(dir2dsc tools_common)
 TARGET_LINK_LIBRARIES(dir2dsc ${Boost_LIBRARIES})
 TARGET_LINK_LIBRARIES(dir2dsc ${JPEG_LIBRARIES})

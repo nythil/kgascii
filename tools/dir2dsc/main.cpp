@@ -27,6 +27,7 @@ public:
     GenerateFont();
 
 protected:
+    bool processArgs();
     int doExecute();
 };
 
@@ -40,11 +41,17 @@ GenerateFont::GenerateFont()
 {
     using namespace boost::program_options;
     desc_.add_options()
-        ("image-path,i", value<std::string>()->required(), "input image directory")
+        ("image-path,i", value<std::string>(), "input image directory")
         ("output-file,o", value<std::string>(), "output font file")
     ;
     posDesc_.add("image-path", 1);
     posDesc_.add("output-file", 1);
+}
+
+bool GenerateFont::processArgs()
+{
+    requireOption("image-path");
+    return true;
 }
 
 int GenerateFont::doExecute()

@@ -28,6 +28,7 @@ public:
     DumpFont();
 
 protected:
+    bool processArgs();
     int doExecute();
 };
 
@@ -41,9 +42,15 @@ DumpFont::DumpFont()
 {
     using namespace boost::program_options;
     desc_.add_options()
-        ("input-file,i", value<StringVectorT>()->required(), "input font file")
+        ("input-file,i", value<StringVectorT>(), "input font file")
     ;
     posDesc_.add("input-file", -1);
+}
+
+bool DumpFont::processArgs()
+{
+    requireOption("input-file");
+    return true;
 }
 
 int DumpFont::doExecute()

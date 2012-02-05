@@ -27,7 +27,8 @@ public:
     Dsc2Img();
 
 protected:
-    int doExecute();    
+    bool processArgs();
+    int doExecute();
 };
 
 
@@ -43,10 +44,16 @@ Dsc2Img::Dsc2Img()
     using namespace boost::program_options;
     desc_.add_options()
         ("max-width,w", value<unsigned>()->default_value(1024), "max output image width")
-        ("font-file,f", value<std::string>()->required(), "input dsc file")
+        ("font-file,f", value<std::string>(), "input dsc file")
         ("output-file,o", value<std::string>(), "output file")
     ;
     posDesc_.add("font-file", 1);
+}
+
+bool Dsc2Img::processArgs()
+{
+    requireOption("font-file");
+    return true;
 }
 
 int Dsc2Img::doExecute()

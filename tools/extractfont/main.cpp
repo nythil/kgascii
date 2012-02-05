@@ -28,6 +28,7 @@ public:
     ExtractFont();
 
 protected:
+    bool processArgs();
     int doExecute();
 };
 
@@ -47,11 +48,18 @@ ExtractFont::ExtractFont()
         ("min-char,f", value<unsigned>()->default_value(32), "first charcode")
         ("max-char,l", value<unsigned>()->default_value(126), "last charcode")
         ("output-file,o", value<std::string>(), "output file")
-        ("input-file,i", value<std::string>()->required(), "input font file")
-        ("pixel-size,s", value<unsigned>()->required(), "font nominal pixel size")
+        ("input-file,i", value<std::string>(), "input font file")
+        ("pixel-size,s", value<unsigned>(), "font nominal pixel size")
     ;
     posDesc_.add("input-file", 1);
     posDesc_.add("pixel-size", 1);
+}
+
+bool ExtractFont::processArgs()
+{
+    requireOption("input-file");
+    requireOption("pixel-size");
+    return true;
 }
 
 int ExtractFont::doExecute()

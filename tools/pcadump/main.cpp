@@ -26,6 +26,7 @@ public:
     PcaDump();
 
 protected:
+    bool processArgs();
     int doExecute();
 };
 
@@ -41,13 +42,20 @@ PcaDump::PcaDump()
 {
     using namespace boost::program_options;
     desc_.add_options()
-        ("font-file,f", value<std::string>()->required(), "input dsc file")
-        ("nfeatures,n", value<unsigned>()->required(), "number of features to extract")
+        ("font-file,f", value<std::string>(), "input dsc file")
+        ("nfeatures,n", value<unsigned>(), "number of features to extract")
         ("output-dsc", value<std::string>(), "output reconstructed dsc file")
         ("output-features", value<std::string>(), "output extracted feature masks")
     ;
     posDesc_.add("font-file", 1);
     posDesc_.add("nfeatures", 1);
+}
+
+bool PcaDump::processArgs()
+{
+    requireOption("font-file");
+    requireOption("nfeatures");
+    return true;
 }
 
 int PcaDump::doExecute()

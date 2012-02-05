@@ -28,6 +28,7 @@ public:
     RenderText();
 
 protected:
+    bool processArgs();
     int doExecute();
 };
 
@@ -43,11 +44,18 @@ RenderText::RenderText()
 {
     using namespace boost::program_options;
     desc_.add_options()
-        ("input-file,i", value<std::string>()->required(), "input text file")
-        ("font-file,f", value<std::string>()->required(), "font file")
+        ("input-file,i", value<std::string>(), "input text file")
+        ("font-file,f", value<std::string>(), "font file")
         ("output-file,o", value<std::string>(), "output file")
     ;
     posDesc_.add("input-file", 1);
+}
+
+bool RenderText::processArgs()
+{
+    requireOption("input-file");
+    requireOption("font-file");
+    return true;
 }
 
 int RenderText::doExecute()

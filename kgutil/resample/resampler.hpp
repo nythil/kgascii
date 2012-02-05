@@ -73,8 +73,18 @@ struct FilterContributions
             int left = static_cast<int>(ceil(center - fwidth));
             int right = static_cast<int>(floor(center + fwidth));
             assert(static_cast<unsigned>(right - left) < max_weights);
-            pixels[i].index = std::max<int>(0, left);
-            pixels[i].size = std::min<int>(right, ssize - 1) - pixels[i].index + 1;
+            int left_lim = std::max<int>(0, left);
+            int right_lim = std::min<int>(right, ssize - 1);
+            int lim_size = right_lim - left_lim + 1;
+            int lim_overflow = std::max<int>(right - right_lim, left_lim - left) + 1;
+            if (lim_overflow > lim_size) {
+                lim_size = lim_overflow;
+                if (left_lim + lim_overflow > ssize) {
+                    left_lim = ssize - lim_overflow;
+                }
+            }
+            pixels[i].index = left_lim;
+            pixels[i].size = lim_size;
             assert(pixels[i].size <= max_weights);
             pixels[i].weights = &weights[0] + i * max_weights;
             TReal total_weight = 0;

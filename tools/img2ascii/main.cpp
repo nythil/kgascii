@@ -143,20 +143,13 @@ int ImageToAscii::doExecute()
     unsigned char_height = font->glyphHeight();
 
     std::cerr << "loading image...\n";
-    typedef boost::mpl::vector<
-        boost::gil::gray8_image_t,
-        boost::gil::gray16_image_t,
-        boost::gil::rgb8_image_t,
-        boost::gil::rgb16_image_t,
-        boost::gil::rgba8_image_t,
-        boost::gil::rgba16_image_t
-    >::type input_image_types;
-    boost::gil::any_image<input_image_types> loaded_image;
-    if (!loadImage(inputFile_, loaded_image))
+    ImageInfo iinfo;
+    if (!readImageInfo(inputFile_, iinfo)) {
         return -1;
+    }
 
-    unsigned frame_width = loaded_image.width();
-    unsigned frame_height = loaded_image.height();
+    unsigned frame_width = iinfo.width;
+    unsigned frame_height = iinfo.height;
 
     unsigned hint_width = maxCols_ * char_width;
     unsigned hint_height = maxRows_ * char_height;
@@ -178,6 +171,18 @@ int ImageToAscii::doExecute()
     std::cout << "output height " << out_height << "\n";
     std::cout << "output columns " << col_count << "\n";
     std::cout << "output rows " << row_count << "\n";
+
+    typedef boost::mpl::vector<
+        boost::gil::gray8_image_t,
+        boost::gil::gray16_image_t,
+        boost::gil::rgb8_image_t,
+        boost::gil::rgb16_image_t,
+        boost::gil::rgba8_image_t,
+        boost::gil::rgba16_image_t
+    >::type input_image_types;
+    boost::gil::any_image<input_image_types> loaded_image;
+    if (!loadImage(inputFile_, loaded_image))
+        return -1;
 
     boost::gil::rgb_lin16_image_t input_image(frame_width, frame_height);
     boost::gil::copy_and_convert_pixels(const_view(loaded_image), view(input_image));

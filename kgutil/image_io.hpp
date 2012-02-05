@@ -173,6 +173,115 @@ bool loadAndConvertImage(const TString& filename, TImage& image)
     return Internal::loadImage(filename, image, boost::mpl::true_());
 }
 
+struct ImageInfo
+{
+    unsigned width;
+    unsigned height;
+};
+
+namespace Internal {
+
+template<class TTag>
+bool parseImageInfo(const boost::gil::image_read_info<TTag>& fmt_info, ImageInfo& info)
+{
+    return false;
+}
+
+template<>
+bool parseImageInfo(const boost::gil::image_read_info<boost::gil::bmp_tag>& fmt_info, ImageInfo& info)
+{
+    info.width = fmt_info._width;
+    info.height = fmt_info._height;
+    return true;
+}
+
+template<>
+bool parseImageInfo(const boost::gil::image_read_info<boost::gil::jpeg_tag>& fmt_info, ImageInfo& info)
+{
+    info.width = fmt_info._width;
+    info.height = fmt_info._height;
+    return true;
+}
+
+template<>
+bool parseImageInfo(const boost::gil::image_read_info<boost::gil::png_tag>& fmt_info, ImageInfo& info)
+{
+    info.width = fmt_info._width;
+    info.height = fmt_info._height;
+    return true;
+}
+
+template<>
+bool parseImageInfo(const boost::gil::image_read_info<boost::gil::pnm_tag>& fmt_info, ImageInfo& info)
+{
+    info.width = fmt_info._width;
+    info.height = fmt_info._height;
+    return true;
+}
+
+template<>
+bool parseImageInfo(const boost::gil::image_read_info<boost::gil::targa_tag>& fmt_info, ImageInfo& info)
+{
+    info.width = fmt_info._width;
+    info.height = fmt_info._height;
+    return true;
+}
+
+template<>
+bool parseImageInfo(const boost::gil::image_read_info<boost::gil::tiff_tag>& fmt_info, ImageInfo& info)
+{
+    info.width = fmt_info._width;
+    info.height = fmt_info._height;
+    return true;
+}
+
+template<class TString, class TTag>
+bool tryReadImageInfo(const TString& filename, ImageInfo& info, const TTag& tag)
+{
+    return parseImageInfo(boost::gil::read_image_info(filename, tag), info);
+}
+
+template<class TString>
+bool readImageInfo(const TString& filename, ImageInfo& info)
+{
+    boost::filesystem::path file_path(filename);
+    std::string ext = boost::algorithm::to_lower_copy(file_path.extension().string());
+
+    if (ext == ".bmp") {
+        if (tryReadImageInfo(filename, info, boost::gil::bmp_tag()))
+            return true;
+    }
+    if (ext == ".jpg" || ext == ".jpeg") {
+        if (tryReadImageInfo(filename, info, boost::gil::jpeg_tag()))
+            return true;
+    }
+    if (ext == ".png") {
+        if (tryReadImageInfo(filename, info, boost::gil::png_tag()))
+            return true;
+    }
+    if (ext == ".pnm" || ext == ".pbm" || ext == ".pgm" || ext == ".ppm") {
+        if (tryReadImageInfo(filename, info, boost::gil::pnm_tag()))
+            return true;
+    }
+    if (ext == ".tga") {
+        if (tryReadImageInfo(filename, info, boost::gil::targa_tag()))
+            return true;
+    }
+    if (ext == ".tif" || ext == ".tiff") {
+        if (tryReadImageInfo(filename, info, boost::gil::tiff_tag()))
+            return true;
+    }
+    return false;
+}
+
+} // namespace Internal
+
+template<class TString>
+bool readImageInfo(const TString& filename, ImageInfo& info)
+{
+    return Internal::readImageInfo(filename, info);
+}
+
 } } // namespace KG::Util
 
 #endif // KGUTIL_IMAGE_IO_HPP
